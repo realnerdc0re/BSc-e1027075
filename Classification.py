@@ -892,7 +892,7 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
         if (not time): input('\n...')
     
     # output final results
-    print('\n\n'+10*'~'+' {}: test results '.format(model)+10*'~')
+    print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
     print('\nModel-Parameters:\n{}'.format(model.get_params(deep=True)))
     print('\n\nAccuracy-Score: %.5f' % (accuracy_score(Ytest,predictions)))
     print('\n\nFeature-Importance:\n{}'.format(model.feature_importances_))
