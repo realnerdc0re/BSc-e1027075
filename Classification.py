@@ -253,7 +253,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
             elif mode == 3: value = tmax
             elif mode == 4: value = tstd
             
-            print('\n>>> replacing Infinite values...')
+            print('\n>>> replacing Infinite values: {}'.format(column))
             writeCells(dataset,column,infRows[i],value,verbose,False)
     else: return
     
@@ -361,7 +361,7 @@ def cleanNaN(dataset,mode,verbose=False,time=False):
             elif mode == 3: value = tmax
             elif mode == 4: value = tstd
                 
-            print('\n>>> replacing NaNs...')
+            print('\n>>> replacing NaNs: {}'.format(column))
             writeCells(dataset,column,NaNRows[i],value,verbose,False)
                 
     if verbose:

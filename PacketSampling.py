@@ -371,7 +371,7 @@ if __name__ == '__main__':
     print('\n\n'+40*'~'+' SCRIPT: PacketSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--check".format(verbose,superverbose,time,osx,windows,check))
-    print('\n{}, n = {}'.format(samplingmode[smode],n))
+    print('\n{}, n = {}, split = {}'.format(samplingmode[smode],n,split))
     
     print('\n'+20*'~'+' paths '+20*'~')
     print('\nPCAP: {}'.format(pcap))
