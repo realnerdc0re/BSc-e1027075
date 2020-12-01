@@ -991,7 +991,7 @@ if __name__ == '__main__':
     
     # SCALING DATA
     # MinMax proportional scaling
-    # TODO: apply scaling on original split-dataframe
+    # TODO: apply scaling on original split-dataframe for less memory consumption
     #datascaled = scalingDataframe(datasplit,[],verbose,time)
     datascaled = scalingDataframe(scaleinput,[],verbose,time)
     
