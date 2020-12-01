@@ -9,7 +9,6 @@ Created on Sat Nov 14 13:53:04 2020
 import os
 import sys
 
-
 # TODO: implement hardware/performance monitoring (maybe multi-threaded?)
 
 # choices for argument-parsing
