@@ -473,9 +473,11 @@ def cleanSingleValue(dataset,verbose=False,time=False):
 # save features of given df from given list, drop everything else
 def saveFeatures(dataset,features,verbose=False,time=False):
     
-    if not (verbose or time): print('\napplying function saveFeatures\n')
-    
     if time: start = timer()
+    
+    # informational output
+    print('\n>>> saving features...')
+    print('\n\t{}'.format(features))
     
     # list of all features from given dataset
     ldrop = dataset.columns.values
@@ -490,6 +492,11 @@ def saveFeatures(dataset,features,verbose=False,time=False):
             if j == ldrop.item(i):
                 index.append(i)
     
+    if (not index):
+        print('[WARNING] features not found. Abort.')
+        return
+        
+    
     # create list of indexes from features to save
     isave = index.copy()
     isave.reverse()
@@ -501,38 +508,20 @@ def saveFeatures(dataset,features,verbose=False,time=False):
     # drop features from dataset
     dataset.drop(axis=1,labels=ldrop,inplace=True)    
     
-    '''
-    #convert numpy array to list, to be able to use with df.drop()
-    idroplist = idrop.tolist()
-    '''
-    
     if time: end = timer()
     
     if verbose:
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: saveFeatures, save ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        print('\nTotal:\n', len(features))
-        print('\nLabels:\n', features)
-        if index: print('\nIndexes:\n', index)
-        else: 
-            if (not time): input('\n{INFO} features not found!\n')
-            return
+        print('\n'+10*'~'+' save '+10*'~')
+        print('\n{}'.format(features))
+        print('\n{}'.format(len(features)))
+
+        print('\n'+10*'~'+' remove '+10*'~')
+        print('\n{}'.format(ldrop))
+        print('\n{}'.format(len(ldrop)))
         
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: saveFeatures, remove ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        print("\nTotal:\n", len(ldrop))
-        #print("\nColumns, Element:\n",columns.item(2))
-        print("\nLabels:\n", ldrop)
-        print('\nIndexes:\n', idrop)
-        
-        '''
-        print('\nKeep, Labels:\n',keep)
-        print('\nKeep, Indexes:\n',indexes)
-        print('\nDrop, Type:\n',type(columns))
-        print('\nDrop, Labels:\n',columns)
-        '''
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
-        printdata(dataset,'FUNCTION: saveFeatures, cleaned',verbose)
+        if (not time): input('\n...')
     
-    if time: print('\nsaveFeatures\n{TIME}: %.3f' % (end-start),'seconds')        
+    if time: print('\nsaveFeatures\n[TIME]: %.3f' % (end-start),'seconds')        
         
     return
 
@@ -615,11 +604,8 @@ def removeCells(dataset,feature,cells,verbose=False,time=False):
     tmp = extractFeatures(dataset,feature,verbose)
     
     if verbose:
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: removeCells, feature:',feature,' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        print('\nInput:\n')
-        #print(type(tmp))
-        #print(tmp.shape[0])
-        print(tmp.describe())
+        print('\n'+10*'~'+' removeCells, feature: {}, cells: {} '.format(feature,len(cells))+10*'~')
+        print('\n{}'.format(tmp.describe()))
     
     # drop cells from df copy containing given feature
     tmp.drop(axis=0,index=cells,inplace=True)
@@ -627,11 +613,8 @@ def removeCells(dataset,feature,cells,verbose=False,time=False):
     if time: end = timer()
     
     if verbose:
-        print('\nOutput:\n')
-        #print(type(tmp))
-        #print(tmp.shape[0])
-        print(tmp.describe())
-        print('\nRemoved cells:', len(cells),'\n')
+        print('\n'+10*'~'+' removeCells, result '+10*'~')
+        print('\n{}'.format(tmp.describe()))
         if (not time): input('\n...')
      
     if time: print('\nremoveCells\n[TIME]: %.3f' % (end-start),'seconds')
@@ -658,9 +641,11 @@ def copyDfList(dflist,newlist,verbose=False,time=False):
 # split given df into training & validation portions as array
 def splitData(dataset,testsize,verbose=False,time=False):
     
-    if not (verbose or time): print('\n...applying function splitData\n')
-    
     if time: start = timer()
+    
+    # informational output
+    print('\n\n'+40*'~'+' FUNCTION: splitData '+40*'~')
+    print('\n>>> splitting dataframe into training & test portion...')
     
     # splitting dataset, to have data for comparison later to estimate algorithm accuracy
     # write dataset values into array
@@ -686,29 +671,28 @@ def splitData(dataset,testsize,verbose=False,time=False):
     if time: end = timer()
     
     if verbose:
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: splitData, X, Y ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~') 
-        print('\nArray, Values:\n',array)
-        print('\n\nX:\n',X)
-        print('\nX, Shape:\n',np.shape(X))
-        print('\n\nY:\n',Y)
-        print('\nY, Shape:\n',np.shape(Y))
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
+        print('\n'+20*'~'+' original '+20*'~')
+        print('\n{}'.format(dataset))
+        if (not time): input('\n...')
+        print('\n'+10*'~'+' X '+10*'~')
+        print('\n{}'.format(X))
+        print('\n'+10*'~'+' Y '+10*'~')
+        print('\n{}'.format(Y))
+        if (not time): input('\n...')
         
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: splitData, training ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~') 
-        print('\nX_train:\n', Xtrain)
-        print('\nX_train, shape:\n',Xtrain.shape)
-        print('\n\nY_train:\n', Ytrain) 
-        print('\nY_train, shape:\n',Ytrain.shape)
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
-    
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: splitData, test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~') 
-        print('\nX_validation:\n', Xtest)
-        print('\nX_validation, shape:\n',Xtest.shape)
-        print('\n\nY_validation:\n', Ytest) 
-        print('\nY_validation, shape:\n',Ytest.shape)
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
+        print('\n'+10*'~'+' Xtrain '+10*'~')
+        print('\n{}'.format(Xtrain))
+        print('\n'+10*'~'+' Ytrain '+10*'~')
+        print('\n{}'.format(Ytrain))
+        if (not time): input('\n...')
         
-    if time: print('\nsplitData\n{TIME}: %.3f' % (end-start),'seconds')
+        print('\n'+10*'~'+' Xtest '+10*'~')
+        print('\n{}'.format(Xtest))
+        print('\n'+10*'~'+' Ytest '+10*'~')
+        print('\n{}'.format(Ytest))
+        if (not time): input('\n...')
+        
+    if time: print('\nsplitData\n[TIME]: %.3f' % (end-start),'seconds')
     
     return data
 
@@ -978,7 +962,7 @@ if __name__ == '__main__':
     # drop feature 'flowStartMilliseconds'
     # TODO: should be done in FLowSampling.py instead
     dropfeature = []
-    dropfeature.append('flowStartMilliseconds')
+    dropfeature.append('flowStartMilliseconds')    
     removeFeatures(dataset,dropfeature,verbose,time)
     
     
