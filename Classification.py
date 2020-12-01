@@ -82,7 +82,7 @@ def ext2num(dataset,mapping,verbose):
         print('\n...applying function ext2num\n')
     
     if verbose:
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: ext2num ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+        print('\n\n'+40*'~'+' FUNCTION: ext2num '+40*'~')
         print('\n',dataset.groupby('Label').size())
         print('\nmapping:\n',mapping)
 
@@ -409,7 +409,7 @@ def cleanString(dataset,verbose=False,time=False):
         
     # remove features containing string from dataset
     # maybe extract before doing that
-    removeFeatures(dataset,lstr,verbose,False)
+    removeFeatures(dataset,lstr,verbose,time)
     
     if time:
         end = timer()
@@ -419,9 +419,7 @@ def cleanString(dataset,verbose=False,time=False):
     if verbose:
         print('\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(stype))
-        
         if (not time): input('\n...')
-    
     
     if time: print('\n[TIME, cleanString]: %.3f' % (end-start),'seconds')
     
@@ -785,7 +783,7 @@ def scalingArray(data,verbose=False,time=False):
     print(X_scaled)
     print(np.max(X_scaled))
     print(np.min(X_scaled))
-    if (not time): input('{SCALING} press ENTER to continue...\n')
+    if (not time): input('...')
     
     
     return
@@ -842,8 +840,11 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
 # apply PCA on scaled data
 def PCAnalysis(dataset,components,verbose=False,time=False):
     
-    if not (verbose or time): print('\n...applying function PCAnalysis\n')
     if time: start = timer()
+    
+    # informational output
+    print('\n\n'+40*'~'+' FUNCTION: PCAnalysis '+40*'~')
+    print('\n>>> apply principal component analysis...')
     
     Xpca = []
     
@@ -859,32 +860,30 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
     if time: end = timer()
     
     if verbose:
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: PCAnalysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        print('\noriginal dimension, training:\n',dataset[0].shape)
-        print('\nreduced dimension, training:\n',Xpca[0].shape)
-        print('\nPCA, Xtrain (fit/transform):\n',Xpca[0])
-        print(Xpca[0].shape)
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
-        print('\noriginal dimension, test:\n',dataset[1].shape)
-        print('\nreduced dimension, test:\n',Xpca[1].shape)
-        print('\nPCA, Xtest (transform):\n',Xpca[1])
-        print(Xpca[1].shape)
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
-        #print('\n\nPCA, components:\n',pca.components_)
-        #print('\n',pca.components_.shape)
-        #input('\n{VERBOSE} press ENTER to continue...\n')
-        print('\nPCA, explained variance:\n',pca.explained_variance_ratio_)
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
+        print('\n\n'+10*'~'+' Xtrain, fit & transform '+10*'~')
+        print('\n{}'.format(Xpca[0]))
+        print('\n{}'.format(Xpca[0].shape))
+
+        print('\n\n'+10*'~'+' Xtest, fit & transform '+10*'~')
+        print('\n{}'.format(Xpca[1]))
+        print('\n{}'.format(Xpca[1].shape))
+
+        print('\n\n'+10*'~'+' PCA, explained variance '+10*'~')
+        print('\n{}'.format(pca.explained_variance_ratio_))
+        if (not time): input('\n...\n')
     
-    if time: print('\nPCAnalysis\n{TIME}: %.3f' % (end-start),'seconds')
+    if time: print('\nPCAnalysis\n[TIME]: %.3f' % (end-start),'seconds')
     
     return Xpca
 
 # apply ML model
 def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     
-    print('\n...applying function applyModel,',model,'\n')
     if time: start = timer()
+    
+    # informational output
+    print('\n\n'+40*'~'+' FUNCTION: applyModel '+40*'~')
+    print('\n>>> fitting model for {}...'.format(model))
     
     # fit model to Xtrain & Ytrain
     model.fit(Xtrain,Ytrain)
@@ -897,34 +896,20 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     if time: end = timer()
       
     if verbose: 
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: applyModel, model:',model,'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        print('\nXtrain (pca):')
-        print(Xtrain)
-        print(Xtrain.shape)
-        print('\n\nYtrain:')
-        print(Ytrain)
-        print('\nYtrain, counts:')
-        print(Ytrain.value_counts())
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
-        print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: applyModel, model:',model,'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        print('\nXtest (pca):')
-        print(Xtest)
-        print(Xtest.shape)
-        print('\nYtest:')
-        print(Ytest)
-        print('\nYtest, counts:')
-        print(Ytest.value_counts())
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')
+        print('\n\n'+10*'~'+' {}: training '.format(model)+10*'~')
+        print('\nXtrain:\n{}\n{}'.format(Xtrain,Xtrain.shape))
+        print('\n\nYtrain:\n{}'.format(Ytrain.value_counts()))
+        if (not time): input('\n...')
+        print('\n\n'+10*'~'+' {}: test '.format(model)+10*'~')
+        print('\nXtest:\n{}\n{}'.format(Xtest,Xtest.shape))
+        print('\n\nYtest:\n{}'.format(Ytest.value_counts()))
+        if (not time): input('\n...')
     
     # output final results
-    print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: applyModel, model:',model,'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~') 
-    print('\nModel-Parameters:\n')
-    print(model.get_params(deep=True))
+    print('\n\n'+10*'~'+' {}: test results '.format(model)+10*'~')
+    print('\nModel-Parameters:\n{}'.format(model.get_params(deep=True)))
     print('\n\nAccuracy-Score: %.5f' % (accuracy_score(Ytest,predictions)))
-    print('\n\nFeature-Importance:\n')
-    print(model.feature_importances_)
-    print('\n\nLabe-Counts:\n')
-    print(Ytest.value_counts())
+    print('\n\nFeature-Importance:\n{}'.format(model.feature_importances_))
     print('\n\nConfusion-Matrix:\n')
     print('t       p r e d i c t')
     print('r         "0"    "1"')
@@ -932,10 +917,9 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     print('e  "1":',matrix[1])
     print('\n\nClassification-Report:\n\n',report)
     
-    if time: print('\napplyModel\n{TIME}: %.3f' % (end-start),'seconds')
+    if time: print('\napplyModel\n[TIME]: %.3f' % (end-start),'seconds')
     
     return
-
 
 if __name__ == '__main__':
     
@@ -1052,7 +1036,7 @@ if __name__ == '__main__':
     
     if time: 
         end = timer()
-        print('\n{TOTAL TIME}: %.3f' % (end-start),'seconds')
+        print('\n[TOTAL TIME]: %.3f' % (end-start),'seconds')
     
     if (not time): input('\n{QUIT} press ENTER to quit.')
     
