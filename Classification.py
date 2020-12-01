@@ -119,7 +119,7 @@ def printdata(dataset,heading,verbose=False):
     print('\n{}'.format(dataset))
     #if (not time): input('\n...')
     print('\n{}'.format(dataset.describe()))
-    if (not time): input('\n...')
+    if verbose and (not time): input('\n...')
     if verbose:
         verboseprint(dataset)
     return
