@@ -18,6 +18,8 @@ import sys
 
 # available sampling-modes, used for informational outputs
 samplingmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
+# capture files, https://www.unb.ca/cic/datasets/ids-2017.html
+filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 
 
 # ARGUMENT PARSING
@@ -33,7 +35,7 @@ parser.add_argument('--osx', action='store_true', help='use MacOS paths')
 parser.add_argument('--check', action='store_true', help='check if number of sampled packets is correct')
 
 parser.add_argument('mode', metavar = 'mode', type=int,nargs=1,help='select sampling mode: {}'.format(samplingmode))
-parser.add_argument('file', metavar = 'file', type=int,nargs=1,help='choose integer 0 - 4 for PCAPs from Monday to Friday' )
+parser.add_argument('file', metavar = 'file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
 
 args = parser.parse_args()
@@ -305,7 +307,8 @@ if __name__ == '__main__':
     time = args.time   
     
     mode = args.mode[0]
-    findex = args.file[0]
+    # index-position of chosen file
+    findex = args.file[0]-1
     n = args.n[0]
     
     windows = args.windows

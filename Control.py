@@ -56,8 +56,9 @@ if __name__ == '__main__':
     split = 5000
     
     # positional arguments
-    # index-number used to select files
-    findex = args.file[0]-1
+    # file selection (can be passed 1:1 to scripts called in main)
+    findex = args.file[0]
+    # sampling steps
     n = abs(args.n[0])
     if n == 0:
         print('>>> please enter non-zero integer value for n!')

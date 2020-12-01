@@ -921,8 +921,9 @@ if __name__ == '__main__':
     time = args.time  
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
-
-    findex = args.file[0]     
+    
+    # index-position of chosen file
+    findex = args.file[0]-1
     
     if time: start = timer()
     

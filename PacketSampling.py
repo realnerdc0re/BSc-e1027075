@@ -14,9 +14,10 @@ import subprocess
 import os
 import sys
 
-
+# available sampling-modes, used for informational outputs
 samplingmode = {1:'every n-th packet'}
-
+# capture files, https://www.unb.ca/cic/datasets/ids-2017.html
+filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
@@ -31,8 +32,8 @@ parser.add_argument('--osx', action='store_true', help='use MacOS paths')
 parser.add_argument('--check', action='store_true', help='check if number of sampled packets is correct')
 
 parser.add_argument('split', metavar='split', type=int,nargs=1,help='integer used to determine the split-size for PCAP files')
-parser.add_argument('mode', metavar='mode', type=int, nargs=1, help='choose samplign mode (1: every n-th packet, 2: sample n & skip n, 3: sample n & skip 2n)')
-parser.add_argument('file', metavar='file', type=int,nargs=1,help='choose integer 0 - 4 for PCAPs from Monday to Friday' )
+parser.add_argument('mode', metavar='mode', type=int, nargs=1, help='choose samplign mode: {}'.format(samplingmode))
+parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
 
 args = parser.parse_args()
@@ -266,7 +267,8 @@ if __name__ == '__main__':
     
     # positional arguments
     split = args.split[0]
-    findex = args.file[0]
+    # index-position of chosen file
+    findex = args.file[0]-1
     smode = args.mode[0]
     n = args.n[0]
     
