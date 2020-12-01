@@ -467,6 +467,8 @@ def cleanSingleValue(dataset,verbose=False,time=False):
     return
 
 
+# TODO: gather new features from existing features (e.g. total packets from forward and backward packets)    
+# TODO: create new column on specific position within the dataset
 # REMOVE/EXTRACT FEATURES
 # save features of given df from given list, drop everything else
 def saveFeatures(dataset,features,verbose=False,time=False):
@@ -941,24 +943,13 @@ if __name__ == '__main__':
     if time: start = timer()
     
     # IMPORT CSV
-    # OSX
-    #path = "/Users/drone/shared/Patrick/BSc/GeneratedLabelledFlows/TrafficLabelling_/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv"
-    # WINDOWS
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Monday-WorkingHours.pcap_ISCX.csv" 
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Tuesday-WorkingHours.pcap_ISCX.csv" 
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Wednesday-workingHours.pcap_ISCX.csv" 
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Thursday-WorkingHours-Afternoon-Infilteration.pcap_ISCX.csv"   
-    # containing lots of NaN (288k rows), mixed data types, can't be imported using UTF-8 encoding and so on.
-    # save CSV UTF-8 encoded before working with it, check Dtypewarning and manually set necessary datatype for the columns
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Thursday-WorkingHours-Morning-WebAttacks.pcap_ISCX.csv" 
-    #dataset = importCSV(path,None,True,'cp1252')
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv"  
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Friday-WorkingHours-Afternoon-PortScan.pcap_ISCX.csv"
-    #path = "D:\CIC-IDS2017\GeneratedLabelledFlows\TrafficLabelling_\Friday-WorkingHours-Morning.pcap_ISCX.csv" 
     
+    # WINDOWS
     # path to CSV files
     fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
     ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+    
+    
     # name for sampled, unlabeled CSVs
     csvname = ["Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     
@@ -977,7 +968,7 @@ if __name__ == '__main__':
     # IMPORT
     dataset = importCSV(path,None,verbose)
     # output dataset informations
-    printdata(dataset,'ORIGINAL',verbose)
+    printdata(dataset,'original',verbose)
 
     # EXT2NUM via mapping  
     # change strings BENIGN and DDoS contained within the feature 'Label' to numerical values according to given mapping
@@ -996,27 +987,28 @@ if __name__ == '__main__':
     # get rid of NaNs, Inf & Str objects within the DataFrame
     cleanSingleValue(dataset,verbose,time)
     cleanString(dataset,verbose,time)
-    # TODO: replacement value maybe add as function argument
+    # TODO: replacement value maybe add as function argument?
     cleanInf(dataset,0,verbose,time)
     cleanNaN(dataset,1,verbose,time)
     
-    printdata(dataset,'CLEANED',verbose)
+    printdata(dataset,'cleaned',verbose)
     
 
     # CLASSIFICATION
-    # get split data for training and validation
-    # format of returned data as list: [Xtrain,Xtest,Ytrain,Ytest]
-    # accessing data via datasplit[i], i = 0...3
-    # splitting training:test in the ration 70:30
+    # get split data for training and validation, format of returned data as list: [Xtrain,Xtest,Ytrain,Ytest]
+    # accessing data for further Classification via datasplit[i], splitting training:test in ration 70:30
     datasplit = splitDataframe(dataset,0.30,verbose,time)
 
     # CREATING COPY OF DATA TO SCALE
     # create copy of splitdata to apply scaling to, to not overwrite original values
+    # TODO: for improved memory efficiency just use original data, skipping this block
     scaleinput = []        
     scaleinput = copyDfList(datasplit,scaleinput,verbose,time)  
     
     # SCALING DATA
     # MinMax proportional scaling
+    # TODO: apply scaling on original split-dataframe
+    #datascaled = scalingDataframe(datasplit,[],verbose,time)
     datascaled = scalingDataframe(scaleinput,[],verbose,time)
     
     # PCA (principal component analysis)
@@ -1030,7 +1022,8 @@ if __name__ == '__main__':
     # Xpca[0] = Xtrain, datasplit[2] = Ytrain
     applyModel(model,Xpca[0],datasplit[2],Xpca[1],datasplit[3],verbose,time)
     
-    #use dataset without PCA or proportional scaling (Random Forest doesn't care about that)
+    
+    # TODO: for comparison, use dataset without PCA & proportional scaling (Random Forest doesn't care about that)
     #applyModel(model,datasplit[0],datasplit[2],datasplit[1],datasplit[3],verbose,time)
     #cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
     
@@ -1051,6 +1044,8 @@ if __name__ == '__main__':
     scatter_matrix(X_train)
     pyplot.show()
     '''
+    
+    
     
     '''
     # HISTOGRAM PLOTS
@@ -1082,46 +1077,4 @@ if __name__ == '__main__':
     #pyplot.hist(X_train['Flow Duration'],bins=100,label='X_train')
     #pyplot.savefig('Flow Duration for original and training dataset')
     pyplot.show()
-    '''
-    
-    
-    
-    # FEATURES TO GATHER FROM A COMBINATION OF FEATURES WITHIN THE ORIGINAL DATASET
-    
-    # e.g. total packages from Forward and Backward packages
-    # e.g. create new column on specific column position of the dataset  
-     
-    # BAD method to search strings in columns, since it actually would search every single cell of the dataset
-    '''  
-    # search column containing strings
-    # number of rows
-    hrow = hdataset.shape[0]
-    hcol = hdataset.shape[1]
-    
-    
-    hstr=[]
-    for i in range(0,hcol):
-        for j in range(0,hrow):
-            if type(hdataset.iloc[j][i])==str:
-                print(i)
-                hstr.append(i)
-                break
-            elif type(hdataset.iloc[j][i].str.isnumeric()==True):
-                break
-           
-         
-    print(hstr)
-    keyboard.wait('esc')
-    '''
-
-    # FUNCTION TO STORE lists in a dataframe
-    '''
-    # initialise empty dataframe to store multiple features containing Inf
-    Infframe = pd.DataFrame()
-    for column in linf:
-        # create series from list np.isinf(...) creates
-        Infvalues = pd.Series(np.isinf(dataset[column]))
-        Infframe.insert(loc=0,column=column,value=Infvalues)   
-    print('\nDataFrame:\n',Infframe)
-    input('press ENTER to continue...')
     '''
