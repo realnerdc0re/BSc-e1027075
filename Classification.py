@@ -933,7 +933,6 @@ if __name__ == '__main__':
     fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
     ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
     
-    
     # name for sampled, unlabeled CSVs
     csvname = ["Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     
@@ -960,7 +959,7 @@ if __name__ == '__main__':
     #ext2num(dataset,mapping,verbose)
     
     # drop feature 'flowStartMilliseconds'
-    # TODO: should be done in FLowSampling.py instead
+    # TODO: should be done directly in FLowSampling.py instead?
     dropfeature = []
     dropfeature.append('flowStartMilliseconds')    
     removeFeatures(dataset,dropfeature,verbose,time)
@@ -971,7 +970,7 @@ if __name__ == '__main__':
     # get rid of NaNs, Inf & Str objects within the DataFrame
     cleanSingleValue(dataset,verbose,time)
     cleanString(dataset,verbose,time)
-    # TODO: replacement value maybe add as function argument?
+    # TODO: add replacement value as function argument?
     cleanInf(dataset,0,verbose,time)
     cleanNaN(dataset,1,verbose,time)
     
@@ -1015,7 +1014,7 @@ if __name__ == '__main__':
         end = timer()
         print('\n[TOTAL TIME]: %.3f' % (end-start),'seconds')
     
-    if (not time): input('\n{QUIT} press ENTER to quit.')
+    if (not time): input('\n[QUIT] press ENTER to quit.')
     
     #sys.stdout.close()
     
