@@ -100,12 +100,12 @@ if __name__ == '__main__':
     # forge script execution-command out of given arguments
     if flowsampling: 
         sarg = " --flowsampling "
-        m = args.flowsampling[0]-1
+        m = args.flowsampling[0]
         samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
         samplingcmd = "python FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
     elif packetsampling: 
         sarg = " --packetsampling "
-        m = m = args.packetsampling[0]-1
+        m = m = args.packetsampling[0]
         samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
         samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
         

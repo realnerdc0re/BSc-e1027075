@@ -16,6 +16,10 @@ import os
 import re
 import sys
 
+# available sampling-modes, used for informational outputs
+samplingmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
+
+
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
 import argparse
@@ -28,7 +32,7 @@ parser.add_argument('--windows', action='store_true', help='use windows paths')
 parser.add_argument('--osx', action='store_true', help='use MacOS paths')
 parser.add_argument('--check', action='store_true', help='check if number of sampled packets is correct')
 
-parser.add_argument('mode', metavar = 'mode', type=int,nargs=1,help='choose sampling mode 1-4' )
+parser.add_argument('mode', metavar = 'mode', type=int,nargs=1,help='select sampling mode: {}'.format(samplingmode))
 parser.add_argument('file', metavar = 'file', type=int,nargs=1,help='choose integer 0 - 4 for PCAPs from Monday to Friday' )
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
 
@@ -598,7 +602,7 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
     for feature in features:
         print(feature)
         if feature[0:len(keyword)] == keyword:
-            print('...added!')
+            print('...added\n')
             tmp.append(feature)
         else:
             print('...discarded\n')
@@ -653,7 +657,7 @@ def convertToList(dataset,features,verbose=False,time=False):
 # sample first and every n-th package afterwards from given list of features
 def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     
-    samplingmode = {0: 'every {}-th packet'.format(n), 1: 'sample & skip {} packets'.format(n), 2: 'sample first {} packets of a flow'.format(n), 3: 'sample n, skip n-1, sample n-2 ... (n={})'.format(n)}
+    #samplingmode = {0: 'every {}-th packet'.format(n), 1: 'sample & skip {} packets'.format(n), 2: 'sample first {} packets of a flow'.format(n), 3: 'sample n, skip n-1, sample n-2 ... (n={})'.format(n)}
     
     # temporary list for sampling
     tmp = [] 
@@ -679,7 +683,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                 print(dataset[feature][i])
 
             # mode 0: sample every n-th packet of the flow (including first packet)
-            if mode == 0:
+            if mode == 1:
                 dataset.at[i,feature] = dataset[feature][i][0::n]
                 
                 if superverbose:
@@ -689,7 +693,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                         input('\n...')
             
             # mode 1: sample n packets, skip n packets...
-            elif mode == 1:
+            elif mode == 2:
                 # copy current cells content for sampling
                 tmp = dataset[feature][i].copy()
                 
@@ -714,7 +718,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                 #if superverbose: input('\n{SUPERVERBOSE} press ENTER to continue.')
             
             # mode 2: sample first n packets of the flow
-            elif mode == 2:
+            elif mode == 3:
                 dataset.at[i,feature] = dataset[feature][i][0:n]
                 
                 if superverbose:
@@ -723,7 +727,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                         print(dataset[feature][i])
         
             # mode 3: sample n, skip n-1, sample n-2, skip n-3... packets of the flow
-            elif mode == 3:
+            elif mode == 4:
                 # copy current cells content for sampling
                 tmp = dataset[feature][i].copy()
                 
@@ -904,16 +908,21 @@ if __name__ == '__main__':
     
     # check passed optional arguments, filepaths and forged commands
     if verbose:
-        print('\n\n'+40*'~'+' SCRIPT: FlowSampling, optional arguments '+40*'~')
+        print('\n\n'+40*'~'+' SCRIPT: FlowSampling '+40*'~')
+        print('\n'+20*'~'+' optional arguments '+20*'~')
         print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows".format(verbose,superverbose,time,osx,windows))
-        print('\n'+20*'~'+' paths & commands, file: {} '.format(pcap)+20*'~')
-        print('\nJSON: {}'.format(goflowsconf))
-        print('\nCSV (flows): {}'.format(unlabeledcsv)) 
+        print('\n{}, n = {}'.format(samplingmode[mode],n))
+        
+        print('\n'+20*'~'+' paths '+20*'~')
+        print('\nPCAP: {}'.format(pcap))
+        print('JSON: {}'.format(goflowsconf))
+        print('CSV (flows): {}'.format(unlabeledcsv)) 
         print('CSV (sampled): {}'.format(sampledcsv))
         print('CSV (labeled): {}'.format(labeledcsv))
         
-        print("\n\ngo-flows command: {}".format(goflowscmd))
-        print("labeling command: {}".format(labelingcmd))
+        print('\n'+20*'~'+' commands '+20*'~')
+        print("\ngo-flows: {}".format(goflowscmd))
+        print("labeling: {}".format(labelingcmd))
         if (not time): input('\n...') 
 
     
@@ -946,7 +955,6 @@ if __name__ == '__main__':
     # CALCULATIONS
     # TODO: should do more than this, e.g. min, max, stdev...
     # calculate mean of remaining packet values after sampling
-    
     if verbose: 
         print('\n\n'+20*'~'+' Calculation, mean '+20*'~')
         

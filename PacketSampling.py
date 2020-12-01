@@ -15,6 +15,9 @@ import os
 import sys
 
 
+samplingmode = {1:'every n-th packet'}
+
+
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
 import argparse
@@ -304,6 +307,8 @@ if __name__ == '__main__':
         fpath = r"D:\CIC-IDS2017\PCAP"
         # list of PCAP files in above folder:
         fname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
+        # current PCAP
+        pcap = "{}".format(fpath)+"\\"+fname[findex]
         # list of PCAP files after dropping payload
         snapname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
         # folder containing split capture files
@@ -339,18 +344,49 @@ if __name__ == '__main__':
         goflowsconf = "{}".format(wd)+"\\go-flows-configurations\CAIA_packetSampling.json"
         # labeling.py script
         labelingpath = r"labeling.py"
-                
-    # check passed optional arguments
-    if verbose:
-        print('\n\n'+40*'~'+' SCRIPT: PacketSampling, optional arguments '+40*'~')
-        print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows".format(verbose,superverbose,time,osx,windows))
-        #input('\n{VERBOSE} press ENTER to continue.')
-     
-    # PREPARE PCAP FILES
+            
+    
     
     # forged command to gather packets, -M ... human readable packet count output, findstr is grep aequivalent
     capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(fpath)+"\\"+fname[findex]+" | findstr packets"
-    print("\nforged capinfos (total packet count):\n", capinfoscmd)
+    # forged command to label sampled CSV file
+    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+"\\"+labelingname[findex]+" 5tuple"
+    # forged command to drop payload (keep first 127 bytes of all packets)
+    editsnapcmd = "{}".format(editcappath)+" -s 127 "+"{}".format(fpath)+"\\"+fname[findex]+" "+"{}".format(snappath)+"\\"+fname[findex]
+    # forged command to remove all files in the splitPCAP folder
+    cleansplitPCAP = "del /q /s "+"{}".format(splitpath)+"\\*"+" > NUL"
+    # forged command to split PCAP files into smaller files based on required argument split
+    editsplitcmd = "{}".format(editcappath)+" -c "+str(split)+" "+"{}".format(snappath)+"\\"+snapname[findex]+" "+"{}".format(splitpath)+"\\"+splitname[findex]
+    # forged command to merge sampled PCAP files into one file
+    mergecapcmd = "{}".format(mergecappath)+" -F pcap "+"{}".format(splitpath)+"\\* -w "+"{}".format(samplepath)+"\\"+samplename[findex]
+    # forged command to convert sampled PCAP into (per-packet) CSV for Classification
+    goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(csvpath)+"\\"+"{}".format(csvname[findex])+" source libpcap "+"{}".format(samplepath)+"\\"+"{}".format(samplename[findex])
+    
+    
+    # files
+    snapfile = "{}".format(snappath)+"\\"+snapname[findex]
+    
+    
+    # check passed optional arguments and commands
+    if verbose:
+        print('\n\n'+40*'~'+' SCRIPT: PacketSampling '+40*'~')
+        print('\n'+20*'~'+' optional arguments '+20*'~')
+        print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--check".format(verbose,superverbose,time,osx,windows,check))
+        print('\n{}, n = {}'.format(samplingmode[smode],n))
+        
+        print('\n'+20*'~'+' paths '+20*'~')
+        print('\nPCAP: {}'.format(pcap))
+        print('JSON: {}'.format(goflowsconf))
+        
+        print('\n'+20*'~'+' commands '+20*'~')
+        print('\npacket-count: {}'.format(capinfoscmd))
+        print('drop payload: {}'.format(editsnapcmd))
+        print('clear folder: {}'.format(cleansplitPCAP))
+        print('split PCAP: {}'.format(editsplitcmd))
+        print('merge splits: {}'.format(mergecapcmd))
+        print ('go-flows: {}'.format(goflowscmd))
+        print('labeling: {}'.format(labelingcmd))
+        if (not time): input('\n...')
     
     # optional argument --check: get total & sampled packet count of the original PCAP
     if check:
@@ -363,36 +399,19 @@ if __name__ == '__main__':
                 print('\n\n'+20*'~'+' check packets, file: {} '.format(fname[findex])+20*'~')
                 print("\ntotal packets: {} ".format(totalpacketcount))
                 print("\nsampled packets: {} ".format(totalsamplecount))
-                if (not time): input('\n\n[CHECK] press ENTER to continue.')
+                if (not time): input('\n...')
     
-    # forged command to label sampled CSV file
-    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+"\\"+labelingname[findex]+" 5tuple"
-    print("\nforged labeling:\n", labelingcmd)
     
-    # forged command to drop payload (keep first 127 bytes of all packets)
-    editsnapcmd = "{}".format(editcappath)+" -s 127 "+"{}".format(fpath)+"\\"+fname[findex]+" "+"{}".format(snappath)+"\\"+fname[findex]
-    print("\nforged editcaps (snaplen):\n", editsnapcmd)
+    # PREPARE PCAP FILES
+    # drop payload
+    print('\n\n>>> dropping payload from {}'.format(pcap))
     os.system(editsnapcmd)
-    
-    # forged command to remove all files in the splitPCAP folder
-    cleansplitPCAP = "del /q /s "+"{}".format(splitpath)+"\\*"+" > NUL"
-    print("\nforged cleansplitPCAP (clean splitPCAP folder):\n", cleansplitPCAP)
+    # clean splitPCAP folder
+    print('>>> cleaning folder {}'.format(splitpath))
     os.system(cleansplitPCAP)
-    
-    # forged command to split PCAP files into smaller files based on required argument split
-    editsplitcmd = "{}".format(editcappath)+" -c "+str(split)+" "+"{}".format(snappath)+"\\"+snapname[findex]+" "+"{}".format(splitpath)+"\\"+splitname[findex]
-    print("\nforged editcaps (split):\n", editsplitcmd)
+    # split PCAP into smaller files
+    print('>>> splitting PCAP from {} into folder {}'.format(snapfile,splitpath))
     os.system(editsplitcmd)
-    
-    # forged command to merge sampled PCAP files into one file
-    mergecapcmd = "{}".format(mergecappath)+" -F pcap "+"{}".format(splitpath)+"\\* -w "+"{}".format(samplepath)+"\\"+samplename[findex]
-    print("\nforged mergecap (merge sampled splits):\n", mergecapcmd)
-    #os.system(mergecapcmd)
-    #input('\n{VERBOSE} press ENTER to continue.')
-    
-    # forged command to convert sampled PCAP into (per-packet) CSV for Classification
-    goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(csvpath)+"\\"+"{}".format(csvname[findex])+" source libpcap "+"{}".format(samplepath)+"\\"+"{}".format(samplename[findex])
-    print ("\nforged go-flows (convert sampled PCAP to (per-packet) CSV):\n", goflowscmd)
     
     
     # SAMPLING (per-packet)
@@ -420,8 +439,8 @@ if __name__ == '__main__':
         if verbose: print('\n\n'+40*'~'+' SCRIPT: PacketSampling, file: {} (processing), iteration: {}/{}'.format(file,scount,splitcount)+40*'~')
             
         # forge command for capinfos to gather pcount of the current split-file
-        capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+"\\"+file+" | findstr packets"
-        pcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)  
+        capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+"\\"+file+" | findstr packets"
+        pcount = subprocess.check_output(capinfosplitcmd, shell=True, universal_newlines=True)  
         for word in pcount.split():
             if word.isdigit():
                 pcount = int(word)
@@ -470,7 +489,7 @@ if __name__ == '__main__':
             print('\nsampled packets (considering skips): {}\n\n'.format(len(psamplenumber))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             pprint = packetOutput(pdrop,10,False)
             print('\ndropped packets (considering skips): {}\n\n'.format(len(pdrop))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
-            if verbose and (not superverbose) and (not time): input('\n{VERBOSE} press ENTER to continue.')
+            if verbose and (not superverbose) and (not time): input('\n...')
     
         # flip list to drop packets from split-file, starting from the end and working towards the first packets of the split-file
         pdrop = np.flip(pdrop)
@@ -496,7 +515,7 @@ if __name__ == '__main__':
                 # output for increased readability in superverbose mode
                 elif i == (iteration-1):
                     print('\n'+40*'~'+' SCRIPT: PacketSampling, file: {} (done), iteration: {}/{}'.format(file,scount,splitcount)+40*'~')
-                    input('\n[SUPERVERBOSE] press ENTER to continue.')
+                    input('\n...')
             
             # create string containing packet numbers seperated with whitespaces as argument for editcaps execution
             arg = [str(int) for int in pslice]
