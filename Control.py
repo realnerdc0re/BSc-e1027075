@@ -3,7 +3,7 @@
 """
 Created on Sat Nov 14 13:53:04 2020
 
-@author: drone
+@author: Patrick Resch
 """
 
 import os

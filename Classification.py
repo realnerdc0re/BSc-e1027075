@@ -2,7 +2,7 @@
 """
 Created on Fri Sep 11 09:25:55 2020
 
-@author: Patrick
+@author: Patrick Resch
 """
 
 from pandas import read_csv
