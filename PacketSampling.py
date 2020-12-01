@@ -397,8 +397,8 @@ if __name__ == '__main__':
                 totalpackets = np.arange(1,totalpacketcount+1,1)
                 totalsamplecount = len(totalpackets[0::n])
                 print('\n\n'+20*'~'+' check packets, file: {} '.format(fname[findex])+20*'~')
-                print("\ntotal packets: {} ".format(totalpacketcount))
-                print("\nsampled packets: {} ".format(totalsamplecount))
+                print("\ntotal: {} ".format(totalpacketcount))
+                print("\nsampled: {} ".format(totalsamplecount))
                 if (not time): input('\n...')
     
     
@@ -436,7 +436,7 @@ if __name__ == '__main__':
         
         scount += 1
         # informational output
-        if verbose: print('\n\n'+40*'~'+' SCRIPT: PacketSampling, file: {} (processing), iteration: {}/{}'.format(file,scount,splitcount)+40*'~')
+        if verbose: print('\n\n'+40*'~'+' SCRIPT: PacketSampling.py, file: {} (processing), iteration: {}/{}'.format(file,scount,splitcount)+40*'~')
             
         # forge command for capinfos to gather pcount of the current split-file
         capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+"\\"+file+" | findstr packets"
@@ -470,10 +470,12 @@ if __name__ == '__main__':
                 nextsamplepstart = 0
             
             if verbose:
-                print('\n\n'+20*'~'+' skipped packets in split-file '+20*'~')
+                print('\n\n'+20*'~'+' skipped packets '+20*'~')
                 print("\n{}\t...current split-file".format(packetskip))
                 print("{}\t...next split-file".format(nextpacketskip))
         
+            # packets considering skips from splits
+            pskip = plist[packetskip:]
             # sample index-numbers, considering packet-skips from previous split-file
             psample = plistindex[packetskip::n]
             # sample packet-numbers, considering packet-skips from previous split-file (used for verbose output)
@@ -482,13 +484,15 @@ if __name__ == '__main__':
             pdrop = np.delete(plist,psample.tolist())
         
         if verbose:
-            print('\n\n'+20*'~'+' sampling packets in split-file'+20*'~')
+            print('\n\n'+20*'~'+' sampled packets '+20*'~')
             pprint = packetOutput(plist,10,False)
-            print('\npacket-count (ignoring skips): {}\n\n'.format(len(plist))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
+            print('\noriginal: {}\n\n'.format(len(plist))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
+            pprint = packetOutput(pskip,10,False)
+            print('\nskipped: {}\n\n'.format(len(pskip))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             pprint = packetOutput(psamplenumber,10,False)
-            print('\nsampled packets (considering skips): {}\n\n'.format(len(psamplenumber))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
+            print('\nsampled: {}\n\n'.format(len(psamplenumber))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             pprint = packetOutput(pdrop,10,False)
-            print('\ndropped packets (considering skips): {}\n\n'.format(len(pdrop))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
+            print('\ndropped: {}\n\n'.format(len(pdrop))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             if verbose and (not superverbose) and (not time): input('\n...')
     
         # flip list to drop packets from split-file, starting from the end and working towards the first packets of the split-file
@@ -504,7 +508,7 @@ if __name__ == '__main__':
             pdrop = pdrop[512:]
         
             if superverbose:
-                print('\n\n'+20*'~'+' packet removal, iteration: {}/{} '.format(i+1,iteration)+20*'~')
+                print('\n\n'+20*'~'+' packet removal {}/{} '.format(i+1,iteration)+20*'~')
                 pprint = packetOutput(pslice,10,False)
                 print('\nslice: {}\n\n'.format(len(pslice))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             
@@ -512,10 +516,8 @@ if __name__ == '__main__':
                 if i < (iteration-1):
                     pprint = packetOutput(pdrop,10,False)
                     print('\nremaining: {}\n\n'.format(len(pdrop))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))  
-                # output for increased readability in superverbose mode
-                elif i == (iteration-1):
-                    print('\n'+40*'~'+' SCRIPT: PacketSampling, file: {} (done), iteration: {}/{}'.format(file,scount,splitcount)+40*'~')
-                    input('\n...')
+                # increased readability in superverbose mode
+                elif i == (iteration-1) and (not time): input('\n...')
             
             # create string containing packet numbers seperated with whitespaces as argument for editcaps execution
             arg = [str(int) for int in pslice]
@@ -533,7 +535,7 @@ if __name__ == '__main__':
         print('\n[SAMPLE TIME]: %.3f' % (sampletime-start),'seconds')
     
     # merge split-files into single pcap for further processing
-    print("\n>>> merge sampled split-files into single PCAP...")
+    print("\n>>> merging split-files...")
     os.system(mergecapcmd)
     if time:
         mergetime = timer()
