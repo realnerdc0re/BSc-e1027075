@@ -942,12 +942,12 @@ if __name__ == '__main__':
     elif packetsampling:
         path = ppath+"\\"+csvname[findex]
     
-    if verbose:
-        print('\n\n'+40*'~'+' SCRIPT: Classification.py '+40*'~')
-        print('\n'+20*'~'+' optional arguments '+20*'~')
-        print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,flowsampling,packetsampling))
-        print('\n\n{}'.format(path))
-        if (not time): input('\n...')
+    # check passed optional arguments, filepaths and forged commands
+    print('\n\n'+40*'~'+' SCRIPT: Classification.py '+40*'~')
+    print('\n'+20*'~'+' optional arguments '+20*'~')
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,flowsampling,packetsampling))
+    print('\n\n{}'.format(path))
+    if (not time): input('\n...')
         
     # IMPORT
     dataset = importCSV(path,None,verbose)

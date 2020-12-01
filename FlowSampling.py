@@ -907,23 +907,22 @@ if __name__ == '__main__':
     labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+"\\"+labelingname[findex]+" 5tuple"
     
     # check passed optional arguments, filepaths and forged commands
-    if verbose:
-        print('\n\n'+40*'~'+' SCRIPT: FlowSampling '+40*'~')
-        print('\n'+20*'~'+' optional arguments '+20*'~')
-        print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows".format(verbose,superverbose,time,osx,windows))
-        print('\n{}, n = {}'.format(samplingmode[mode],n))
-        
-        print('\n'+20*'~'+' paths '+20*'~')
-        print('\nPCAP: {}'.format(pcap))
-        print('JSON: {}'.format(goflowsconf))
-        print('CSV (flows): {}'.format(unlabeledcsv)) 
-        print('CSV (sampled): {}'.format(sampledcsv))
-        print('CSV (labeled): {}'.format(labeledcsv))
-        
-        print('\n'+20*'~'+' commands '+20*'~')
-        print("\ngo-flows: {}".format(goflowscmd))
-        print("labeling: {}".format(labelingcmd))
-        if (not time): input('\n...') 
+    print('\n\n'+40*'~'+' SCRIPT: FlowSampling '+40*'~')
+    print('\n'+20*'~'+' optional arguments '+20*'~')
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows".format(verbose,superverbose,time,osx,windows))
+    print('\n{}, n = {}'.format(samplingmode[mode],n))
+    
+    print('\n'+20*'~'+' paths '+20*'~')
+    print('\nPCAP: {}'.format(pcap))
+    print('JSON: {}'.format(goflowsconf))
+    print('CSV (flows): {}'.format(unlabeledcsv)) 
+    print('CSV (sampled): {}'.format(sampledcsv))
+    print('CSV (labeled): {}'.format(labeledcsv))
+    
+    print('\n'+20*'~'+' commands '+20*'~')
+    print("\ngo-flows: {}".format(goflowscmd))
+    print("labeling: {}".format(labelingcmd))
+    if (not time): input('\n...') 
 
     
     # FLOW-CREATION & LABELING

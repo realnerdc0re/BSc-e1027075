@@ -368,25 +368,24 @@ if __name__ == '__main__':
     
     
     # check passed optional arguments and commands
-    if verbose:
-        print('\n\n'+40*'~'+' SCRIPT: PacketSampling '+40*'~')
-        print('\n'+20*'~'+' optional arguments '+20*'~')
-        print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--check".format(verbose,superverbose,time,osx,windows,check))
-        print('\n{}, n = {}'.format(samplingmode[smode],n))
-        
-        print('\n'+20*'~'+' paths '+20*'~')
-        print('\nPCAP: {}'.format(pcap))
-        print('JSON: {}'.format(goflowsconf))
-        
-        print('\n'+20*'~'+' commands '+20*'~')
-        print('\npacket-count: {}'.format(capinfoscmd))
-        print('drop payload: {}'.format(editsnapcmd))
-        print('clear folder: {}'.format(cleansplitPCAP))
-        print('split PCAP: {}'.format(editsplitcmd))
-        print('merge splits: {}'.format(mergecapcmd))
-        print ('go-flows: {}'.format(goflowscmd))
-        print('labeling: {}'.format(labelingcmd))
-        if (not time): input('\n...')
+    print('\n\n'+40*'~'+' SCRIPT: PacketSampling.py '+40*'~')
+    print('\n'+20*'~'+' optional arguments '+20*'~')
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--check".format(verbose,superverbose,time,osx,windows,check))
+    print('\n{}, n = {}'.format(samplingmode[smode],n))
+    
+    print('\n'+20*'~'+' paths '+20*'~')
+    print('\nPCAP: {}'.format(pcap))
+    print('JSON: {}'.format(goflowsconf))
+    
+    print('\n'+20*'~'+' commands '+20*'~')
+    print('\npacket-count: {}'.format(capinfoscmd))
+    print('drop payload: {}'.format(editsnapcmd))
+    print('clear folder: {}'.format(cleansplitPCAP))
+    print('split PCAP: {}'.format(editsplitcmd))
+    print('merge splits: {}'.format(mergecapcmd))
+    print ('go-flows: {}'.format(goflowscmd))
+    print('labeling: {}'.format(labelingcmd))
+    if (not time): input('\n...')
     
     # optional argument --check: get total & sampled packet count of the original PCAP
     if check:
@@ -429,14 +428,14 @@ if __name__ == '__main__':
     # variable to keep track of split-file count thats currently processed
     scount = 0
     
-    print("\n>>> apply sampling... (number of necessary iterations: {})".format(splitcount))
+    print("\n>>> apply sampling...".format(splitcount))
     
     # iterate all split-files and apply sampling
     for file in splitlist:
         
         scount += 1
         # informational output
-        if verbose: print('\n\n'+40*'~'+' SCRIPT: PacketSampling.py, file: {} (processing), iteration: {}/{}'.format(file,scount,splitcount)+40*'~')
+        print('\n\n'+20*'~'+' {}, iteration: {}/{}'.format(file,scount,splitcount)+20*'~')
             
         # forge command for capinfos to gather pcount of the current split-file
         capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+"\\"+file+" | findstr packets"
@@ -470,7 +469,7 @@ if __name__ == '__main__':
                 nextsamplepstart = 0
             
             if verbose:
-                print('\n\n'+20*'~'+' skipped packets '+20*'~')
+                print('\n\n'+10*'~'+' skipped packets '+10*'~')
                 print("\n{}\t...current split-file".format(packetskip))
                 print("{}\t...next split-file".format(nextpacketskip))
         
@@ -484,7 +483,7 @@ if __name__ == '__main__':
             pdrop = np.delete(plist,psample.tolist())
         
         if verbose:
-            print('\n\n'+20*'~'+' sampled packets '+20*'~')
+            print('\n\n'+10*'~'+' sampled packets '+10*'~')
             pprint = packetOutput(plist,10,False)
             print('\noriginal: {}\n\n'.format(len(plist))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             pprint = packetOutput(pskip,10,False)
@@ -508,7 +507,7 @@ if __name__ == '__main__':
             pdrop = pdrop[512:]
         
             if superverbose:
-                print('\n\n'+20*'~'+' packet removal {}/{} '.format(i+1,iteration)+20*'~')
+                print('\n\n'+10*'~'+' packet removal {}/{} '.format(i+1,iteration)+10*'~')
                 pprint = packetOutput(pslice,10,False)
                 print('\nslice: {}\n\n'.format(len(pslice))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             
