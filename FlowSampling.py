@@ -598,15 +598,15 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
     for feature in features:
         print(feature)
         if feature[0:len(keyword)] == keyword:
-            print('MATCH\n')
+            print('...added!')
             tmp.append(feature)
         else:
             print('...discarded\n')
     
     if verbose:
         print('\n'+40*'~'+' FUNCTION: perpacketFeatures, summary '+40*'~')
-        print('\nper-packet features:\n', tmp)
-        if (not time): input('\n{VERBOSE} press ENTER to continue.')
+        print('\n\t{}'.format(tmp))
+        if (not time): input('\n...')
             
     return tmp
 
@@ -639,14 +639,14 @@ def convertToList(dataset,features,verbose=False,time=False):
             # output warning for other cases
             else:
                 print('\n[WARNING] feature {} has wrong data-type!'.format(feature))
-                if (not time): input('\n{PAUSE} press ENTER to continue.')
+                if (not time): input('\n...')
             
             if superverbose:
                 print('transformed:\n', dataset[feature][i])
                 print('type:\n', type(dataset[feature][i]))
         
     
-    if verbose and (not time): input('\n{VERBOSE} press ENTER to continue.')
+    if verbose and (not time): input('\n...')
             
     return
 
@@ -686,7 +686,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                         print('\nSampled:')
                         print(len(dataset[feature][i]))
                         print(dataset[feature][i])
-                        input('\n{SUPERVERBOSE} press ENTER to continue.')
+                        input('\n...')
             
             # mode 1: sample n packets, skip n packets...
             elif mode == 1:
@@ -761,10 +761,10 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
             #if superverbose and not mode == 1 and not mode == 3: 
             #       input('\n{VERBOSE} press ENTER to continue.')
         if superverbose:
-            input('\n{SUPERVERBOSE} press ENTER to continue.')
+            input('\n...')
     
     if verbose and (not superverbose) and (not time):
-        input('\n{VERBOSE} press ENTER to continue.')
+        input('\n...')
     
     return
 
