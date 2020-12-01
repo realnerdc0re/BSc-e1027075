@@ -100,15 +100,17 @@ if __name__ == '__main__':
     # forge script execution-command out of given arguments
     if flowsampling: 
         sarg = " --flowsampling "
-        samplearg = " "+str(args.flowsampling[0])+" "+str(findex)+" "+str(n)
+        m = args.flowsampling[0]-1
+        samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
         samplingcmd = "python FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
     elif packetsampling: 
         sarg = " --packetsampling "
-        samplearg = " "+str(split)+" "+str(args.packetsampling[0])+" "+str(findex)+" "+str(n)
+        m = m = args.packetsampling[0]-1
+        samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
         samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
         
     print('>>> process with sampling...')
-    #os.system(samplingcmd)
+    os.system(samplingcmd)
     
     
     # PREPROCESSING

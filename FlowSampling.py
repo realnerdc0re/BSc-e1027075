@@ -717,7 +717,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
             elif mode == 2:
                 dataset.at[i,feature] = dataset[feature][i][0:n]
                 
-                if verbose:
+                if superverbose:
                         print('\nSampled:')
                         print(len(dataset[feature][i]))
                         print(dataset[feature][i])
@@ -781,11 +781,11 @@ def packetOutput(plist,n,verbose):
         tmp[i] = " ".join(tmp[i])
     
     if verbose:
-        print('\n\n\n'+40*'~'+' FUNCTION: packetOutput '+40*'~')
+        print('\n\n'+40*'~'+' FUNCTION: packetOutput '+40*'~')
         print('\npacket-list, length:\n{}'.format(len(plist)))
         print('\npacket-list, content:\n{}'.format(plist))
         print('\npacket-list, formatted:\n{}'.format(tmp))
-        if not time: input('\n{VERBOSE} press ENTER to continue.')
+        if not time: input('\n...')
     
     return tmp
 
@@ -914,7 +914,7 @@ if __name__ == '__main__':
         
         print("\n\ngo-flows command: {}".format(goflowscmd))
         print("labeling command: {}".format(labelingcmd))
-        if not time: input('\n[VERBOSE] press ENTER to continue.') 
+        if (not time): input('\n...') 
 
     
     # FLOW-CREATION & LABELING
@@ -929,7 +929,7 @@ if __name__ == '__main__':
     
     if verbose:
         printdata(dataset,'go-flows CSV',verbose)
-        if not time: input('\n[VERBOSE] press ENTER to continue.') 
+        if (not time): input('\n...') 
     
     
     # SAMPLING (flow-based)
@@ -957,11 +957,11 @@ if __name__ == '__main__':
         if verbose: 
             print('\n')
             print(dataset[feature])
-            if not time: input('\n[VERBOSE] press ENTER to continue.') 
+            if (not time): input('\n...') 
         
     if verbose:
-        printdata(dataset,'SAMPLED',verbose)
-        if not time: input('\n[VERBOSE] press ENTER to continue.')
+        printdata(dataset,'sampled',verbose)
+        if not time: input('\n...')
     
     # save dataframe as CSV for further preprocessing & classification
     print("\n>>> save data to CSV...")
