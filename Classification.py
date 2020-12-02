@@ -877,7 +877,7 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: applyModel '+40*'~')
-    print('\n>>> fitting model for {}...'.format(model))
+    print('\n>>> fitting model with {}...'.format(model))
     
     # fit model to Xtrain & Ytrain
     model.fit(Xtrain,Ytrain)

@@ -42,7 +42,6 @@ osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
 osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
 osgroup.add_argument('--windows', action='store_true', help='use windows paths')
 
-
 args = parser.parse_args()
 
 
@@ -458,16 +457,15 @@ if __name__ == '__main__':
     # CALCULATIONS
     # TODO: should do more than this, e.g. min, max, stdev...
     # calculate mean of remaining packet values after sampling
-    if verbose: 
-        print('\n\n'+20*'~'+' Calculation, mean '+20*'~')
         
     for feature in features:
+        print('\n\n>>> processing sampled packets: {}'.format(feature))
         for i in range(0,len(dataset.index)):
             dataset.at[i,feature] = sum(dataset[feature][i])/len(dataset[feature][i])
             
-        if verbose: 
-            print('\n')
-            print(dataset[feature])
+        if verbose:
+            print('\n\n'+20*'~'+' Calculation, mean '+20*'~')
+            print('\n{}'.format(dataset[feature]))
             if (not time): input('\n...') 
         
     if verbose:
