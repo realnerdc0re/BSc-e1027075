@@ -56,7 +56,7 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
     for feature in features:
         print(feature)
         if feature[0:len(keyword)] == keyword:
-            print('MATCH\n')
+            print('...added\n')
             tmp.append(feature)
         else:
             print('...discarded\n')
@@ -64,7 +64,7 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
     if verbose:
         print('\n'+40*'~'+' FUNCTION: perpacketFeatures, summary '+40*'~')
         print('\nper-packet features:\n', tmp)
-        if (not time): input('\n{VERBOSE} press ENTER to continue.')
+        if (not time): input('\n...')
             
     return tmp
 
@@ -76,7 +76,7 @@ def convertToList(dataset,features,verbose=False,time=False):
         
         if verbose and not superverbose:
             print('\n\n'+40*'~'+' FUNCTION: convertToList: {} '.format(feature)+40*'~')
-            print('processing...')  
+            print('>>> processing...')  
         
         for i in range(0,len(dataset.index)):
             if superverbose:
@@ -96,14 +96,14 @@ def convertToList(dataset,features,verbose=False,time=False):
             # output warning for other cases
             else:
                 print('\n[WARNING] feature {} has wrong data-type!'.format(feature))
-                input('\n{PAUSE} press ENTER to continue.')
+                input('\n...')
             
             if superverbose:
                 print('transformed:\n', dataset[feature][i])
                 print('type:\n', type(dataset[feature][i]))
         
     
-    if verbose and (not time): input('\n{VERBOSE} press ENTER to continue.')
+    if verbose and (not time): input('\n...')
             
     return
 
@@ -121,7 +121,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
         if verbose and not superverbose:
             print('\n'+40*' '+' SAMPLING: {} '.format(samplingmode[mode]))  
             print(40*'~'+' FUNCTION: flowSampling: {} '.format(feature)+40*'~')
-            print('...processing...')
+            print('>>> processing...')
         
         # iterate over every single row of the feature
         for i in range(0,len(dataset.index)):
@@ -143,7 +143,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                         print('\nSampled:')
                         print(len(dataset[feature][i]))
                         print(dataset[feature][i])
-                        input('\n{SUPERVERBOSE} press ENTER to continue.')
+                        input('\n...')
             
             # mode 1: sample n packets, skip n packets...
             elif mode == 1:
@@ -218,10 +218,10 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
             #if superverbose and not mode == 1 and not mode == 3: 
             #       input('\n{VERBOSE} press ENTER to continue.')
         if superverbose:
-            input('\n{SUPERVERBOSE} press ENTER to continue.')
+            input('\n...')
     
     if verbose and (not superverbose) and (not time):
-        input('\n{VERBOSE} press ENTER to continue.')
+        input('\n...')
     
     return
 
@@ -242,7 +242,7 @@ def packetOutput(plist,n,verbose):
         print('\npacket-list, length:\n{}'.format(len(plist)))
         print('\npacket-list, content:\n{}'.format(plist))
         print('\npacket-list, formatted:\n{}'.format(tmp))
-        if (not time): input('\n{VERBOSE} press ENTER to continue.')
+        if (not time): input('\n...')
     
     return tmp
 
@@ -540,7 +540,7 @@ if __name__ == '__main__':
     os.system(mergecapcmd)
     if time:
         mergetime = timer()
-        print('\n[MERGE TIME]: %.3f' % (mergetime-sampletime),'seconds')
+        print('\nmergecap\n[TIME]: %.3f' % (mergetime-sampletime),'seconds')
     
     # optional argument --check: get packet count of processed (merged) PCAP and compare with sampled packet count obtained from the original PCAP
     if check:
@@ -566,21 +566,21 @@ if __name__ == '__main__':
     os.system(goflowscmd)
     if time:
         goflowstime = timer()
-        print('\n[GO-FLOWS TIME]: %.3f' % (goflowstime-mergetime),'seconds')
+        print('\ngo-flows\n[TIME]: %.3f' % (goflowstime-mergetime),'seconds')
         
     # label sampled flow CSV for further classification
     print("\n>>> label CSV file for classification...")
     os.system(labelingcmd)
     if time:
         labelingtime = timer()
-        print('\n[LABEL TIME]: %.3f' % (labelingtime-goflowstime),'seconds')
+        print('\nlabeling.py\n[TIME]: %.3f' % (labelingtime-goflowstime),'seconds')
     
     if time: 
         end = timer()
-        print('\n[TOTAL TIME, PacketSampling.py]: %.3f' % (end-start),'seconds')
+        print('\nPacketSampling.py\n[TIME]: %.3f' % (end-start),'seconds')
     
     
-    if (not time):  input('\n[QUIT] press ENTER to quit.')   
+    if (not time):  input('\n...')   
     exit()
     #sys.stdout.close()
     

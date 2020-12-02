@@ -109,7 +109,7 @@ if __name__ == '__main__':
         samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
         samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
         
-    print('>>> process with sampling...')
+    print('>>> execute sampling: {}'.format(samplingcmd))
     os.system(samplingcmd)
     
     
@@ -120,6 +120,6 @@ if __name__ == '__main__':
     classificationarg = " "+str(findex)
     classificationcmd = "python Classification.py"+str(verbosearg)+str(timearg)+str(sarg)+str(findex)
     
-    print('>>> process with classification...')
+    print('>>> execute classification: {}'.format(classificationcmd))
     os.system(classificationcmd)
         

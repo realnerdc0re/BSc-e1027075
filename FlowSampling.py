@@ -427,7 +427,7 @@ if __name__ == '__main__':
     # FLOW-CREATION & LABELING
     
     # execute go-flows to process passed PCAP file
-    print("\n>>> create flow-CSV from PCAP with go-flows...")
+    print("\n\n>>> create flow-CSV from PCAP with go-flows...")
     os.system(goflowscmd)
     
     # import output CSV from go-flows
@@ -481,7 +481,7 @@ if __name__ == '__main__':
         end = timer()
         print('\n[TOTAL TIME, FlowSampling.py]: %.3f' % (end-start),'seconds')
     
-    if (not time): input('\n[QUIT] press ENTER to quit.')  
+    if (not time): input('\n...')  
     exit()
     
     #sys.stdout.close()

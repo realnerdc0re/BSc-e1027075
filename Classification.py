@@ -67,7 +67,7 @@ def resetpoptions():
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):  
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
-    print('\n>>> importing CSV...')
+    print('\n>>> importing CSV: {}'.format(csvpath))
     csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
     if verbose:
         print('\n{}'.format(csvdata.groupby('Label').size()))
@@ -154,7 +154,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
     
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanInf '+40*'~')
-    print('\n>>> searching for infinite values...')
+    print('\n>>> searching Infs...')
     
     # create pseudo-random values to a feature, add inf value for testing purpose
     #createRandom(dataset,'Random',False,False)
@@ -280,7 +280,7 @@ def cleanNaN(dataset,mode,verbose=False,time=False):
     
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
-    print('\n>>> searching for NaN values...')
+    print('\n>>> searching NaNs...')
     
     # summary for NaN values
     vNaN = dataset.isnull().sum()
@@ -374,7 +374,7 @@ def cleanNaN(dataset,mode,verbose=False,time=False):
         
     if time: end = timer()
     
-    if time: print('\ncleanNaN\n{TIME}: %.3f' % (end-start),'seconds')
+    if time: print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
       
     return
 
@@ -388,7 +388,7 @@ def cleanString(dataset,verbose=False,time=False):
     
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanString '+40*'~')
-    print('\n>>> searching for features containing strings...')
+    print('\n>>> searching strings...')
     
     # get features (index & label) containing Strings
     # feature (column)-index
@@ -421,7 +421,7 @@ def cleanString(dataset,verbose=False,time=False):
         print('\n{}'.format(stype))
         if (not time): input('\n...')
     
-    if time: print('\n[TIME, cleanString]: %.3f' % (end-start),'seconds')
+    if time: print('\ncleanString\n[TIME]: %.3f' % (end-start),'seconds')
     
     return
 
@@ -433,7 +433,7 @@ def cleanSingleValue(dataset,verbose=False,time=False):
     
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
-    print('\n>>> searching for features containing only a single unique value...')
+    print('\n>>> searching single-unique-value features...')
     
     ldrop = []
     # contains number of unique values contained (per feature)
@@ -462,7 +462,7 @@ def cleanSingleValue(dataset,verbose=False,time=False):
         print('\n{}'.format(counts))
         if (not time): input('\n...') 
     
-    if time: print('\ncleanSingleValue\n{TIME}: %.3f' % (end-start),'seconds')
+    if time: print('\ncleanSingleValue\n[TIME]: %.3f' % (end-start),'seconds')
     
     return
 
@@ -561,7 +561,7 @@ def extractFeatures(dataset,feature,verbose=False,time=False):
     
     if time: 
         end = timer()
-        print('\nextractFeatures\n{TIME}: %.3f' % (end-start),'seconds')
+        print('\nextractFeatures\n[TIME]: %.3f' % (end-start),'seconds')
     
     # return extracted features for further processing
     return new
@@ -1016,7 +1016,7 @@ if __name__ == '__main__':
         end = timer()
         print('\n[TOTAL TIME]: %.3f' % (end-start),'seconds')
     
-    if (not time): input('\n[QUIT] press ENTER to quit.')
+    if (not time): input('\n...')
     
     #sys.stdout.close()
     
