@@ -34,18 +34,26 @@ import pandas as pd
 import sys
 
 
+# capture files, https://www.unb.ca/cic/datasets/ids-2017.html
+filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
+
 # ARGUMENT PARSING
 
 # command line argument passthrough for better usability
 import argparse
 parser = argparse.ArgumentParser(description='script for cleaning dataframes imported from CSV files')
-parser.add_argument('--verbose', action='store_true', help='output additional informations')
+# positional arguments
+parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
+# optional arguments
+parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
-parser.add_argument('--time', action='store_true', help='measure function-runtimes')
-parser.add_argument('--flowsampling', action='store_true', help='use flow-sampled CSV files')
-parser.add_argument('--packetsampling', action='store_true', help='use per-packet sampled CSV files')
+parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
+# force sampling choice
+samplegroup = parser.add_mutually_exclusive_group(required=True)
+samplegroup.add_argument('--flowsampling', action='store_true', help='use flow-sampled CSV files')
+samplegroup.add_argument('--packetsampling', action='store_true', help='use per-packet sampled CSV files')
 
-parser.add_argument('file', metavar='file', type=int,nargs=1,help='choose integer 0 - 4 for CSVs from Monday to Friday' )
+
 
 args = parser.parse_args()
 

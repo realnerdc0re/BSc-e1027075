@@ -23,18 +23,21 @@ filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-Worki
 # command line argument passthrough for better usability
 import argparse
 parser = argparse.ArgumentParser(description='script for sampling PCAP files via editcaps (packetsampling), output is CSV')
-
-parser.add_argument('--verbose', action='store_true', help='output additional informations')
-parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
-parser.add_argument('--time', action='store_true', help='measure function-runtimes')
-parser.add_argument('--windows', action='store_true', help='use windows paths')
-parser.add_argument('--osx', action='store_true', help='use MacOS paths')
-parser.add_argument('--check', action='store_true', help='check if number of sampled packets is correct')
-
+# positional arguments
 parser.add_argument('split', metavar='split', type=int,nargs=1,help='integer used to determine the split-size for PCAP files')
 parser.add_argument('mode', metavar='mode', type=int, nargs=1, help='choose samplign mode: {}'.format(samplingmode))
 parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
+# optional arguments
+parser.add_argument('--verbose', action='store_true', help='output additional informations')
+parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
+parser.add_argument('--time', action='store_true', help='measure function-runtimes')
+parser.add_argument('--check', action='store_true', help='check if number of sampled packets is correct')
+# force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
+osgroup = parser.add_mutually_exclusive_group(required=True)
+osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
+osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
+osgroup.add_argument('--windows', action='store_true', help='use windows paths')
 
 args = parser.parse_args()
 
