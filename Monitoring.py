@@ -15,6 +15,8 @@ from memory_profiler import profile
 # https://medium.com/the-andela-way/machine-monitoring-tool-using-python-from-scratch-8d10411782fd
 # https://medium.com/survata-engineering-blog/monitoring-memory-usage-of-a-running-python-program-49f027e3d1ba
 
+# possible arguments for dstat monitoring usage
+#dstat --time --epoch --cpu-adv --cpu-use --disk --net --mem-adv --proc --sys --unix --top-io-adv
 
 # https://www.geeksforgeeks.org/memory-profiling-in-python-using-memory_profiler/
 @profile
