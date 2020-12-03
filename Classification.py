@@ -52,6 +52,11 @@ parser.add_argument('-t','--time', action='store_true', help='measure function-r
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('--flowsampling', action='store_true', help='use flow-sampled CSV files')
 samplegroup.add_argument('--packetsampling', action='store_true', help='use per-packet sampled CSV files')
+# force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
+osgroup = parser.add_mutually_exclusive_group(required=True)
+osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
+osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
+osgroup.add_argument('--windows', action='store_true', help='use windows paths')
 
 
 
@@ -930,6 +935,11 @@ if __name__ == '__main__':
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
     
+    windows = args.windows
+    osx = args.osx
+    linux = args.linux
+
+
     # index-position of chosen file
     findex = args.file[0]-1
     
@@ -938,11 +948,12 @@ if __name__ == '__main__':
     # IMPORT CSV
     
     # WINDOWS
-    # path to CSV files
-    #fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-    fpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/flow-sampledCSV"
-    #ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
-    ppath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/packet-sampledCSV"
+    # path to CSV files based on OS choice
+    if windows: fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
+    elif linux: fpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/flow-sampledCSV"
+    
+    if windows: ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+    elif linux: ppath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/packet-sampledCSV"
     
     # name for sampled, unlabeled CSVs
     csvname = ["Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
@@ -950,12 +961,12 @@ if __name__ == '__main__':
     # set path to sampeld CSV based on optional arguments
     if flowsampling:
     	# windows folder separator
-        #path = fpath+"\\"+csvname[findex]
-        path = fpath+"/"+csvname[findex] 
+        if windows: path = fpath+"\\"+csvname[findex]
+        elif linux: path = fpath+"/"+csvname[findex] 
     elif packetsampling:
     	# windows folder separator5
-        #path = ppath+"\\"+csvname[findex]
-        path = ppath+"/"+csvname[findex]
+        if windows: path = ppath+"\\"+csvname[findex]
+        elif linux: path = ppath+"/"+csvname[findex]
     
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*'~'+' SCRIPT: Classification.py '+40*'~')

@@ -110,7 +110,7 @@ if __name__ == '__main__':
         samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
         
     print('>>> execute sampling: {}'.format(samplingcmd))
-    os.system(samplingcmd)
+    #os.system(samplingcmd)
     
     
     # PREPROCESSING
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     
     # CLASSIFICATION
     classificationarg = " "+str(findex)
-    classificationcmd = "python Classification.py"+str(verbosearg)+str(timearg)+str(sarg)+str(findex)
+    classificationcmd = "python Classification.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
     
     print('>>> execute classification: {}'.format(classificationcmd))
     os.system(classificationcmd)
