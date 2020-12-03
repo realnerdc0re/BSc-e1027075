@@ -939,17 +939,23 @@ if __name__ == '__main__':
     
     # WINDOWS
     # path to CSV files
-    fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-    ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+    #fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
+    fpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/flow-sampledCSV"
+    #ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+    ppath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/packet-sampledCSV"
     
     # name for sampled, unlabeled CSVs
     csvname = ["Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     
     # set path to sampeld CSV based on optional arguments
     if flowsampling:
-        path = fpath+"\\"+csvname[findex] 
+    	# windows folder separator
+        #path = fpath+"\\"+csvname[findex]
+        path = fpath+"/"+csvname[findex] 
     elif packetsampling:
-        path = ppath+"\\"+csvname[findex]
+    	# windows folder separator5
+        #path = ppath+"\\"+csvname[findex]
+        path = ppath+"/"+csvname[findex]
     
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*'~'+' SCRIPT: Classification.py '+40*'~')

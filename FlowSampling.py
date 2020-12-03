@@ -317,6 +317,7 @@ if __name__ == '__main__':
     
     windows = args.windows
     osx = args.osx
+    linux = args.linux
     check = args.check
     
     # get working directory
@@ -332,6 +333,8 @@ if __name__ == '__main__':
     
     # OSX
     if osx:
+        # necessary separator to forge file-paths
+        separator = "/"
         # paths to pcap & CSV files
         pcap = "/Users/drone/shared/Patrick/BSc/sample.pcap"
         # path to sample pcap file for editcap (copy of original pcap file, created in function packetSampling)
@@ -353,11 +356,14 @@ if __name__ == '__main__':
         goflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv output_accumulate.csv source libpcap sample.pcap"
         # path to go flows with argument to run for packet-sampled pcap
         egoflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv eoutput_accumulate.csv source libpcap editsample.pcap"
+
     
     # Windows 10
     if windows:
         # PATH TO FOLDERS
         # https://www.unb.ca/cic/datasets/ids-2017.html
+        # necessary separator to forge file-paths
+        separator = r"\\"
         # folder containing unedited capture files of used dataset
         fpath = r"D:\CIC-IDS2017\PCAP"
         # list of PCAP files in above folder:
@@ -394,20 +400,71 @@ if __name__ == '__main__':
         goflowspath = r"D:\go-flows-master\go-flows.exe"
         # go flow JSON configuration file
         # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
-        goflowsconf = "{}".format(wd)+"\\go-flows-configurations\CAIA_flowSampling.json"
+        goflowsconf = "{}".format(wd)+separator+"go-flows-configurations"+separator+"CAIA_flowSampling.json"
         # labeling.py script
         labelingpath = r"labeling.py"
+
+        
     
-    
+    # Linux
+    # TODO: mount disks within script
+    # https://packagecontrol.io/packages/TodoReview
+    if linux:
+        # PATH TO FOLDERS
+        # https://www.unb.ca/cic/datasets/ids-2017.html
+        # necessary separator to forge file-paths
+        separator="/"
+        # folder containing unedited capture files of used dataset
+        fpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP"
+        # list of PCAP files in above folder:
+        fname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
+        # list of PCAP files after dropping payload
+        snapname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
+        # folder containing split capture files
+        splitpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/splitPCAP"
+        # folder containing PCAPS with dropped payload
+        snappath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/snapPCAP"
+        # folder containtin splits
+        splitpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/splitPCAP"
+        # folder containting sampled pcaps
+        samplepath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/sampledPCAP"
+        # folder containing unlabeled CSV
+        csvpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/flow-sampledCSV"
+        # name for splitted files
+        splitname = ["Monday-WorkingHours_split.pcap","Tuesday-WorkingHours_split.pcap","Wednesday-WorkingHours_split.pcap","Thursday-WorkingHours_split.pcap","Friday-WorkingHours_split.pcap"]
+        # name for sampled files
+        samplename = ["Monday-WorkingHours_sampled.pcap","Tuesday-WorkingHours_sampled.pcap","Wednesday-WorkingHours_sampled.pcap","Thursday-WorkingHours_sampled.pcap","Friday-WorkingHours_sampled.pcap"]
+        # name for sampled, unlabeled CSVs
+        csvname = ["Monday-WorkingHours_unlabeled.csv","Tuesday-WorkingHours_unlabeled.csv","Wednesday-WorkingHours_unlabeled.csv","Thursday-WorkingHours_unlabeled.csv","Friday-WorkingHours_unlabeled.csv"]
+        # filename used for labeling.py
+        labelingname = ["Monday-WorkingHours","Tuesday-WorkingHours","Wednesday-WorkingHours","Thursday-WorkingHours","Friday-WorkingHours"]
+
+        # PATH TO TOOLS
+        # capinfos path
+        capinfospath = "capinfos"
+        # editcap command
+        editcappath = "exitcap"
+        # mergecap
+        mergecappath = "mergecap"
+        # goflows
+        goflowspath = "/home/noooberino/Git/go-flows/go-flows"
+        # go flow JSON configuration file
+        # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
+        goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/CAIA_flowSampling.json"
+        # labeling.py script
+        labelingpath = r"/media/noooberino/SSD/BSc-e1027075/Labeling.py"
+
+
+
     # forged file-paths  
-    pcap = fpath+"\\"+fname[findex]
-    unlabeledcsv = fpath+"\\"+csvname[findex]
-    sampledcsv = "{}".format(csvpath)+"\\"+csvname[findex]
-    labeledcsv = "{}".format(csvpath)+"\\"+labelingname[findex]+".csv"
+    pcap = fpath+separator+fname[findex]
+    unlabeledcsv = fpath+separator+csvname[findex]
+    sampledcsv = "{}".format(csvpath)+separator+csvname[findex]
+    labeledcsv = "{}".format(csvpath)+separator+labelingname[findex]+".csv"
     
     # forged command to convert sampled PCAP into (per-packet) CSV for Classification
-    goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(fpath)+"\\"+"{}".format(csvname[findex])+" source libpcap "+"{}".format(fpath)+"\\"+"{}".format(fname[findex])
-    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+"\\"+labelingname[findex]+" 5tuple"
+    goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(fpath)+separator+"{}".format(csvname[findex])+" source libpcap "+"{}".format(fpath)+separator+"{}".format(fname[findex])
+    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+" 5tuple"
     
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*'~'+' SCRIPT: FlowSampling '+40*'~')

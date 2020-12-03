@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     
     # COMMANDS
-    # set command argument for OS
+    # set optional argument for OS choice
     if linux: osarg = ' --linux'
     elif osx: osarg = ' --osx'
     elif windows: osarg = ' --windows'

@@ -266,6 +266,7 @@ if __name__ == '__main__':
     time = args.time
     windows = args.windows
     osx = args.osx
+    linux = args.linux
     check = args.check
     
     # positional arguments
@@ -308,12 +309,14 @@ if __name__ == '__main__':
     if windows:
         # PATH TO FOLDERS
         # https://www.unb.ca/cic/datasets/ids-2017.html
+        # necessary separator to forge file-paths
+        separator = r"\\"
         # folder containing unedited capture files of used dataset
         fpath = r"D:\CIC-IDS2017\PCAP"
         # list of PCAP files in above folder:
         fname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
         # current PCAP
-        pcap = "{}".format(fpath)+"\\"+fname[findex]
+        pcap = "{}".format(fpath)+separator+fname[findex]
         # list of PCAP files after dropping payload
         snapname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
         # folder containing split capture files
@@ -346,30 +349,87 @@ if __name__ == '__main__':
         goflowspath = r"D:\go-flows-master\go-flows.exe"
         # go flow JSON configuration file
         # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
-        goflowsconf = "{}".format(wd)+"\\go-flows-configurations\CAIA_packetSampling.json"
+        goflowsconf = "{}".format(wd)+separator+"go-flows-configurations"+separator+"CAIA_packetSampling.json"
         # labeling.py script
         labelingpath = r"labeling.py"
+        # forged command to remove all files in the splitPCAP folder
+        cleansplitPCAP = "del /q /s "+"{}".format(splitpath)+separator+"*"+" > NUL"
             
+  
+  	# Linux
+  	# TODO: mount disks within script
+    if linux:
+        # PATH TO FOLDERS
+        # https://www.unb.ca/cic/datasets/ids-2017.html
+        # necessary separator to forge file-paths
+        separator="/"
+        # folder containing unedited capture files of used dataset
+        fpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP"
+        # list of PCAP files in above folder:
+        fname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
+        # current PCAP
+        pcap = "{}".format(fpath)+separator+fname[findex]
+        # list of PCAP files after dropping payload
+        snapname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
+        # folder containing split capture files
+        splitpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/splitPCAP"
+        # folder containing PCAPS with dropped payload
+        snappath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/snapPCAP"
+        # folder containtin splits
+        splitpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/splitPCAP"
+        # folder containting sampled pcaps
+        samplepath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/sampledPCAP"
+        # folder containing unlabeled CSV
+        csvpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/flow-sampledCSV"
+        # name for splitted files
+        splitname = ["Monday-WorkingHours_split.pcap","Tuesday-WorkingHours_split.pcap","Wednesday-WorkingHours_split.pcap","Thursday-WorkingHours_split.pcap","Friday-WorkingHours_split.pcap"]
+        # name for sampled files
+        samplename = ["Monday-WorkingHours_sampled.pcap","Tuesday-WorkingHours_sampled.pcap","Wednesday-WorkingHours_sampled.pcap","Thursday-WorkingHours_sampled.pcap","Friday-WorkingHours_sampled.pcap"]
+        # name for sampled, unlabeled CSVs
+        csvname = ["Monday-WorkingHours_unlabeled.csv","Tuesday-WorkingHours_unlabeled.csv","Wednesday-WorkingHours_unlabeled.csv","Thursday-WorkingHours_unlabeled.csv","Friday-WorkingHours_unlabeled.csv"]
+        # filename used for labeling.py
+        labelingname = ["Monday-WorkingHours","Tuesday-WorkingHours","Wednesday-WorkingHours","Thursday-WorkingHours","Friday-WorkingHours"]  
+
+        # PATH TO TOOLS
+        # capinfos path
+        capinfospath = "capinfos"
+        # editcap command
+        editcappath = "editcap"
+        # mergecap
+        mergecappath = "mergecap"
+        # goflows
+        goflowspath = "/home/noooberino/Git/go-flows/go-flows"
+        # go flow JSON configuration file
+        # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
+        goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/CAIA_flowSampling.json"
+        # labeling.py script
+        labelingpath = r"/media/noooberino/SSD/BSc-e1027075/Labeling.py"
+        # forged command to remove all files in the splitPCAP folder
+        cleansplitPCAP=r"rm"+" "+"{}".format(splitpath)+r"/* "
+
+     
+
     
-    
+   
+
     # forged command to gather packets, -M ... human readable packet count output, findstr is grep aequivalent
-    capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(fpath)+"\\"+fname[findex]+" | findstr packets"
+    capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(fpath)+separator+fname[findex]+" | findstr packets"
     # forged command to label sampled CSV file
-    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+"\\"+labelingname[findex]+" 5tuple"
+    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+" 5tuple"
     # forged command to drop payload (keep first 127 bytes of all packets)
-    editsnapcmd = "{}".format(editcappath)+" -s 127 "+"{}".format(fpath)+"\\"+fname[findex]+" "+"{}".format(snappath)+"\\"+fname[findex]
+    editsnapcmd = "{}".format(editcappath)+" -s 127 "+"{}".format(fpath)+separator+fname[findex]+" "+"{}".format(snappath)+separator+fname[findex]
     # forged command to remove all files in the splitPCAP folder
-    cleansplitPCAP = "del /q /s "+"{}".format(splitpath)+"\\*"+" > NUL"
+    #cleansplitPCAP = "del /q /s "+"{}".format(splitpath)+separator+"*"+" > NUL"
     # forged command to split PCAP files into smaller files based on required argument split
-    editsplitcmd = "{}".format(editcappath)+" -c "+str(split)+" "+"{}".format(snappath)+"\\"+snapname[findex]+" "+"{}".format(splitpath)+"\\"+splitname[findex]
+    editsplitcmd = "{}".format(editcappath)+" -c "+str(split)+" "+"{}".format(snappath)+separator+snapname[findex]+" "+"{}".format(splitpath)+separator+splitname[findex]
     # forged command to merge sampled PCAP files into one file
-    mergecapcmd = "{}".format(mergecappath)+" -F pcap "+"{}".format(splitpath)+"\\* -w "+"{}".format(samplepath)+"\\"+samplename[findex]
+    mergecapcmd = "{}".format(mergecappath)+" -F pcap "+"{}".format(splitpath)+separator+"* -w "+"{}".format(samplepath)+separator+samplename[findex]
     # forged command to convert sampled PCAP into (per-packet) CSV for Classification
-    goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(csvpath)+"\\"+"{}".format(csvname[findex])+" source libpcap "+"{}".format(samplepath)+"\\"+"{}".format(samplename[findex])
+    goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(csvpath)+separator+"{}".format(csvname[findex])+" source libpcap "+"{}".format(samplepath)+separator+"{}".format(samplename[findex])
     
     
     # files
-    snapfile = "{}".format(snappath)+"\\"+snapname[findex]
+    snapfile = "{}".format(snappath)+separator+snapname[findex]
     
     
     # check passed optional arguments and commands
@@ -443,7 +503,8 @@ if __name__ == '__main__':
         print('\n\n'+20*'~'+' {}, iteration: {}/{}'.format(file,scount,splitcount)+20*'~')
             
         # forge command for capinfos to gather pcount of the current split-file
-        capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+"\\"+file+" | findstr packets"
+        if windows: capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+separator+file+" | findstr packets"
+        if linux: capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+separator+file+" | grep packets"
         pcount = subprocess.check_output(capinfosplitcmd, shell=True, universal_newlines=True)  
         for word in pcount.split():
             if word.isdigit():
@@ -528,10 +589,11 @@ if __name__ == '__main__':
             arg = " ".join(arg)
     
             # forged command to drop packets with editcap
-            editcapcmd = "{}".format(editcappath)+" "+"{}".format(splitpath)+"\\"+file+" "+"{}".format(splitpath)+"\\"+"tmp.pcap"+" "+arg
+            editcapcmd = "{}".format(editcappath)+" "+"{}".format(splitpath)+separator+file+" "+"{}".format(splitpath)+separator+"tmp.pcap"+" "+arg
             os.system(editcapcmd)
             # forge command to replace old split-file with sampled tmp.pcap file
-            movecmd = r"move /Y "+"{}".format(splitpath)+"\\"+"tmp.pcap"+" "+"{}".format(splitpath)+"\\"+file+" > NUL"
+            if windows: movecmd = r"move /Y "+"{}".format(splitpath)+separator+"tmp.pcap"+" "+"{}".format(splitpath)+separator+file+" > NUL"
+            if linux: movecmd = r"mv "+"{}".format(splitpath)+separator+"tmp.pcap"+" "+"{}".format(splitpath)+separator+file+" > NUL"
             os.system(movecmd)
         
     if time:
@@ -547,7 +609,7 @@ if __name__ == '__main__':
     
     # optional argument --check: get packet count of processed (merged) PCAP and compare with sampled packet count obtained from the original PCAP
     if check:
-        capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(samplepath)+"\\"+samplename[findex]+" | findstr packets"
+        capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(samplepath)+separator+samplename[findex]+" | findstr packets"
         print("\nforged capinfos (sampled packet count):\n", capinfoscmd)
         
         samplepacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
