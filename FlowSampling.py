@@ -363,7 +363,7 @@ if __name__ == '__main__':
         # PATH TO FOLDERS
         # https://www.unb.ca/cic/datasets/ids-2017.html
         # necessary separator to forge file-paths
-        separator = r"\\"
+        separator = "\\"
         # folder containing unedited capture files of used dataset
         fpath = r"D:\CIC-IDS2017\PCAP"
         # list of PCAP files in above folder:
