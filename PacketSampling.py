@@ -88,10 +88,11 @@ def convertToList(dataset,features,verbose=False,time=False):
                 print('type:\n', type(dataset[feature][i]))
             
             # remove first and last character of the string (basically the brackets)
-            if type(dataset[feature][i])==str: 
+            if type(dataset[feature][i])==str:
                 dataset.at[i,feature] = dataset[feature][i][1:len(dataset[feature][i])-1]
                 # convert strings to integers, use whitespace as separator, saves as list
                 dataset.at[i,feature] = [int(s) for s in dataset[feature][i].split(' ')]
+            
             # consider single integers (like replacements for NaNs)
             elif type(dataset[feature][i]==int):
                 # store value as list-element
@@ -137,7 +138,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                 print('\nOriginal:')
                 print(len(dataset[feature][i]))
                 print(dataset[feature][i])
-
+            
             # mode 0: sample every n-th packet of the flow (including first packet)
             if mode == 0:
                 dataset.at[i,feature] = dataset[feature][i][0::n]
@@ -154,7 +155,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                 tmp = dataset[feature][i].copy()
                 
                 iteration = int(len(tmp)/(2*n))+1
-    
+                
                 for j in range (0,iteration):
                     # extend sampling list with first n packets in cell
                     psample.extend(tmp[0:n])
@@ -213,7 +214,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                         
                         # pauses after every single row iteration
                         #input('\n{SUPERVERBOSE} press ENTER to continue.')
- 
+
             else:
                 print('\n[ERROR] invalid sampling-mode selected!')
                 exit()
@@ -648,20 +649,3 @@ if __name__ == '__main__':
     if (not time):  input('\n...')   
     exit()
     #sys.stdout.close()
-    
-    
-    
-    
-    
-    
-    
-     
-    
-    
-
-    
-    
-   
-    
-   
-    

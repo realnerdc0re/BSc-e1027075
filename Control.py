@@ -122,4 +122,3 @@ if __name__ == '__main__':
     
     print('>>> execute classification: {}'.format(classificationcmd))
     os.system(classificationcmd)
-        
