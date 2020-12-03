@@ -110,7 +110,7 @@ if __name__ == '__main__':
         samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
         
     print('>>> execute sampling: {}'.format(samplingcmd))
-    #os.system(samplingcmd)
+    os.system(samplingcmd)
     
     
     # PREPROCESSING
