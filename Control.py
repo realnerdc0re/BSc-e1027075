@@ -102,12 +102,12 @@ if __name__ == '__main__':
         sarg = " --flowsampling "
         m = args.flowsampling[0]
         samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
-        samplingcmd = "py FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
+        samplingcmd = "python3 FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
     elif packetsampling: 
         sarg = " --packetsampling "
         m = m = args.packetsampling[0]
         samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
-        samplingcmd = "py PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
+        samplingcmd = "python3 PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
         
     print('>>> execute sampling: {}'.format(samplingcmd))
     os.system(samplingcmd)
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     
     # CLASSIFICATION
     classificationarg = " "+str(findex)
-    classificationcmd = "py Classification.py"+str(verbosearg)+str(timearg)+str(sarg)+str(findex)
+    classificationcmd = "python3 Classification.py"+str(verbosearg)+str(timearg)+str(sarg)+str(findex)
     
     print('>>> execute classification: {}'.format(classificationcmd))
     os.system(classificationcmd)
