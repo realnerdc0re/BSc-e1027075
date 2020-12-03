@@ -507,6 +507,7 @@ if __name__ == '__main__':
     # get list of accumulated perpacket-features that have to be sampled
     features = perpacketFeatures(dataset,'apply(accumulate',verbose,time)
     # convert content of perpacket-features into an actual list for further processing
+    print('\n\n>>> convert sampled values into list...')
     convertToList(dataset,features,verbose,time)
     # sample perpacket-features
     flowSampling(dataset,n,features,mode,verbose,time)
