@@ -365,7 +365,7 @@ if __name__ == '__main__':
         # necessary separator to forge file-paths
         separator="/"
         # folder containing unedited capture files of used dataset
-        fpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP"
+        fpath = r"/mnt/data/CIC-IDS2017/PCAP"
         # list of PCAP files in above folder:
         fname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
         # current PCAP
@@ -373,15 +373,15 @@ if __name__ == '__main__':
         # list of PCAP files after dropping payload
         snapname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
         # folder containing split capture files
-        splitpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/splitPCAP"
+        splitpath = r"/mnt/data/CIC-IDS2017/PCAP/splitPCAP"
         # folder containing PCAPS with dropped payload
-        snappath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/snapPCAP"
+        snappath = r"/mnt/data/CIC-IDS2017/PCAP/snapPCAP"
         # folder containtin splits
-        splitpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/splitPCAP"
+        splitpath = r"/mnt/data/CIC-IDS2017/PCAP/splitPCAP"
         # folder containting sampled pcaps
-        samplepath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/sampledPCAP"
+        samplepath = r"/mnt/data/CIC-IDS2017/PCAP/sampledPCAP"
         # folder containing unlabeled CSV
-        csvpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/flow-sampledCSV"
+        csvpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
         # name for splitted files
         splitname = ["Monday-WorkingHours_split.pcap","Tuesday-WorkingHours_split.pcap","Wednesday-WorkingHours_split.pcap","Thursday-WorkingHours_split.pcap","Friday-WorkingHours_split.pcap"]
         # name for sampled files
@@ -404,7 +404,7 @@ if __name__ == '__main__':
         # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
         goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/CAIA_flowSampling.json"
         # labeling.py script
-        labelingpath = r"/media/noooberino/SSD/BSc-e1027075/Labeling.py"
+        labelingpath = r"/mnt/data/BSc-e1027075/Labeling.py"
         # forged command to remove all files in the splitPCAP folder
         cleansplitPCAP=r"rm"+" "+"{}".format(splitpath)+r"/* "
 

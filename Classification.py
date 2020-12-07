@@ -950,10 +950,10 @@ if __name__ == '__main__':
     # WINDOWS
     # path to CSV files based on OS choice
     if windows: fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-    elif linux: fpath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/flow-sampledCSV"
+    elif linux: fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
     
     if windows: ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
-    elif linux: ppath = r"/media/noooberino/SSD/CIC-IDS2017/PCAP/packet-sampledCSV"
+    elif linux: ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
     
     # name for sampled, unlabeled CSVs
     csvname = ["Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
