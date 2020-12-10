@@ -8,6 +8,10 @@ Created on Sat Nov 14 13:53:04 2020
 
 import os
 import sys
+import subprocess
+import time as epochtime
+
+from timeit import default_timer as timer
 
 # TODO: implement hardware/performance monitoring (maybe multi-threaded?)
 
@@ -18,6 +22,10 @@ flowsmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n
 packetsmode = {1:'every n-th packet'}
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
+
+
+# dstat command
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
 
 
 # ARGUMENT PARSING
@@ -51,19 +59,7 @@ if __name__ == '__main__':
     global verbose 
     global time
     global check
-    
-    # set split to 5000 packets per split-file (editcaps)
-    split = 5000
-    
-    # positional arguments
-    # file selection (can be passed 1:1 to scripts called in main)
-    findex = args.file[0]
-    # sampling steps
-    n = abs(args.n[0])
-    if n == 0:
-        print('>>> please enter non-zero integer value for n!')
-        exit()
-    
+
     # optional arguments
     verbose = args.verbose
     superverbose = args.superverbose
@@ -77,6 +73,27 @@ if __name__ == '__main__':
     
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
+
+    os.system(dstat)
+
+    if time: start = timer()
+    t = epochtime.time()
+    print('START: {}'.format(t))
+
+    #input('test')
+
+    
+    # set split to 5000 packets per split-file (editcaps)
+    split = 5000
+    
+    # positional arguments
+    # file selection (can be passed 1:1 to scripts called in main)
+    findex = args.file[0]
+    # sampling steps
+    n = abs(args.n[0])
+    if n == 0:
+        print('>>> please enter non-zero integer value for n!')
+        exit()
     
     # get working directory
     wd = os.getcwd()
@@ -122,3 +139,11 @@ if __name__ == '__main__':
     
     print('>>> execute classification: {}'.format(classificationcmd))
     os.system(classificationcmd)
+
+    if time: 
+        end = timer()
+        t = epochtime.time()
+        print('END: {}'.format(t))
+        print('\nControl.py\n[TIME]: %.3f' % (end-start),'seconds')
+
+    #os.system('killall dstat')

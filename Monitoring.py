@@ -16,6 +16,7 @@ from memory_profiler import profile
 # https://medium.com/survata-engineering-blog/monitoring-memory-usage-of-a-running-python-program-49f027e3d1ba
 
 # possible arguments for dstat monitoring usage
+# fix for the --output error: https://serverfault.com/questions/996996/dstat-fails-to-start-trying-to-load-python3s-csv
 #dstat --time --epoch --cpu-adv --cpu-use --disk --net --mem-adv --proc --sys --unix --top-io-adv
 
 # https://www.geeksforgeeks.org/memory-profiling-in-python-using-memory_profiler/
