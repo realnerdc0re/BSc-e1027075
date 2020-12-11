@@ -8,9 +8,10 @@ Created on Fri Sep 11 09:25:55 2020
 from pandas import read_csv
 from timeit import default_timer as timer
 
+import time as epochtime
 import numpy as np
 import pandas as pd
-
+import csv
 import subprocess
 import os
 import re
@@ -20,7 +21,8 @@ import sys
 samplingmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
-
+# feature vectors
+featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
@@ -31,6 +33,7 @@ parser = argparse.ArgumentParser(description='script for sampling PCAP files via
 parser.add_argument('mode', metavar = 'mode', type=int,nargs=1,help='select sampling mode: {}'.format(samplingmode))
 parser.add_argument('file', metavar = 'file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
+parser.add_argument('j', metavar='j', type=int,nargs=1,help='choose feature-vector: {}'.format(featurevectors))
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
@@ -125,7 +128,7 @@ def convertToList(dataset,features,verbose=False,time=False):
         
         if verbose and not superverbose:
             print('\n\n'+40*'~'+' FUNCTION: convertToList: {} '.format(feature)+40*'~')
-            print('>>> processing...')  
+            print('>>> processing...')
         
         for i in range(0,len(dataset.index)):
             if superverbose:
@@ -168,7 +171,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     for feature in features:
         
         if verbose and not superverbose:
-            print('\n'+40*' '+' SAMPLING: {} '.format(samplingmode[mode]))  
+            print('\n'+40*' '+' SAMPLING: {} (n={})'.format(samplingmode[mode],n))  
             print(40*'~'+' FUNCTION: flowSampling: {} '.format(feature)+40*'~')
             print('>>> processing...')
         
@@ -178,7 +181,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
             psample = []
             
             if superverbose:
-                print('\n\n'+40*' '+' SAMPLING: {} '.format(samplingmode[mode]))
+                print('\n\n'+40*' '+' SAMPLING: {} '.format(samplingmode[mode])+' (n={}).format(n)')
                 print(40*'~'+' FUNCTION: flowSampling: {}, row: {}/{} '.format(feature,(i+1),len(dataset.index))+40*'~')
                 print('\nOriginal:')
                 print(len(dataset[feature][i]))
@@ -314,6 +317,8 @@ if __name__ == '__main__':
     # index-position of chosen file
     findex = args.file[0]-1
     n = args.n[0]
+    # feature-vector JSON index
+    j = args.j[0]
     
     windows = args.windows
     osx = args.osx
@@ -323,7 +328,16 @@ if __name__ == '__main__':
     # get working directory
     wd = os.getcwd()
     
-    if time: start = timer()
+    if time: 
+        start = timer()
+        # save epochtime
+        t = epochtime.time()
+        print('\nFlowSampling.py\n[EPOCH, start]: {}'.format(t))
+
+        # write timestamp to csv
+        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow([t,'FlowSampling.py','start'])
     
     # TODO: make list for all necessary PCAP files from dataset
     # TODO: use argument parsing to select sampling-mode from command line
@@ -450,7 +464,9 @@ if __name__ == '__main__':
         goflowspath = "/home/noooberino/Git/go-flows/go-flows"
         # go flow JSON configuration file
         # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
-        goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/CAIA_flowSampling.json"
+        #goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/CAIA_flowSampling.json"
+        goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/"+"{}".format(featurevectors[j])
+
         # labeling.py script
         labelingpath = r"/mnt/data/BSc-e1027075/Labeling.py"
 
@@ -540,7 +556,13 @@ if __name__ == '__main__':
     
     if time: 
         end = timer()
-        print('\n[TOTAL TIME, FlowSampling.py]: %.3f' % (end-start),'seconds')
+        t = epochtime.time()
+        print('\nFlowsampling.py\n[EPOCH, end]: {}'.format(t))
+        print('[RUNTIME]: %.3f' % (end-start),'seconds')
+        # write timestamp to csv
+        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow([t,'FlowSampling.py','end'])
     
     if (not time): input('\n...')  
     exit()

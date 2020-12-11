@@ -6,12 +6,28 @@ Created on Sat Nov 14 13:53:04 2020
 @author: Patrick Resch
 """
 
+import csv
 import os
 import sys
 import subprocess
 import time as epochtime
-
+import threading
 from timeit import default_timer as timer
+
+# dstat command including arguments to pipe output do null and execute in background
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/dstat-log.csv > /dev/null 2>&1 &'
+#dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv &'
+#dstatarg = '--epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
+
+# function that start dstat
+def threadFunc():
+
+    os.system(dstat)
+    #proc = subprocess.Popen(["/usr/bin/dstat","--epoch","--cpu-adv","--output /home/noooberino/control.csv"],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT,shell=True)
+    #log = open('/home/noooberino/control.csv','a')
+    #proc = subprocess.Popen(["/usr/bin/dstat","--epoch","--cpu-adv"],stdout=log,shell=True)
+
+th = threading.Thread(target=threadFunc)
 
 # TODO: implement hardware/performance monitoring (maybe multi-threaded?)
 
@@ -22,10 +38,8 @@ flowsmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n
 packetsmode = {1:'every n-th packet'}
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
-
-
-# dstat command
-dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
+# feature vectors
+featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
 
 
 # ARGUMENT PARSING
@@ -35,6 +49,7 @@ parser = argparse.ArgumentParser(description='Script to execute sampling, labeli
 # positional arguments
 parser.add_argument('file', metavar='file', type=int,nargs=1,choices=filenames, help='select file to process: {}'.format(filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='non-zero integer, used to determine sampling-steps')
+parser.add_argument('j', metavar='j', type=int,nargs=1,help='select feature-vector: {}'.format(featurevectors))
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output verbose information')
 parser.add_argument('--superverbose', action='store_true', help='output additional verbose informations, including loop-iterations output')
@@ -60,6 +75,8 @@ if __name__ == '__main__':
     global time
     global check
 
+    # positional arguments
+    j = args.j[0]
     # optional arguments
     verbose = args.verbose
     superverbose = args.superverbose
@@ -74,14 +91,20 @@ if __name__ == '__main__':
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
 
-    os.system(dstat)
+    #os.system(dstat)
+    # start dstat threaded
+    th.start()
 
-    if time: start = timer()
-    t = epochtime.time()
-    print('START: {}'.format(t))
+    if time: 
+        start = timer()
+        # save epochtime
+        t = epochtime.time()
+        print('\nControl.py\n[EPOCH, start]: {}'.format(t))
 
-    #input('test')
-
+        # write timestamp to csv
+        with open('/home/noooberino/timestamps.csv','w') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow([t,'Control.py','start'])
     
     # set split to 5000 packets per split-file (editcaps)
     split = 5000
@@ -119,12 +142,14 @@ if __name__ == '__main__':
         sarg = " --flowsampling "
         m = args.flowsampling[0]
         samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
-        samplingcmd = "python FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
+        featurearg =" "+str(j)
+        samplingcmd = "python FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
     elif packetsampling: 
         sarg = " --packetsampling "
-        m = m = args.packetsampling[0]
+        m = args.packetsampling[0]
         samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
-        samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)
+        featurearg =" "+str(j)
+        samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
         
     print('>>> execute sampling: {}'.format(samplingcmd))
     os.system(samplingcmd)
@@ -143,7 +168,22 @@ if __name__ == '__main__':
     if time: 
         end = timer()
         t = epochtime.time()
-        print('END: {}'.format(t))
-        print('\nControl.py\n[TIME]: %.3f' % (end-start),'seconds')
+        print('\nControl.py\n[EPOCH, end]: {}'.format(t))
+        print('[RUNTIME]: %.3f' % (end-start),'seconds')
+        # write timestamp to csv
+        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow([t,'Control.py','end'])
 
+    # get running dstat pid
+    # -q ...doesn't output pid to console, -s ...single-shot, only displays 
+    pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -sq')
+    #pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -s')
+    # wait 50 seconds for dstat before terminating the process, seems like dstat writes its output to the file around every 45 seconds
+    epochtime.sleep(50)
+    # kill running dstat process
+    os.kill(pid,9)
+    sys.exit()
+
+    # kill literally any dstat process
     #os.system('killall dstat')

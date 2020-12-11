@@ -12,7 +12,7 @@ import os
 # https://pypi.org/project/memory-profiler/
 from memory_profiler import profile
 
-# https://medium.com/the-andela-way/machine-monitoring-tool-using-python-from-scratch-8d10411782fd
+# https://medium.com/the-andela-way/machijpjpafne-monitoring-tool-using-python-from-scratch-8d10411782fd
 # https://medium.com/survata-engineering-blog/monitoring-memory-usage-of-a-running-python-program-49f027e3d1ba
 
 # possible arguments for dstat monitoring usage

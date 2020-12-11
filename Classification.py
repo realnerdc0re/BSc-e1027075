@@ -28,10 +28,12 @@ from sklearn.ensemble import RandomForestClassifier
 from timeit import default_timer as timer
 
 #from memory_profiler import profile
-
+import time as epochtime
 import numpy as np
 import pandas as pd
 import sys
+import csv
+
 
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
@@ -943,7 +945,16 @@ if __name__ == '__main__':
     # index-position of chosen file
     findex = args.file[0]-1
     
-    if time: start = timer()
+    if time: 
+        start = timer()
+        # save epochtime
+        t = epochtime.time()
+        print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
+
+        # write timestamp to csv
+        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow([t,'Classification.py','start'])
     
     # IMPORT CSV
     
@@ -1036,10 +1047,17 @@ if __name__ == '__main__':
     # TODO: for comparison, use dataset without PCA & proportional scaling (Random Forest doesn't care about that)
     #applyModel(model,datasplit[0],datasplit[2],datasplit[1],datasplit[3],verbose,time)
     #cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+
     
-    if time: 
+    if time:
         end = timer()
-        print('\n[TOTAL TIME]: %.3f' % (end-start),'seconds')
+        t = epochtime.time()
+        print('\nClassification.py\n[EPOCH, end]: {}'.format(t))
+        print('[RUNTIME]: %.3f' % (end-start),'seconds')
+        # write timestamp to csv
+        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow([t,'Classification.py','end'])
     
     if (not time): input('\n...')
     
