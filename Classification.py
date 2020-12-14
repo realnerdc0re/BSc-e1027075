@@ -37,7 +37,7 @@ import csv
 
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
-filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
+filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 
 # ARGUMENT PARSING
 
@@ -943,7 +943,7 @@ if __name__ == '__main__':
 
 
     # index-position of chosen file
-    findex = args.file[0]-1
+    findex = args.file[0]
     
     if time: 
         start = timer()
@@ -967,7 +967,7 @@ if __name__ == '__main__':
     elif linux: ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
     
     # name for sampled, unlabeled CSVs
-    csvname = ["Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
+    csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     
     # set path to sampeld CSV based on optional arguments
     if flowsampling:

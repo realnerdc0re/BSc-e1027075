@@ -398,7 +398,7 @@ if __name__ == '__main__':
         # folder containting sampled pcaps
         samplepath = r"/mnt/data/CIC-IDS2017/PCAP/sampledPCAP"
         # folder containing unlabeled CSV
-        csvpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
+        csvpath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
         # name for splitted files
         splitname = ["Monday-WorkingHours_split.pcap","Tuesday-WorkingHours_split.pcap","Wednesday-WorkingHours_split.pcap","Thursday-WorkingHours_split.pcap","Friday-WorkingHours_split.pcap"]
         # name for sampled files

@@ -1,5 +1,8 @@
 # BSc-e1027075
 
+labeling.py script used:
+https://github.com/CN-TU/Datasets-preprocessing/tree/master/CIC-IDS-2017/labeling
+
 filepaths need to be set correctly in following scripts:
 Classification.py
 FlowSampling.py
