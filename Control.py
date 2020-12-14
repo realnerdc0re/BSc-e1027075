@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # set command for time
     if time: timearg = " --time"
     else: timearg = ""
-    
+
 
     # SAMPLING ALL CAPTURE FILES & MERGE
     if findex == 0:
@@ -165,8 +165,7 @@ if __name__ == '__main__':
                 samplearg = " "+str(split)+" "+str(m)+" "+str(fcount)+" "+str(n)
                 featurearg =" "+str(j)
                 samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
-            print('\n>>> execute sampling: {}'.format(samplingcmd))
-            input('fcount: {}'.format(fcount))
+            print('\n>>> execute sampling: {}\n>>> input-file: {}'.format(samplingcmd,filenames[fcount]))
             # start sampling
             os.system(samplingcmd)
         # merge all CSVs into one single file
@@ -178,6 +177,7 @@ if __name__ == '__main__':
             os.chdir(packetfolder)
             mergefolder = packetfolder
         extension = 'csv'
+        print('\n\n>>> merging sampled data into CSV...')
         # save all files matching *Hours.csv into list, these are the already labeled CSV files
         matchedfiles = [i for i in glob.glob('*Hours.{}'.format(extension))]
         # concat all labeled csv-files into single csv
@@ -185,7 +185,8 @@ if __name__ == '__main__':
         singlecsv.to_csv(str(mergefolder)+"/Merged.csv", index = False,encoding='utf-8-sig')
         # set working directory back to actual wd for further script executions
         os.chdir(wd)
-    
+
+
     # SAMPLING SPECIFIC CAPTURE FILE
     else:
         # forge script execution-command out of given arguments
@@ -224,6 +225,7 @@ if __name__ == '__main__':
         with open('/home/noooberino/timestamps.csv','a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Control.py','end'])
+
 
     # MONITORING
     # get running dstat pid

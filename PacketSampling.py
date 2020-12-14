@@ -258,13 +258,13 @@ def packetOutput(plist,n,verbose):
 
 
 if __name__ == '__main__':
-    
+
     global verbose 
     global time
     global check
-    
+
     #sys.stdout = open("PacketSamplingOutput.txt","w")
-    
+
     # optional arguments
     verbose = args.verbose
     superverbose = args.superverbose
@@ -275,7 +275,7 @@ if __name__ == '__main__':
     osx = args.osx
     linux = args.linux
     check = args.check
-    
+
     # positional arguments
     split = args.split[0]
     # index-position of chosen file
@@ -284,11 +284,11 @@ if __name__ == '__main__':
     n = args.n[0]
     # feature-vector JSON index
     j = args.j[0]
-    
+
     # get working directory
     wd = os.getcwd()
-    
-    if time: 
+
+    if time:
         start = timer()
         # save epochtime
         t = epochtime.time()
@@ -298,7 +298,8 @@ if __name__ == '__main__':
         with open('/home/noooberino/timestamps.csv','a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'PacketSampling.py','start'])
-    
+
+
     # OSX
     if osx:
         # paths to pcap & CSV files
@@ -322,7 +323,8 @@ if __name__ == '__main__':
         goflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv output_accumulate.csv source libpcap sample.pcap"
         # path to go flows with argument to run for packet-sampled pcap
         egoflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv eoutput_accumulate.csv source libpcap editsample.pcap"
-    
+
+
     # Windows 10
     if windows:
         # PATH TO FOLDERS
@@ -372,10 +374,10 @@ if __name__ == '__main__':
         labelingpath = r"labeling.py"
         # forged command to remove all files in the splitPCAP folder
         cleansplitPCAP = "del /q /s "+"{}".format(splitpath)+separator+"*"+" > NUL"
-            
-  
-  	# Linux
-  	# TODO: mount disks within script
+
+
+    # Linux
+    # TODO: mount disks within script
     if linux:
         # PATH TO FOLDERS
         # https://www.unb.ca/cic/datasets/ids-2017.html
@@ -426,10 +428,6 @@ if __name__ == '__main__':
         # forged command to remove all files in the splitPCAP folder
         cleansplitPCAP=r"rm"+" "+"{}".format(splitpath)+r"/* "
 
-     
-
-    
-   
 
     # forged command to gather packets, -M ... human readable packet count output, findstr is grep aequivalent
     capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(fpath)+separator+fname[findex]+" | findstr packets"

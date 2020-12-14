@@ -11,13 +11,12 @@ PacketSampling.py
 Use Control.py to run scripts.
 
 python Control.py -h
-usage: Control.py [-h] [-v] [--superverbose] [-t] (--linux | --osx | --windows) (--flowsampling m | --packetsampling m)
-                  file n j
+usage: Control.py [-h] [-v] [--superverbose] [-t] (--linux | --osx | --windows) (--flowsampling m | --packetsampling m) file n j
 
 Script to execute sampling, labeling, preprocessing and classification scripts on given capture file.
 
 positional arguments:
-  file                select file to process: {1: 'Monday-WorkingHours', 2: 'Tuesday-WorkingHours', 3: 'Wednesday-
+  file                select file to process: {0:'All', 1: 'Monday-WorkingHours', 2: 'Tuesday-WorkingHours', 3: 'Wednesday-
                       WorkingHours', 4: 'Thursday-WorkingHours', 5: 'Friday-WorkingHours'}
   n                   non-zero integer, used to determine sampling-steps
   j                   select feature-vector: {1: 'AGM_10s.json', 2: 'AGM_60s.json', 3: 'AGM_3600s.json', 4:

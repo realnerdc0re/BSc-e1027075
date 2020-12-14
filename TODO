@@ -1,0 +1,11 @@
+TODO:
+
+* implement mode-selection in sampling scripts for usage of AGM feature vector (labeling.py needs different mode then)
+* add functionality to save ML algorithm score with other relevant informations into file
+* write script to evaluate data logged with dstat in combination with ML scores and timestamps saved
+* tweak Classification.py to read CSV line-by-line on Raspberry Pi
+
+INPROGRESS:
+
+* evaluate all necessary tools/packages for Raspberry Pi setup
+* how to handle low flash-drive storage on Raspberry Pi (8GB) for large capture files? (additional storage via USB, larger SD card...)

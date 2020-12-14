@@ -359,8 +359,7 @@ if __name__ == '__main__':
         path = "/Users/drone/shared/Patrick/BSc/output_accumulate.csv"
         # path to extracted flows CSV creatd with go-flows
         epath = "/Users/drone/shared/Patrick/BSc/eoutput_accumulate.csv"
-    
-    
+
         # commands to execute go-flows, capinfos and editcap
         # capinfo command to obtain total packet count
         capinfos = "capinfos -M -c editsample.pcap | grep packets | awk '{print $4}'"
@@ -371,7 +370,7 @@ if __name__ == '__main__':
         # path to go flows with argument to run for packet-sampled pcap
         egoflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv eoutput_accumulate.csv source libpcap editsample.pcap"
 
-    
+
     # Windows 10
     if windows:
         # PATH TO FOLDERS
@@ -418,8 +417,7 @@ if __name__ == '__main__':
         # labeling.py script
         labelingpath = r"labeling.py"
 
-        
-    
+
     # Linux
     # TODO: mount disks within script
     # https://packagecontrol.io/packages/TodoReview
@@ -466,13 +464,11 @@ if __name__ == '__main__':
         # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
         #goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/CAIA_flowSampling.json"
         goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/"+"{}".format(featurevectors[j])
-
-        # labeling.py script
+        # labeling script
         labelingpath = r"/mnt/data/BSc-e1027075/Labeling.py"
 
 
-
-    # forged file-paths  
+    # forged file-paths
     pcap = fpath+separator+fname[findex]
     unlabeledcsv = fpath+separator+csvname[findex]
     sampledcsv = "{}".format(csvpath)+separator+csvname[findex]
@@ -500,7 +496,7 @@ if __name__ == '__main__':
     print("labeling: {}".format(labelingcmd))
     if (not time): input('\n...') 
 
-    
+
     # FLOW-CREATION & LABELING
     
     # execute go-flows to process passed PCAP file
@@ -527,7 +523,7 @@ if __name__ == '__main__':
     convertToList(dataset,features,verbose,time)
     # sample perpacket-features
     flowSampling(dataset,n,features,mode,verbose,time)
-    
+
     # CALCULATIONS
     # TODO: should do more than this, e.g. min, max, stdev...
     # calculate mean of remaining packet values after sampling
