@@ -35,10 +35,10 @@ parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file t
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
 parser.add_argument('j', metavar='j', type=int,nargs=1,help='choose feature-vector: {}'.format(featurevectors))
 # optional arguments
-parser.add_argument('--verbose', action='store_true', help='output additional informations')
+parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
-parser.add_argument('--time', action='store_true', help='measure function-runtimes')
-parser.add_argument('--check', action='store_true', help='check if number of sampled packets is correct')
+parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
+parser.add_argument('-c','--check', action='store_true', help='check if number of sampled packets is correct')
 # force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
 osgroup = parser.add_mutually_exclusive_group(required=True)
 osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
@@ -428,11 +428,16 @@ if __name__ == '__main__':
         # forged command to remove all files in the splitPCAP folder
         cleansplitPCAP=r"rm"+" "+"{}".format(splitpath)+r"/* "
 
+        # set correct mode for labeling.py depending on given feature-vector
+        if j<4:
+            labelmode = ' AGM'
+        elif j >= 4:
+            labelmode = ' 5tuple'
 
     # forged command to gather packets, -M ... human readable packet count output, findstr is grep aequivalent
     capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(fpath)+separator+fname[findex]+" | findstr packets"
     # forged command to label sampled CSV file
-    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+" 5tuple"
+    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+labelmode
     # forged command to drop payload (keep first 127 bytes of all packets)
     editsnapcmd = "{}".format(editcappath)+" -s 127 "+"{}".format(fpath)+separator+fname[findex]+" "+"{}".format(snappath)+separator+fname[findex]
     # forged command to remove all files in the splitPCAP folder
@@ -450,7 +455,8 @@ if __name__ == '__main__':
     
     
     # check passed optional arguments and commands
-    print('\n\n'+40*'~'+' SCRIPT: PacketSampling.py '+40*'~')
+    print('\n\n'+40*' '+' FILE: {}'.format(fname[findex]))
+    print(40*'~'+' SCRIPT: PacketSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--check".format(verbose,superverbose,time,osx,windows,check))
     print('\n{}, n = {}, split = {}'.format(samplingmode[smode],n,split))
@@ -652,6 +658,7 @@ if __name__ == '__main__':
         
     # label sampled flow CSV for further classification
     print("\n>>> label CSV file for classification...")
+    print(">>> {}".format(labelingcmd))
     os.system(labelingcmd)
     if time:
         labelingtime = timer()

@@ -467,6 +467,11 @@ if __name__ == '__main__':
         # labeling script
         labelingpath = r"/mnt/data/BSc-e1027075/Labeling.py"
 
+        # set correct mode for labeling.py depending on given feature-vector
+        if j<4:
+            labelmode = ' AGM'
+        elif j >= 4:
+            labelmode = ' 5tuple'
 
     # forged file-paths
     pcap = fpath+separator+fname[findex]
@@ -476,10 +481,12 @@ if __name__ == '__main__':
     
     # forged command to convert sampled PCAP into (per-packet) CSV for Classification
     goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(fpath)+separator+"{}".format(csvname[findex])+" source libpcap "+"{}".format(fpath)+separator+"{}".format(fname[findex])
-    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+" 5tuple"
-    
+    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+labelmode
+
+
     # check passed optional arguments, filepaths and forged commands
-    print('\n\n'+40*'~'+' SCRIPT: FlowSampling '+40*'~')
+    print('\n\n'+40*' '+' FILE: {}'.format(fname[findex]))
+    print(40*'~'+' SCRIPT: FlowSampling '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows".format(verbose,superverbose,time,osx,windows))
     print('\n{}, n = {}'.format(samplingmode[mode],n))
@@ -547,7 +554,8 @@ if __name__ == '__main__':
     dataset.to_csv(sampledcsv, index=False)
     
     # label flow-based sampled CSV as last step of preparation for further classification
-    print("\n>>> label flow-CSV...")
+    print("\n>>> label CSV file for classification...")
+    print(">>> {}".format(labelingcmd))
     os.system(labelingcmd)
     
     if time: 
