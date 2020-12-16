@@ -56,6 +56,7 @@ samplegroup.add_argument('--flowsampling', action='store_true', help='use flow-s
 samplegroup.add_argument('--packetsampling', action='store_true', help='use per-packet sampled CSV files')
 # force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
 osgroup = parser.add_mutually_exclusive_group(required=True)
+osgroup.add_argument('--rpi', action='store_true', help='use Raspberry Pi paths (pre-sampled CSVs)')
 osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
 osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
 osgroup.add_argument('--windows', action='store_true', help='use windows paths')
@@ -962,22 +963,25 @@ if __name__ == '__main__':
     # path to CSV files based on OS choice
     if windows: fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
     elif linux: fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
+    elif rpi: fpath = r"/home/dietpi/BSc-e107075/rpi/flow-sampled"
     
     if windows: ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
     elif linux: ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
+    elif rpi: fpath = r"/home/dietpi/BSc-e107075/rpi/packet-sampled"
+
     
     # name for sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     
     # set path to sampeld CSV based on optional arguments
     if flowsampling:
-    	# windows folder separator
+        # windows folder separator
         if windows: path = fpath+"\\"+csvname[findex]
-        elif linux: path = fpath+"/"+csvname[findex] 
+        elif (linux or rpi): path = fpath+"/"+csvname[findex] 
     elif packetsampling:
-    	# windows folder separator5
+        # windows folder separator5
         if windows: path = ppath+"\\"+csvname[findex]
-        elif linux: path = ppath+"/"+csvname[findex]
+        elif (linux or rpi): path = ppath+"/"+csvname[findex]
     
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*'~'+' SCRIPT: Classification.py '+40*'~')
