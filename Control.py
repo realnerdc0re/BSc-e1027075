@@ -24,6 +24,7 @@ import threading
 from timeit import default_timer as timer
 
 # dstat command including arguments to pipe output do null and execute in background
+# logs epochtime, cpu-usage, disk-usage, memory-usage and top ps
 dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/dstat-log.csv > /dev/null 2>&1 &'
 #dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv &'
 #dstatarg = '--epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
@@ -232,8 +233,10 @@ if __name__ == '__main__':
     # -q ...doesn't output pid to console, -s ...single-shot, only displays 
     pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -sq')
     #pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -s')
+    
     # wait 50 seconds for dstat before terminating the process, seems like dstat writes its output to the target-file around every 45 seconds
     epochtime.sleep(50)
+
     # kill running dstat process
     os.kill(pid,9)
     sys.exit()
