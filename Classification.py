@@ -937,7 +937,8 @@ if __name__ == '__main__':
     time = args.time  
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
-    
+
+    rpi = args.rpi
     windows = args.windows
     osx = args.osx
     linux = args.linux
