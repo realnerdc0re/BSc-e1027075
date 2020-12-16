@@ -964,11 +964,11 @@ if __name__ == '__main__':
     # path to CSV files based on OS choice
     if windows: fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
     elif linux: fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
-    elif rpi: fpath = r"/home/dietpi/BSc-e107075/rpi/flow-sampled"
+    elif rpi: fpath = r"/home/dietpi/BSc-e1027075/rpi/flow-sampled"
     
     if windows: ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
     elif linux: ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-    elif rpi: fpath = r"/home/dietpi/BSc-e107075/rpi/packet-sampled"
+    elif rpi: fpath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
 
     
     # name for sampled, unlabeled CSVs
