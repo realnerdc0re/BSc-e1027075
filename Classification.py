@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Fri Sep 11 09:25:55 2020
@@ -968,7 +969,7 @@ if __name__ == '__main__':
     
     if windows: ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
     elif linux: ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-    elif rpi: fpath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
+    elif rpi: ppath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
 
     
     # name for sampled, unlabeled CSVs
