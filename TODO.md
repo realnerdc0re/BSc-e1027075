@@ -11,6 +11,7 @@
 #### NEXT:
 - tweak Classification.py to read CSV line-by-line on rpi
 - add functionality to save ML algorithm score with other relevant informations into file
+- add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
 #### LATER:
 - write script to evaluate data logged with dstat in combination with ML scores and timestamps saved
 - change rpi distro from dietPi to piCore (http://www.tinycorelinux.net/ports.html, check http://forum.tinycorelinux.net/index.php/topic,24392.0.html to import integrated wifi firmware)
