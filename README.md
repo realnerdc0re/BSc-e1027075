@@ -14,9 +14,11 @@ aptitude install wireshark
 
 
 filepaths need to be set correctly in following scripts:
+
 Classification.py
 FlowSampling.py
 PacketSampling.py
+Preprocessing.py
 
 Use Control.py to run scripts.
 
