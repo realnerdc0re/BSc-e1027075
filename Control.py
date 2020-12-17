@@ -55,15 +55,14 @@ packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
 # ARGUMENT PARSING
 import argparse
 parser = argparse.ArgumentParser(description='Script to execute sampling, labeling, preprocessing and classification scripts on given capture file.')
-
 # positional arguments
 parser.add_argument('file', metavar='file', type=int,nargs=1,choices=filenames, help='select file to process: {}'.format(filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='non-zero integer, used to determine sampling-steps')
 parser.add_argument('j', metavar='j', type=int,nargs=1,help='select feature-vector: {}'.format(featurevectors))
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output verbose information')
-parser.add_argument('--superverbose', action='store_true', help='output additional verbose informations, including loop-iterations output')
-parser.add_argument('-t','--time', action='store_true', help='measure runtimes')
+parser.add_argument('--superverbose', action='store_true', help='output additional verbose informations, including loop-iteration output')
+parser.add_argument('-t','--time', action='store_true', help='measure runtimes, save timestamps')
 # force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
 osgroup = parser.add_mutually_exclusive_group(required=True)
 osgroup.add_argument('--linux', action='store_true', help = 'use Linux paths & commands' )
@@ -73,7 +72,6 @@ osgroup.add_argument('--windows', action='store_true', help='use Windows paths &
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('--flowsampling', metavar='m', type=int, nargs=1, choices=flowsmode, help='select sampling-mode: {}'.format(flowsmode))
 samplegroup.add_argument('--packetsampling', metavar='m', type=int, nargs=1, choices=packetsmode, help='select sampling-mode: {}'.format(packetsmode))
-
 args = parser.parse_args()
 
 
