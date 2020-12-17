@@ -3,7 +3,7 @@
 """
 Created on Sat Dec 16 13:53:04 2020
 
-@author: Patrick Resch
+@author: pjr
 """
 
 import glob

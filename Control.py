@@ -3,7 +3,7 @@
 """
 Created on Sat Nov 14 13:53:04 2020
 
-@author: Patrick Resch
+@author: pjr
 
 datasets taken from:
     https://www.unb.ca/cic/datasets/ids-2017.html

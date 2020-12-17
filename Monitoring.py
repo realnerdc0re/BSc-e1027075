@@ -2,7 +2,7 @@
 """
 Created on Mon Nov 23 11:12:06 2020
 
-@author: Noooberino
+@author: pjr
 """
 
 # https://psutil.readthedocs.io/en/latest/
