@@ -13,7 +13,7 @@ aptitude install wireshark
 ```
 
 ### usage
-filepaths need to be set in: Classification.py, FlowSampling.py, PacketSampling.py, Preprocessing.py
+file- and folderpaths need to be set in: Classification.py, FlowSampling.py, PacketSampling.py, Preprocessing.py
 ```
 python Control.py -h
 usage: Control.py [-h] [-v] [--superverbose] [-t] (--linux | --osx | --windows) (--flowsampling m | --packetsampling m) file n j
@@ -30,8 +30,8 @@ positional arguments:
 optional arguments:
   -h, --help          show this help message and exit
   -v, --verbose       output verbose information
-  --superverbose      output additional verbose informations, including loop-iterations output
-  -t, --time          measure runtimes
+  --superverbose      output additional verbose informations, including loop-iteration output
+  -t, --time          measure runtimes, save timestamps
   --linux             use Linux paths & commands
   --osx               use MacOS paths & commands
   --windows           use Windows paths & commands

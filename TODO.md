@@ -16,6 +16,7 @@
 - change rpi distro from dietPi to piCore (http://www.tinycorelinux.net/ports.html, check http://forum.tinycorelinux.net/index.php/topic,24392.0.html to import integrated wifi firmware)
 - think about the substitutions for NaNs & Infs in preprocessing
 #### IMPROVEMENTS:
+- create config file to import, containing all necessary file- and folderpaths, paths to executable tools... and import this file instead of making definitions inside every script
 - choose another method to load/save data, model & results
 - improve FlowSampling method (function convertToList), now using actual lists instead of np array for iteration, etc..
 - improve Classification (function scalingDataframe) with using the actual data and not the copy 'scaleinput'
