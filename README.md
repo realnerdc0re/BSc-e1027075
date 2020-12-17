@@ -1,12 +1,12 @@
 # BSc-e1027075
 
-labeling:
+### labeling
 https://github.com/CN-TU/Datasets-preprocessing/tree/master/CIC-IDS-2017/labeling
 
-go-flows:
+### go-flows
 https://github.com/CN-TU/go-flows
 
-wireshark (including tools necessary for sampling):
+### wireshark
 ```
 aptitude update
 aptitude install wireshark
@@ -14,7 +14,7 @@ aptitude install wireshark
 
 filepaths need to be set correctly in: Classification.py, FlowSampling.py, PacketSampling.py, Preprocessing.py
 
-use Control.py to run scripts.
+### usage
 ```
 python Control.py -h
 usage: Control.py [-h] [-v] [--superverbose] [-t] (--linux | --osx | --windows) (--flowsampling m | --packetsampling m) file n j
