@@ -38,8 +38,6 @@ def threadFunc():
 
 th = threading.Thread(target=threadFunc)
 
-# TODO: implement hardware/performance monitoring (maybe multi-threaded?)
-
 # choices for argument-parsing
 # flowsampling-modes
 flowsmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
