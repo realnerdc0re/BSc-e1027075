@@ -6,8 +6,8 @@ go-flows:
 https://github.com/CN-TU/go-flows
 
 wireshark:
-  aptitude update
-  aptitude install wireshark
+    aptitude update
+    aptitude install wireshark
 
 
 
