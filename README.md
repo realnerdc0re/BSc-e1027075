@@ -7,10 +7,10 @@ go-flows:
 https://github.com/CN-TU/go-flows
 
 wireshark:
-'''
+```
 aptitude update
 aptitude install wireshark
-'''
+```
 
 
 filepaths need to be set correctly in following scripts:
