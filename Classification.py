@@ -45,8 +45,10 @@ parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file t
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
-parser.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
-parser.add_argument('-l','--load', action='store_true', help='import model and testdata for further classification')
+# force load/save choice
+loadgroup = parser.add_mutually_exclusive_group(required=True)
+loadgroup.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
+loadgroup.add_argument('-l','--load', action='store_true', help='import model and testdata for further classification')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
