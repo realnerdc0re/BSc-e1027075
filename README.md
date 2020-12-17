@@ -6,19 +6,13 @@ https://github.com/CN-TU/Datasets-preprocessing/tree/master/CIC-IDS-2017/labelin
 go-flows:
 https://github.com/CN-TU/go-flows
 
-wireshark:
+wireshark (including tools necessary for sampling):
 ```
 aptitude update
 aptitude install wireshark
 ```
 
-
-filepaths need to be set correctly in following scripts:
-
-Classification.py
-FlowSampling.py
-PacketSampling.py
-Preprocessing.py
+filepaths need to be set correctly in: Classification.py, FlowSampling.py, PacketSampling.py, Preprocessing.py
 
 Use Control.py to run scripts.
 
