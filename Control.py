@@ -5,7 +5,7 @@ Created on Sat Nov 14 13:53:04 2020
 
 @author: Patrick Resch
 
-dataset taken from:
+datasets taken from:
     https://www.unb.ca/cic/datasets/ids-2017.html
     http://205.174.165.80/CICDataset/CIC-IDS-2017/
 
@@ -86,43 +86,37 @@ if __name__ == '__main__':
     global verbose 
     global time
     global check
-
-    # positional arguments
-    j = args.j[0]
-    # optional arguments
-    verbose = args.verbose
-    superverbose = args.superverbose
-    if superverbose:
-        verbose = True
     time = args.time
-    
-    linux = args.linux
-    osx = args.osx
-    windows = args.windows
-    
-    flowsampling = args.flowsampling
-    packetsampling = args.packetsampling
-
-
-    # kill literally any running dstat process before starting monitoring
-    os.system('killall dstat')
-    # starting dstat threaded
-    th.start()
 
     if time: 
+        # kill literally any running dstat process
+        os.system('killall dstat')
+        # start timer
         start = timer()
         # save epochtime
         t = epochtime.time()
-        print('\nControl.py\n[EPOCH, start]: {}'.format(t))
+        # start dstat logging
+        th.start()
+        print('\nControl.py\n[EPOCH, start]: {}\n'.format(t))
 
         # write timestamp to csv
         with open('/home/noooberino/timestamps.csv','w') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Control.py','start'])
-    
+
     # set split to 5000 packets per split-file (editcaps)
     split = 5000
-    
+    # positional arguments
+    j = args.j[0]
+    # optional arguments
+    verbose = args.verbose
+    superverbose = args.superverbose
+    if superverbose: verbose = True
+    linux = args.linux
+    osx = args.osx
+    windows = args.windows
+    flowsampling = args.flowsampling
+    packetsampling = args.packetsampling
     # positional arguments
     # file selection (can be passed 1:1 to scripts called in main)
     findex = args.file[0]
@@ -131,12 +125,10 @@ if __name__ == '__main__':
     if n == 0:
         print('>>> please enter non-zero integer value for n!')
         exit()
-    
+
     # get working directory
     wd = os.getcwd()
 
-    
-    # COMMANDS
     # set optional argument for OS choice
     if linux: osarg = ' --linux'
     elif osx: osarg = ' --osx'
@@ -169,6 +161,7 @@ if __name__ == '__main__':
             print('\n>>> execute sampling: {}\n>>> input-file: {}'.format(samplingcmd,filenames[fcount]))
             # start sampling
             os.system(samplingcmd)
+
         # merge all CSVs into one single file
         # change current working directory to CSV folder to get relevant files
         if flowsampling:
@@ -207,14 +200,18 @@ if __name__ == '__main__':
         os.system(samplingcmd)
 
 
-    # PREPROCESSING
+    # PRE-PROCESSING
+    #preparg = " "+str(findex)
+    prepcmd = "python Preprocessing.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
+    print('>>> pre-processing:\n\t{}'.format(prepcmd))
+    os.system(prepcmd)
 
 
     # CLASSIFICATION
     # forge executable command + arguments
-    classificationarg = " "+str(findex)
+    #classificationarg = " "+str(findex)
     classificationcmd = "python Classification.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
-    print('>>> execute classification: {}'.format(classificationcmd))
+    print('>>> classification:\n\t{}'.format(classificationcmd))
     os.system(classificationcmd)
 
     if time:

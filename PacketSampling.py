@@ -112,8 +112,7 @@ def convertToList(dataset,features,verbose=False,time=False):
             if superverbose:
                 print('transformed:\n', dataset[feature][i])
                 print('type:\n', type(dataset[feature][i]))
-        
-    
+
     if verbose and (not time): input('\n...')
             
     return
