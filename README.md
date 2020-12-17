@@ -14,12 +14,12 @@ aptitude install wireshark
 
 filepaths need to be set correctly in: Classification.py, FlowSampling.py, PacketSampling.py, Preprocessing.py
 
-Use Control.py to run scripts.
-
+use Control.py to run scripts.
+```
 python Control.py -h
 usage: Control.py [-h] [-v] [--superverbose] [-t] (--linux | --osx | --windows) (--flowsampling m | --packetsampling m) file n j
 
-Script to execute sampling, labeling, preprocessing and classification scripts on given capture file.
+script to execute sampling, labeling, preprocessing and classification scripts on given capture file.
 
 positional arguments:
   file                select file to process: {0:'All', 1: 'Monday-WorkingHours', 2: 'Tuesday-WorkingHours', 3: 'Wednesday-
@@ -39,3 +39,4 @@ optional arguments:
   --flowsampling m    select sampling-mode: {1: 'every n-th packet', 2: 'sample & skip n packets', 3: 'sample first n
                       packets of a flow', 4: 'sample n, skip n-1, sample n-2 ...'}
   --packetsampling m  select sampling-mode: {1: 'every n-th packet'}
+```
