@@ -18,7 +18,7 @@
 ## INPROGRESS:
 
 - add paths for rpi
-- expand save to add "_Xtest, _Ytest, _model" to the filenames to have all the files available in one folder
+- expand save to add "_Xtest, _Ytest, _model" to the filenames when saving model & test-portions, to have all the files available in one folder
 - improve filename generation, including working-directory instead of hardcoded /home/<user>/<project-folder>, maybe read folder-content, based on that create dictionary with filenames without extensions, use that and wd as base to forge filepaths and filenames 
 
 
