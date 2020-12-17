@@ -86,8 +86,8 @@ if __name__ == '__main__':
     global verbose 
     global time
     global check
-    time = args.time
 
+    time = args.time
     if time: 
         # kill literally any running dstat process
         os.system('killall dstat')
@@ -98,7 +98,6 @@ if __name__ == '__main__':
         # start dstat logging
         th.start()
         print('\nControl.py\n[EPOCH, start]: {}\n'.format(t))
-
         # write timestamp to csv
         with open('/home/noooberino/timestamps.csv','w') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")

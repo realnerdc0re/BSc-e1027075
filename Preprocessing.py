@@ -8,11 +8,8 @@ Created on Fri Dec 17 13:24:01 2020
 
 from pandas import read_csv
 from pandas.plotting import scatter_matrix
-
 from matplotlib import pyplot
-
 from scipy.stats import zscore
-
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
@@ -25,10 +22,9 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
-
 from timeit import default_timer as timer
-
 #from memory_profiler import profile
+
 import time as epochtime
 import numpy as np
 import pandas as pd
@@ -38,9 +34,7 @@ import csv
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 
-
 # ARGUMENT PARSING
-
 # command line argument passthrough for better usability
 import argparse
 parser = argparse.ArgumentParser(description='script for preprocessing labeled CSVs')
@@ -60,11 +54,8 @@ osgroup.add_argument('--rpi', action='store_true', help='use Raspberry Pi paths 
 osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
 osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
 osgroup.add_argument('--windows', action='store_true', help='use windows paths')
-
 args = parser.parse_args()
 
-
-# DEFINITIONS
 
 # set/reset options for maximum columns to display and floating point output precision
 def poptions():
@@ -75,7 +66,6 @@ def resetpoptions():
     pd.reset_option('display.max_columns', 15)
     pd.reset_option('display.max_rows', 15)
     pd.reset_option('display.precision', 6)
-
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):  
     # informational output
@@ -87,7 +77,6 @@ def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
         print('\n{}'.format(csvdata.groupby('Attack').size()))
         if (not time): input('\n...')
     return csvdata
-
 # dataset ext2numerical
 def ext2num(dataset,mapping,verbose):
     
@@ -116,16 +105,13 @@ def ext2num(dataset,mapping,verbose):
     if time: print('\next2num\n{TIME}: %.3f' % (end-start),'seconds')
     return
 
-
 # INFORMATIONAL OUTPUT
-
 # outputs additional informations only shown in verbose mode
 def verboseprint(dataset):
     print('\n{}\n'.format(dataset.columns))
     print('\n{}'.format(dataset.info()))
     if (not time): input('\n...')
     return
-
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
     print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
@@ -136,7 +122,6 @@ def printdata(dataset,heading,verbose=False):
     if verbose:
         verboseprint(dataset)
     return
-
 # dataset description and grouped summary for 'Label'
 def summary(dataset):
     #poptions()
@@ -147,17 +132,13 @@ def summary(dataset):
     #resetpoptions()
     return
 
-
-# PREPROCESSING
-
-# CLEAN FEATURES 
+# CLEANING FEATURES 
 # function to create a feature containing pseudo-random values
 def createRandom(dataset,feature,verbose=False,time=False):
     import random
     for i in range(0,len(dataset)):
         dataset.at[i,feature]=random.randint(0,1000000)
     return
-
 # clean given df from any infinite values by replacement
 def cleanInf(dataset,mode,verbose=False,time=False):
     
@@ -283,7 +264,6 @@ def cleanInf(dataset,mode,verbose=False,time=False):
   
     # return whatever needed for method to clean specific cells or drop features    
     return
-
 # clean given df from any NaN values by replacement
 def cleanNaN(dataset,mode,verbose=False,time=False):
     
@@ -390,7 +370,6 @@ def cleanNaN(dataset,mode,verbose=False,time=False):
     if time: print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
       
     return
-
 # remove features containing strings from given df
 def cleanString(dataset,verbose=False,time=False):
     
@@ -437,8 +416,6 @@ def cleanString(dataset,verbose=False,time=False):
     if time: print('\ncleanString\n[TIME]: %.3f' % (end-start),'seconds')
     
     return
-
-# TODO: FYI if dataset contains no attacks, both features "Label" and "Attack" would get removed
 # remove single-value-features from given df, since these contain no informations
 def cleanSingleValue(dataset,verbose=False,time=False):
     
@@ -479,9 +456,6 @@ def cleanSingleValue(dataset,verbose=False,time=False):
     
     return
 
-
-# TODO: gather new features from existing features (e.g. total packets from forward and backward packets)    
-# TODO: create new column on specific position within the dataset
 # REMOVE/EXTRACT FEATURES
 # save features of given df from given list, drop everything else
 def saveFeatures(dataset,features,verbose=False,time=False):
@@ -537,7 +511,6 @@ def saveFeatures(dataset,features,verbose=False,time=False):
     if time: print('\nsaveFeatures\n[TIME]: %.3f' % (end-start),'seconds')        
         
     return
-
 # remove given feature from given df
 def removeFeatures(dataset,feature,verbose=False,time=False):
     
@@ -558,7 +531,6 @@ def removeFeatures(dataset,feature,verbose=False,time=False):
     if time: print('\nremoveFeatures\n[TIME]: %.3f' % (end-start),'seconds')
         
     return    
-
 # copy given feature into new dataframe for further manipulation, without affecting original df
 def extractFeatures(dataset,feature,verbose=False,time=False):
     
@@ -578,7 +550,6 @@ def extractFeatures(dataset,feature,verbose=False,time=False):
     
     # return extracted features for further processing
     return new
-
 
 # REMOVE/MANIPULATE CELLS 
 # manipulate content of given cells from given dataframe-feature
@@ -602,7 +573,6 @@ def writeCells(dataset,feature,cells,content,verbose=False,time=False):
         print('\nwriteCells\n[TIME]: %.3f' % (end-start),'seconds')
     
     return
-
 # remove given cells from a copy of the given dataframe feature, return the manipulated copy for further calculations
 def removeCells(dataset,feature,cells,verbose=False,time=False):
     
@@ -637,51 +607,50 @@ def removeCells(dataset,feature,cells,verbose=False,time=False):
 
 
 
+
+
 if __name__ == '__main__':
-    
+
     global verbose 
     global time
     global dataset
-    
+
     verbose = args.verbose
     superverbose = args.superverbose
     if superverbose: verbose = True
     time = args.time  
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
-
     rpi = args.rpi
     windows = args.windows
     osx = args.osx
     linux = args.linux
-
     findex = args.file[0]
-    
+
     if time:
         start = timer()
         # save epochtime
         t = epochtime.time()
         print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
-
         # write timestamp to csv
         with open('/home/noooberino/timestamps.csv','a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Classification.py','start'])
-    
+
+
     # FILEPATHS
-
     # path to CSV files based on OS choice
-    if windows: fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-    elif linux: fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
-    elif rpi: fpath = r"/home/dietpi/BSc-e1027075/rpi/flow-sampled"
-    
-    if windows: ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
-    elif linux: ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-    elif rpi: ppath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
-
+    if windows:
+        fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
+        ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+    elif linux:
+        fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
+        ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
+    elif rpi:
+        fpath = r"/home/dietpi/BSc-e1027075/rpi/flow-sampled"
+        ppath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
     # filenames of sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
-    
     # set path to sampeld CSV based on optional arguments and OS
     if flowsampling:
         if windows: path = fpath+"\\"+csvname[findex]
@@ -691,8 +660,9 @@ if __name__ == '__main__':
         if windows: path = ppath+"\\"+csvname[findex]
         elif (linux or rpi): path = ppath+"/"+csvname[findex]
         savepath = ppath+r"/processed"
-    
-    # check passed optional arguments, filepaths and forged commands
+
+
+    # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: Classification.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,flowsampling,packetsampling))
@@ -701,14 +671,12 @@ if __name__ == '__main__':
 
 
     # IMPORT
-
     dataset = importCSV(path,None,verbose)
     # output basic dataset informations
     printdata(dataset,'original',verbose)
 
 
     # PREPROCESSING
-
     # manually dropping feature 'flowStartMilliseconds'
     # TODO: should be done directly in FLowSampling.py instead?
     dropfeature = []
@@ -724,12 +692,11 @@ if __name__ == '__main__':
     # output basic informations of cleaned dataset
     printdata(dataset,'cleaned',verbose)
 
+
     # SAVE
-    
     # save preprocessed dataset to CSV
     filesave = str(savepath)+"/"+str(filenames[findex])+"_processed.csv"
     print('\n>>> save preprocessed data to CSV: {}'.format(filesave))
     dataset.to_csv(str(filesave), index = False,encoding='utf-8-sig')
-
 
     exit()

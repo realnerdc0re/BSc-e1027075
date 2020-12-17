@@ -23,8 +23,6 @@ filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-Worki
 # feature vectors
 featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
 
-
-
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
 import argparse
@@ -45,11 +43,8 @@ osgroup = parser.add_mutually_exclusive_group(required=True)
 osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
 osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
 osgroup.add_argument('--windows', action='store_true', help='use windows paths')
-
 args = parser.parse_args()
 
-
-# DEFINITIONS
 
 # returns list of features that contains multiple packet-values based on feature-keyword
 def perpacketFeatures(dataset,keyword,verbose=False,time=False):
@@ -77,7 +72,6 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
         if (not time): input('\n...')
             
     return tmp
-
 # convert single string or single integer (given with go-flows accumulate function or after NaN cleaning) into list of integers
 # necessary to get the values as list of integers for sampling and calculations
 def convertToList(dataset,features,verbose=False,time=False):
@@ -116,7 +110,6 @@ def convertToList(dataset,features,verbose=False,time=False):
     if verbose and (not time): input('\n...')
             
     return
-
 # sample first and every n-th package afterwards from given list of features
 def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     
@@ -234,7 +227,6 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
         input('\n...')
     
     return
-
 # returns formatted list for increased visibility in verbose output
 def packetOutput(plist,n,verbose):
     
@@ -257,13 +249,14 @@ def packetOutput(plist,n,verbose):
     return tmp
 
 
+
+
+
 if __name__ == '__main__':
 
     global verbose 
     global time
     global check
-
-    #sys.stdout = open("PacketSamplingOutput.txt","w")
 
     # optional arguments
     verbose = args.verbose
@@ -275,7 +268,6 @@ if __name__ == '__main__':
     osx = args.osx
     linux = args.linux
     check = args.check
-
     # positional arguments
     split = args.split[0]
     # index-position of chosen file
@@ -293,14 +285,11 @@ if __name__ == '__main__':
         # save epochtime
         t = epochtime.time()
         print('\nPacketSampling.py\n[EPOCH, start]: {}'.format(t))
-
         # write timestamp to csv
         with open('/home/noooberino/timestamps.csv','a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'PacketSampling.py','start'])
 
-
-    # OSX
     if osx:
         # paths to pcap & CSV files
         pcap = "/Users/drone/shared/Patrick/BSc/sample.pcap"
@@ -312,8 +301,6 @@ if __name__ == '__main__':
         path = "/Users/drone/shared/Patrick/BSc/output_accumulate.csv"
         # path to extracted flows CSV creatd with go-flows
         epath = "/Users/drone/shared/Patrick/BSc/eoutput_accumulate.csv"
-    
-    
         # commands to execute go-flows, capinfos and editcap
         # capinfo command to obtain total packet count
         capinfos = "capinfos -M -c editsample.pcap | grep packets | awk '{print $4}'"
@@ -324,8 +311,6 @@ if __name__ == '__main__':
         # path to go flows with argument to run for packet-sampled pcap
         egoflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv eoutput_accumulate.csv source libpcap editsample.pcap"
 
-
-    # Windows 10
     if windows:
         # PATH TO FOLDERS
         # https://www.unb.ca/cic/datasets/ids-2017.html
@@ -357,7 +342,6 @@ if __name__ == '__main__':
         csvname = ["Monday-WorkingHours_unlabeled.csv","Tuesday-WorkingHours_unlabeled.csv","Wednesday-WorkingHours_unlabeled.csv","Thursday-WorkingHours_unlabeled.csv","Friday-WorkingHours_unlabeled.csv"]
         # filename used for labeling.py
         labelingname = ["Monday-WorkingHours","Tuesday-WorkingHours","Wednesday-WorkingHours","Thursday-WorkingHours","Friday-WorkingHours"]
-        
         # PATH TO TOOLS
         # capinfos path
         capinfospath = r'"C:\Program Files\Wireshark\capinfos.exe"'
@@ -375,10 +359,8 @@ if __name__ == '__main__':
         # forged command to remove all files in the splitPCAP folder
         cleansplitPCAP = "del /q /s "+"{}".format(splitpath)+separator+"*"+" > NUL"
 
-
-    # Linux
-    # TODO: mount disks within script
     if linux:
+        # TODO: mount disks within script
         # PATH TO FOLDERS
         # https://www.unb.ca/cic/datasets/ids-2017.html
         # necessary separator to forge file-paths
@@ -409,8 +391,6 @@ if __name__ == '__main__':
         csvname = ["Monday-WorkingHours_unlabeled.csv","Tuesday-WorkingHours_unlabeled.csv","Wednesday-WorkingHours_unlabeled.csv","Thursday-WorkingHours_unlabeled.csv","Friday-WorkingHours_unlabeled.csv"]
         # filename used for labeling.py
         labelingname = ["Monday-WorkingHours","Tuesday-WorkingHours","Wednesday-WorkingHours","Thursday-WorkingHours","Friday-WorkingHours"]  
-
-        # PATH TO TOOLS
         # capinfos path
         capinfospath = "capinfos"
         # editcap command
@@ -428,11 +408,11 @@ if __name__ == '__main__':
         # forged command to remove all files in the splitPCAP folder
         cleansplitPCAP=r"rm"+" "+"{}".format(splitpath)+r"/* "
 
-        # set correct mode for labeling.py depending on given feature-vector
-        if j<4:
-            labelmode = ' AGM'
-        elif j >= 4:
-            labelmode = ' 5tuple'
+    # set mode for labeling
+    if j<4:
+        labelmode = ' AGM'
+    elif j >= 4:
+        labelmode = ' 5tuple'
 
     # forged command to gather packets, -M ... human readable packet count output, findstr is grep aequivalent
     capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(fpath)+separator+fname[findex]+" | findstr packets"
@@ -448,23 +428,18 @@ if __name__ == '__main__':
     mergecapcmd = "{}".format(mergecappath)+" -F pcap "+"{}".format(splitpath)+separator+"* -w "+"{}".format(samplepath)+separator+samplename[findex]
     # forged command to convert sampled PCAP into (per-packet) CSV for Classification
     goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(csvpath)+separator+"{}".format(csvname[findex])+" source libpcap "+"{}".format(samplepath)+separator+"{}".format(samplename[findex])
-    
-    
-    # files
+    # snapped file-path
     snapfile = "{}".format(snappath)+separator+snapname[findex]
-    
-    
+
     # check passed optional arguments and commands
     print('\n\n'+40*' '+' FILE: {}'.format(fname[findex]))
     print(40*'~'+' SCRIPT: PacketSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--check".format(verbose,superverbose,time,osx,windows,check))
     print('\n{}, n = {}, split = {}'.format(samplingmode[smode],n,split))
-    
     print('\n'+20*'~'+' paths '+20*'~')
     print('\nPCAP: {}'.format(pcap))
     print('JSON: {}'.format(goflowsconf))
-    
     print('\n'+20*'~'+' commands '+20*'~')
     print('\npacket-count: {}'.format(capinfoscmd))
     print('drop payload: {}'.format(editsnapcmd))
@@ -474,7 +449,7 @@ if __name__ == '__main__':
     print ('go-flows: {}'.format(goflowscmd))
     print('labeling: {}'.format(labelingcmd))
     if (not time): input('\n...')
-    
+
     # optional argument --check: get total & sampled packet count of the original PCAP
     if check:
         totalpacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)  
@@ -487,8 +462,8 @@ if __name__ == '__main__':
                 print("\ntotal: {} ".format(totalpacketcount))
                 print("\nsampled: {} ".format(totalsamplecount))
                 if (not time): input('\n...')
-    
-    
+
+
     # PREPARE PCAP FILES
     # drop payload
     print('\n\n>>> dropping payload from {}'.format(pcap))
@@ -499,32 +474,26 @@ if __name__ == '__main__':
     # split PCAP into smaller files
     print('>>> splitting PCAP from {} into folder {}'.format(snapfile,splitpath))
     os.system(editsplitcmd)
-    
-    
+
+
     # SAMPLING (per-packet)
-    
     # get filenames from all splits and total number of split-files for further processing
     splitlist = os.listdir(splitpath)
     splitcount = len(splitlist)
-    
     # variables to determine necessary packet-skips on split-file transition
     packetskip = 0
     samplepstart = 0
     nextpacketskip = 0
     nextsamplepstart = 0
-    
     # variable to keep track of split-file count thats currently processed
     scount = 0
-    
+
     print("\n>>> apply sampling...".format(splitcount))
-    
     # iterate all split-files and apply sampling
     for file in splitlist:
-        
         scount += 1
         # informational output
         print('\n\n'+20*'~'+' {}, iteration: {}/{}'.format(file,scount,splitcount)+20*'~')
-            
         # forge command for capinfos to gather pcount of the current split-file
         if windows: capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+separator+file+" | findstr packets"
         if linux: capinfosplitcmd = "{}".format(capinfospath)+" -M -c "+"{}".format(splitpath)+separator+file+" | grep packets"
@@ -532,21 +501,18 @@ if __name__ == '__main__':
         for word in pcount.split():
             if word.isdigit():
                 pcount = int(word)
-        
         # get skips for current split-file
         packetskip = nextpacketskip
         # the number of packets relevant for sampling in current split-file, considering skips
         samplepcount = pcount - packetskip
-        
         # create list of all packets and packet indexes of the current split-file
         # list of packet numbers
         plist = np.arange(1,pcount+1,1)
         # list of packet index-numbers
         plistindex = np.arange(0,pcount,1)
-        
+
         # SAMPLING: mode 1, every n-th packet, including first packet of the pcap
         if smode == 1:
-            
             # calculate number of packets to skip for the next split-file
             modulo = samplepcount % n
             if modulo != 0:
@@ -556,12 +522,10 @@ if __name__ == '__main__':
             else:
                 nextpacketskip = 0
                 nextsamplepstart = 0
-            
             if verbose:
                 print('\n\n'+10*'~'+' skipped packets '+10*'~')
                 print("\n{}\t...current split-file".format(packetskip))
                 print("{}\t...next split-file".format(nextpacketskip))
-        
             # packets considering skips from splits
             pskip = plist[packetskip:]
             # sample index-numbers, considering packet-skips from previous split-file
@@ -570,7 +534,7 @@ if __name__ == '__main__':
             psamplenumber = plist[packetskip::n]
             # numbers of packets that are used to remove packets with editcaps
             pdrop = np.delete(plist,psample.tolist())
-        
+
         if verbose:
             print('\n\n'+10*'~'+' sampled packets '+10*'~')
             pprint = packetOutput(plist,10,False)
@@ -582,10 +546,9 @@ if __name__ == '__main__':
             pprint = packetOutput(pdrop,10,False)
             print('\ndropped: {}\n\n'.format(len(pdrop))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
             if verbose and (not superverbose) and (not time): input('\n...')
-    
+
         # flip list to drop packets from split-file, starting from the end and working towards the first packets of the split-file
         pdrop = np.flip(pdrop)
-        
         # number of iterations until all packets are dropped with 512 packets per slice (limiting factor from editcaps)
         iteration = int(len(pdrop)/512)+1    
         # iterate through all packets to drop from current split-file    
@@ -594,23 +557,21 @@ if __name__ == '__main__':
             pslice = pdrop[0:512]
             # remove these 512 packets from droplist for the next iteration
             pdrop = pdrop[512:]
-        
+
             if superverbose:
                 print('\n\n'+10*'~'+' packet removal {}/{} '.format(i+1,iteration)+10*'~')
                 pprint = packetOutput(pslice,10,False)
                 print('\nslice: {}\n\n'.format(len(pslice))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))
-            
                 # only display remaining packets until last iteration
                 if i < (iteration-1):
                     pprint = packetOutput(pdrop,10,False)
                     print('\nremaining: {}\n\n'.format(len(pdrop))+'\t[{} ... {}]'.format(str(pprint[0]),str(pprint[1])))  
                 # increased readability in superverbose mode
                 elif i == (iteration-1) and (not time): input('\n...')
-            
+
             # create string containing packet numbers seperated with whitespaces as argument for editcaps execution
             arg = [str(int) for int in pslice]
             arg = " ".join(arg)
-    
             # forged command to drop packets with editcap
             editcapcmd = "{}".format(editcappath)+" "+"{}".format(splitpath)+separator+file+" "+"{}".format(splitpath)+separator+"tmp.pcap"+" "+arg
             os.system(editcapcmd)
@@ -618,53 +579,45 @@ if __name__ == '__main__':
             if windows: movecmd = r"move /Y "+"{}".format(splitpath)+separator+"tmp.pcap"+" "+"{}".format(splitpath)+separator+file+" > NUL"
             if linux: movecmd = r"mv "+"{}".format(splitpath)+separator+"tmp.pcap"+" "+"{}".format(splitpath)+separator+file+" > NUL"
             os.system(movecmd)
-        
+
     if time:
         sampletime = timer()
         print('\n[SAMPLE TIME]: %.3f' % (sampletime-start),'seconds')
-    
-    # merge split-files into single pcap for further processing
+
+
+    # MERGE split-files
     print("\n>>> merging split-files...")
     os.system(mergecapcmd)
     if time:
         mergetime = timer()
         print('\nmergecap\n[TIME]: %.3f' % (mergetime-sampletime),'seconds')
-    
+
     # optional argument --check: get packet count of processed (merged) PCAP and compare with sampled packet count obtained from the original PCAP
     if check:
         capinfoscmd = "{}".format(capinfospath)+" -M -c "+"{}".format(samplepath)+separator+samplename[findex]+" | findstr packets"
         print("\nforged capinfos (sampled packet count):\n", capinfoscmd)
-        
         samplepacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
-        
         for word in samplepacketcount.split():
-            if word.isdigit():
-                samplepacketcount = int(word)
-        
+            if word.isdigit(): samplepacketcount = int(word)
         print('\n\n'+20*'~'+' check packets, file: {} '.format(samplename[findex])+20*'~')
         print("\ntotal packets: {} ".format(samplepacketcount))
-        
-        if samplepacketcount == totalsamplecount:
-            print("\n\n>> [SUCCESS] number of sampled packets correct!")
-        else:
-            print("\n\n>> [ERROR] number of sampled packets not matching calculated value!")
-    
+        if samplepacketcount == totalsamplecount: print("\n\n>> [SUCCESS] number of sampled packets correct!")
+        else: print("\n\n>> [ERROR] number of sampled packets not matching calculated value!")
+
     # create (per-packet) CSV file from single pcap file
     print("\n>>> create CSV from single PCAP via goflows...")
     os.system(goflowscmd)
     if time:
         goflowstime = timer()
         print('\ngo-flows\n[TIME]: %.3f' % (goflowstime-mergetime),'seconds')
-        
-    # label sampled flow CSV for further classification
+
+    # LABELING
     print("\n>>> label CSV file for classification...")
     print(">>> {}".format(labelingcmd))
     os.system(labelingcmd)
     if time:
         labelingtime = timer()
         print('\nlabeling.py\n[TIME]: %.3f' % (labelingtime-goflowstime),'seconds')
-    
-    if time: 
         end = timer()
         t = epochtime.time()
         print('\nPacketSampling.py\n[EPOCH, end]: {}'.format(t))
@@ -673,7 +626,6 @@ if __name__ == '__main__':
         with open('/home/noooberino/timestamps.csv','a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'PacketSampling.py','end'])
-    
+
     if (not time):  input('\n...')   
     exit()
-    #sys.stdout.close()

@@ -8,11 +8,8 @@ Created on Fri Dec 17 14:25:00 2020
 
 from pandas import read_csv
 from pandas.plotting import scatter_matrix
-
 from matplotlib import pyplot
-
 from scipy.stats import zscore
-
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
@@ -25,10 +22,9 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
-
 from timeit import default_timer as timer
-
 #from memory_profiler import profile
+
 import time as epochtime
 import numpy as np
 import pandas as pd
@@ -36,15 +32,13 @@ import sys
 import csv
 import pickle
 
-
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 
 # ARGUMENT PARSING
-
 # command line argument passthrough for better usability
 import argparse
-parser = argparse.ArgumentParser(description='script for cleaning dataframes imported from CSV files')
+parser = argparse.ArgumentParser(description='classification script, can be used on complete datasets, loading or saving fitted models and test-portions.')
 # positional arguments
 parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
 # optional arguments
@@ -55,19 +49,16 @@ parser.add_argument('-s','--save', action='store_true', help='export model and t
 parser.add_argument('-l','--load', action='store_true', help='import model and testdata for further classification')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
-samplegroup.add_argument('--flowsampling', action='store_true', help='use flow-sampled CSV files')
-samplegroup.add_argument('--packetsampling', action='store_true', help='use per-packet sampled CSV files')
+samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
+samplegroup.add_argument('-p','--packetsampling', action='store_true', help='use per-packet sampled CSV files')
 # force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
 osgroup = parser.add_mutually_exclusive_group(required=True)
 osgroup.add_argument('--rpi', action='store_true', help='use Raspberry Pi paths (pre-sampled CSVs)')
 osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
 osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
 osgroup.add_argument('--windows', action='store_true', help='use windows paths')
-
 args = parser.parse_args()
 
-
-# DEFINITIONS
 
 # set/reset options for maximum columns to display and floating point output precision
 def poptions():
@@ -78,7 +69,6 @@ def resetpoptions():
     pd.reset_option('display.max_columns', 15)
     pd.reset_option('display.max_rows', 15)
     pd.reset_option('display.precision', 6)
-
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):  
     # informational output
@@ -90,7 +80,6 @@ def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
         #print('\n{}'.format(csvdata.groupby('Attack').size()))
         if (not time): input('\n...')
     return csvdata
-
 # dataset ext2numerical
 def ext2num(dataset,mapping,verbose):
     
@@ -119,16 +108,13 @@ def ext2num(dataset,mapping,verbose):
     if time: print('\next2num\n{TIME}: %.3f' % (end-start),'seconds')
     return
 
-
-# INFORMATIONAL OUTPUT
-
+# OUTPUT functions
 # outputs additional informations only shown in verbose mode
 def verboseprint(dataset):
     print('\n{}\n'.format(dataset.columns))
     print('\n{}'.format(dataset.info()))
     if (not time): input('\n...')
     return
-
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
     print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
@@ -139,7 +125,6 @@ def printdata(dataset,heading,verbose=False):
     if verbose:
         verboseprint(dataset)
     return
-
 # dataset description and grouped summary for 'Label'
 def summary(dataset):
     #poptions()
@@ -150,10 +135,7 @@ def summary(dataset):
     #resetpoptions()
     return
 
-
-# CLASSIFICATION
-
-# SPLIT & SCALE DATASET
+# SPLIT & SCALE functions
 # create copy of dataframes in lists
 def copyDfList(dflist,newlist,verbose=False,time=False):
 
@@ -165,7 +147,6 @@ def copyDfList(dflist,newlist,verbose=False,time=False):
         newlist.append(tmp)
         
     return newlist
-
 # split given df into training & validation portions as array
 def splitData(dataset,testsize,verbose=False,time=False):
     
@@ -223,7 +204,6 @@ def splitData(dataset,testsize,verbose=False,time=False):
     if time: print('\nsplitData\n[TIME]: %.3f' % (end-start),'seconds')
     
     return data
-
 # split given df into training & test portions
 def splitDataframe(dataset,testsize,verbose=False,time=False):
     
@@ -283,8 +263,6 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
     
     # return list of arrays or dataframes
     return data
-
-
 # MinMax Scaler (proportional scaling) using numpy arrays
 def scalingArray(data,verbose=False,time=False):
     scaler = MinMaxScaler()
@@ -301,7 +279,6 @@ def scalingArray(data,verbose=False,time=False):
     
     
     return
-
 # Standard (z-Score) Scaler (proportional scaling) using dataframe
 def scalingDataframe(datasets,features,verbose=False,time=False):
     
@@ -349,8 +326,7 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
 
     return tmpscaled
 
-# PCA & RANDOM FOREST
-
+# PCA & MODEL functions
 # apply PCA on scaled data
 def PCAnalysis(dataset,components,verbose=False,time=False):
     
@@ -389,7 +365,6 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
     if time: print('\nPCAnalysis\n[TIME]: %.3f' % (end-start),'seconds')
     
     return Xpca
-
 # apply ML model
 def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     
@@ -447,6 +422,9 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     return
 
 
+
+
+
 if __name__ == '__main__':
     
     global verbose 
@@ -485,13 +463,16 @@ if __name__ == '__main__':
 
 
     # LOADING & CLASSIFICATION
-
     if load:
         # files to load
         if flowsampling: modelfile = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/model.pkl"
         elif packetsampling: modelfile = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/model.pkl"
-        xload = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/Xtest.npy"
-        yload = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/Ytest.npy"
+        if flowsampling:
+            xload = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/Xtest.npy"
+            yload = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/Ytest.npy"
+        elif packetsampling:
+            xload = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/Xtest.npy"
+            yload = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/Ytest.npy"
 
         # importing fitted model and Xtest, Ytest
         print('\n>>> importing Xtest: {}'.format(xload))
@@ -501,7 +482,7 @@ if __name__ == '__main__':
         print('>>> loading model: {}'.format(modelfile))
         with open(modelfile,'rb') as file:
             model = pickle.load(file)
-        
+
         # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
         predictions = model.predict(Xtest)
         matrix = confusion_matrix(Ytest,predictions)
@@ -528,7 +509,6 @@ if __name__ == '__main__':
             with open('/home/noooberino/timestamps.csv','a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'Classification.py','end'])
-
         exit()
 
 
@@ -562,7 +542,7 @@ if __name__ == '__main__':
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load".format(verbose,superverbose,time,osx,windows,save,load))
     if (not time): input('\n...')
 
-    # import pre-processed dataset
+    # IMPORT pre-processed dataset
     dataset = importCSV(path,None,verbose)
     # output dataset informations
     printdata(dataset,'pre-processed',verbose)
@@ -588,24 +568,25 @@ if __name__ == '__main__':
     n = 4
     Xpca = PCAnalysis(datascaled,n,verbose,time)
 
-    # save pre-processed Xtest, Ytest into files
+
+    # SAVE pre-processed Xtest, Ytest
     if save:
         # forge filepaths
         if flowsampling: savepath = fpath+r"/model"
         elif packetsampling: savepath = ppath+r"/model"
 
         filesave = str(savepath)+"/Xtest.npy"
-        print('\n>>> save preprocessed dataset: {}'.format(filesave))
+        print('\n>>> save pre-processed data: {}'.format(filesave))
         np.save(filesave,Xpca[1])
         
         filesave = str(savepath)+"/Ytest.npy"
-        print('>>> save preprocessed dataset: {}'.format(filesave))
+        print('>>> save pre-processed data: {}'.format(filesave))
         np.save(filesave,datasplit[3])
+
 
     # MODEL
     # create model using the Random Forest classifier
     model = RandomForestClassifier()
-
     # Xpca[0] = Xtrain, datasplit[2] = Ytrain
     applyModel(model,Xpca[0],datasplit[2],Xpca[1],datasplit[3],verbose,time)
     
