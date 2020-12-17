@@ -12,9 +12,8 @@ aptitude update
 aptitude install wireshark
 ```
 
-filepaths need to be set correctly in: Classification.py, FlowSampling.py, PacketSampling.py, Preprocessing.py
-
 ### usage
+filepaths need to be set in: Classification.py, FlowSampling.py, PacketSampling.py, Preprocessing.py
 ```
 python Control.py -h
 usage: Control.py [-h] [-v] [--superverbose] [-t] (--linux | --osx | --windows) (--flowsampling m | --packetsampling m) file n j
