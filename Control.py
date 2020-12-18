@@ -53,11 +53,11 @@ packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
 wd = os.getcwd()
 # forge logfolder, timestamps & dstat logs based on wd
 logfolder = wd+"/logs"
-dstatlog = logfolder+"/dstat.csv"
-timelog = logfolder+"/time.csv"
+dstatcsv = logfolder+"/dstat.csv"
+timecsv = logfolder+"/time.csv"
 # dstat command including arguments to pipe output do null and execute in background
 # logs epochtime, cpu-usage, disk-usage, memory-usage and top ps
-dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output '+dstatlog+' > /dev/null 2>&1 &'
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output '+dstatcsv+' > /dev/null 2>&1 &'
 #dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv &'
 #dstatarg = '--epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
 
@@ -160,8 +160,8 @@ if __name__ == '__main__':
     print('\n{}, n = {}'.format(samplingmode,n))
     print('\n'+20*'~'+' paths & files '+20*'~')
     print('\nlogs:\t{}'.format(logfolder))
-    print('dstat:\t{}'.format(dstatlog))
-    print('times:\t{}\n'.format(timelog))
+    print('dstat:\t{}'.format(dstatcsv))
+    print('times:\t{}\n'.format(timecsv))
     print('flowfolder:\t{}'.format(flowfolder))
     print('packetfolder:\t{}'.format(packetfolder))
     print('go-flows:\t{}'.format(featurevectors[j]))
@@ -247,7 +247,7 @@ if __name__ == '__main__':
         print('\nControl.py\n[EPOCH, end]: {}'.format(t))
         print('[RUNTIME]: %.3f' % (end-start),'seconds')
         # write timestamp to csv
-        with open(timelog,'a') as csvfile:
+        with open(timecsv,'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Control.py','end'])
 

@@ -500,41 +500,43 @@ if __name__ == '__main__':
 
     # paths to processed files based on sampling choice
     if flowsampling:
-        modelfile = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/model.pkl"
+        modelfolder = str(wd)+"/csv/flow-sampled/fitted/"
+        modelfile = str(modelfolder)+str(filenames[findex])+"_model.pkl"
         if windows: path = fpath+"\\"+csvname[findex]
         elif (linux or rpi): path = fpath+"/processed/"+filenames[findex]+"_processed.csv"
     elif packetsampling:
-        modelfile = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/model.pkl"
+        modelfolder = str(wd)+"/csv/packet-sampled/fitted/"
+        modelfile = str(modelfolder)+str(filenames[findex])+"_model.pkl"
         if windows: path = ppath+"\\"+csvname[findex]
         elif (linux or rpi): path = ppath+"/processed/"+filenames[findex]+"_processed.csv"
+    xtf = str(modelfolder)+str(filenames[findex])+"_Xtest.npy"
+    ytf = str(modelfolder)+str(filenames[findex])+"_Ytest.npy"
 
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*' '+' FILE: {}_processed.csv'.format(filenames[findex]))
     print(40*'~'+' SCRIPT: Classficiation.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,osx,windows,save,load,export))
+    print('\n'+20*'~'+' paths & files '+20*'~')
+    print('\nlogs:\t{}'.format(logfolder))
+    if export:
+        print('report:\t{}'.format(reportcsv))
+        print('result:\t{}\n'.format(resultscsv))
+    if load or save:
+        print('model:\t{}'.format(modelfile))
+        print('Xtest:\t{}'.format(xtf))
+        print('Ytest:\t{}'.format(ytf))
     if (not time): input('\n...')
-
 
 
     # LOADING & CLASSIFICATION
     if load:
-        # files to load
-        if flowsampling: modelfile = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/model.pkl"
-        elif packetsampling: modelfile = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/model.pkl"
-        if flowsampling:
-            xload = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/Xtest.npy"
-            yload = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/Ytest.npy"
-        elif packetsampling:
-            xload = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/Xtest.npy"
-            yload = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/Ytest.npy"
-
         # importing fitted model and Xtest, Ytest
-        print('\n>>> importing Xtest: {}'.format(xload))
-        Xtest = np.load(xload)
-        print('>>> importing Ytest: {}'.format(yload))
-        Ytest = np.load(yload)
-        print('>>> loading model: {}'.format(modelfile))
+        print('\n>>> importing Xtest...')
+        Xtest = np.load(xtf)
+        print('>>> importing Ytest...')
+        Ytest = np.load(ytf)
+        print('>>> loading model...')
         with open(modelfile,'rb') as file:
             model = pickle.load(file)
 
@@ -610,17 +612,10 @@ if __name__ == '__main__':
 
     # SAVE pre-processed Xtest, Ytest
     if save:
-        # forge filepaths
-        if flowsampling: savepath = fpath+r"/model"
-        elif packetsampling: savepath = ppath+r"/model"
-
-        filesave = str(savepath)+"/Xtest.npy"
-        print('\n>>> save pre-processed data: {}'.format(filesave))
-        np.save(filesave,Xpca[1])
-        
-        filesave = str(savepath)+"/Ytest.npy"
-        print('>>> save pre-processed data: {}'.format(filesave))
-        np.save(filesave,datasplit[3])
+        print('\n>>> save pre-processed data: {}'.format(xtf))
+        np.save(xtf,Xpca[1])
+        print('>>> save pre-processed data: {}'.format(ytf))
+        np.save(ytf,datasplit[3])
 
 
     # MODEL
