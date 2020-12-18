@@ -468,7 +468,7 @@ if __name__ == '__main__':
 
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*' '+' FILE: {}'.format(fname[findex]))
-    print(40*'~'+' SCRIPT: FlowSampling '+40*'~')
+    print(40*'~'+' SCRIPT: FlowSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows".format(verbose,superverbose,time,osx,windows))
     print('\n{}, n = {}'.format(samplingmode[mode],n))

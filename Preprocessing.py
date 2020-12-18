@@ -663,7 +663,7 @@ if __name__ == '__main__':
 
 
     # OUTPUT passed optional arguments & filepath
-    print('\n\n'+40*'~'+' SCRIPT: Classification.py '+40*'~')
+    print('\n\n'+40*'~'+' SCRIPT: Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,flowsampling,packetsampling))
     print('\n\n{}'.format(path))

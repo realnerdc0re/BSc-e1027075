@@ -31,9 +31,19 @@ import pandas as pd
 import sys
 import csv
 import pickle
+import os
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
+
+# get working directory
+wd = os.getcwd()
+# forge logfolder, timestamps & dstat logs based on wd
+logfolder = wd+"/logs"
+reportcsv = logfolder+'/report.csv'
+resultscsv = logfolder+'/results.csv'
+timecsv = logfolder+'/time.csv'
+
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
@@ -45,6 +55,7 @@ parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file t
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
+parser.add_argument('-e','--export', action='store_true', help='export results to file')
 # force load/save choice
 loadgroup = parser.add_mutually_exclusive_group(required=True)
 loadgroup.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
@@ -406,18 +417,29 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
         print('\nXtest:\n{}\n{}'.format(Xtest,Xtest.shape))
         print('\n\nYtest:\n{}'.format(Ytest.value_counts()))
         if (not time): input('\n...')
-    
+
+    # calculate results
+    mparams = model.get_params(deep=True)
+    accuracy = accuracy_score(Ytest,predictions)
+    fimportance = model.feature_importances_
+
     # output final results
     print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
-    print('\nModel-Parameters:\n{}'.format(model.get_params(deep=True)))
-    print('\n\nAccuracy-Score: %.5f' % (accuracy_score(Ytest,predictions)))
-    print('\n\nFeature-Importance:\n{}'.format(model.feature_importances_))
+    print('\nModel-Parameters:\n{}'.format(mparams))
+    print('\n\nAccuracy-Score: %.5f' % (accuracy))
+    print('\n\nFeature-Importance:\n{}'.format(fimportance))
     print('\n\nConfusion-Matrix:\n')
     print('t       p r e d i c t')
     print('r         "0"    "1"')
     print('u  "0":',matrix[0])
     print('e  "1":',matrix[1])
     print('\n\nClassification-Report:\n\n',report)
+
+    if True:
+        characteristics = ['model','parameters','accuracy-score','feature-importance']
+        sresults = pd.DataFrame({'results':list()}, columns=['','results'])
+        print('\nresultsdf:\n\n{}'.format(sresults))
+
     
     if time: print('\napplyModel\n[TIME]: %.3f' % (end-start),'seconds')
     
@@ -441,6 +463,7 @@ if __name__ == '__main__':
     packetsampling = args.packetsampling
     save = args.save
     load = args.load
+    export = args.export
 
     rpi = args.rpi
     windows = args.windows
@@ -459,9 +482,39 @@ if __name__ == '__main__':
         print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
 
         # write timestamp to csv
-        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+        with open(timecsv,'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Classification.py','start'])
+
+    # PATHS
+    # paths to sampled files based on OS choice
+    if windows: 
+        fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
+        ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+    elif linux: 
+        fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
+        ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
+    elif rpi: 
+        fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
+        ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
+
+    # paths to processed files based on sampling choice
+    if flowsampling:
+        modelfile = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/model.pkl"
+        if windows: path = fpath+"\\"+csvname[findex]
+        elif (linux or rpi): path = fpath+"/processed/"+filenames[findex]+"_processed.csv"
+    elif packetsampling:
+        modelfile = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/model.pkl"
+        if windows: path = ppath+"\\"+csvname[findex]
+        elif (linux or rpi): path = ppath+"/processed/"+filenames[findex]+"_processed.csv"
+
+    # check passed optional arguments, filepaths and forged commands
+    print('\n\n'+40*' '+' FILE: {}_processed.csv'.format(filenames[findex]))
+    print(40*'~'+' SCRIPT: Classficiation.py '+40*'~')
+    print('\n'+20*'~'+' optional arguments '+20*'~')
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,osx,windows,save,load,export))
+    if (not time): input('\n...')
+
 
 
     # LOADING & CLASSIFICATION
@@ -488,13 +541,19 @@ if __name__ == '__main__':
         # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
         predictions = model.predict(Xtest)
         matrix = confusion_matrix(Ytest,predictions)
-        report = classification_report(Ytest,predictions,digits=5)
+        # saving the classification-report directly into pandas dataframe to enable easy export to csv if necessary
+        report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
+
+        # save results
+        parameters = model.get_params(deep=True)
+        accuracyscore = accuracy_score(Ytest,predictions)
+        featureimportance = model.feature_importances_
 
         # output final results
         print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
-        print('\nModel-Parameters:\n{}'.format(model.get_params(deep=True)))
-        print('\n\nAccuracy-Score: %.5f' % (accuracy_score(Ytest,predictions)))
-        print('\n\nFeature-Importance:\n{}'.format(model.feature_importances_))
+        print('\nModel-Parameters:\n{}'.format(parameters))
+        print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+        print('\n\nFeature-Importance:\n{}'.format(featureimportance))
         print('\n\nConfusion-Matrix:\n')
         print('t       p r e d i c t')
         print('r         "0"    "1"')
@@ -502,47 +561,25 @@ if __name__ == '__main__':
         print('e  "1":',matrix[1])
         print('\n\nClassification-Report:\n\n',report)
 
+        if export:
+            print('\n>>> exporting results to folder: {}'.format(logfolder))
+            # list of all informations we want to save for later evaluation
+            evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix]}
+            results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
+            # save results
+            results.to_csv(resultscsv)
+            report.to_csv(reportcsv)
+
         if time:
             end = timer()
             t = epochtime.time()
             print('\nClassification.py\n[EPOCH, end]: {}'.format(t))
             print('[RUNTIME]: %.3f' % (end-start),'seconds')
             # write timestamp to csv
-            with open('/home/noooberino/timestamps.csv','a') as csvfile:
+            with open(timecsv,'w') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'Classification.py','end'])
         exit()
-
-
-    # IMPORT
-    
-    # paths to sampled files based on OS choice
-    if windows: 
-        fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-        ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
-    elif linux: 
-        fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
-        ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-    elif rpi: 
-        fpath = r"/home/dietpi/BSc-e1027075/rpi/flow-sampled"
-        ppath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
-
-    # paths to processed files based on sampling choice
-    if flowsampling:
-        modelfile = "/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/model/model.pkl"
-        if windows: path = fpath+"\\"+csvname[findex]
-        elif (linux or rpi): path = fpath+"/processed/"+filenames[findex]+"_processed.csv"
-    elif packetsampling:
-        modelfile = "/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/model/model.pkl"
-        if windows: path = ppath+"\\"+csvname[findex]
-        elif (linux or rpi): path = ppath+"/processed/"+filenames[findex]+"_processed.csv"
-
-    # check passed optional arguments, filepaths and forged commands
-    print('\n\n'+40*' '+' FILE: {}_processed.csv'.format(filenames[findex]))
-    print(40*'~'+' SCRIPT: Classficiation '+40*'~')
-    print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load".format(verbose,superverbose,time,osx,windows,save,load))
-    if (not time): input('\n...')
 
     # IMPORT pre-processed dataset
     dataset = importCSV(path,None,verbose)
@@ -602,7 +639,7 @@ if __name__ == '__main__':
         print('\nClassification.py\n[EPOCH, end]: {}'.format(t))
         print('[RUNTIME]: %.3f' % (end-start),'seconds')
         # write timestamp to csv
-        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+        with open(timecsv,'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Classification.py','end'])
 

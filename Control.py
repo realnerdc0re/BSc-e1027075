@@ -23,11 +23,7 @@ import time as epochtime
 import threading
 from timeit import default_timer as timer
 
-# dstat command including arguments to pipe output do null and execute in background
-# logs epochtime, cpu-usage, disk-usage, memory-usage and top ps
-dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/dstat-log.csv > /dev/null 2>&1 &'
-#dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv &'
-#dstatarg = '--epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
+
 
 # function that start dstat
 def threadFunc():
@@ -51,6 +47,19 @@ featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_
 # directories
 flowfolder = '/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV'
 packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
+
+
+# get working directory
+wd = os.getcwd()
+# forge logfolder, timestamps & dstat logs based on wd
+logfolder = wd+"/logs"
+dstatlog = logfolder+"/dstat.csv"
+timelog = logfolder+"/time.csv"
+# dstat command including arguments to pipe output do null and execute in background
+# logs epochtime, cpu-usage, disk-usage, memory-usage and top ps
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output '+dstatlog+' > /dev/null 2>&1 &'
+#dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv &'
+#dstatarg = '--epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
 
 # ARGUMENT PARSING
 import argparse
@@ -120,9 +129,16 @@ if __name__ == '__main__':
     if n == 0:
         print('>>> please enter non-zero integer value for n!')
         exit()
-
-    # get working directory
-    wd = os.getcwd()
+    if flowsampling:
+        flowsampling = True
+        packetsampling = False
+        m = args.flowsampling[0]
+        samplingmode =flowsmode[m]
+    elif packetsampling:
+        packetsampling = True
+        flowsampling = True
+        m = args.packetsampling[0]
+        samplingmode = packetsmode[m]
 
     # set optional argument for OS choice
     if linux: osarg = ' --linux'
@@ -135,6 +151,22 @@ if __name__ == '__main__':
     # set command for time
     if time: timearg = " --time"
     else: timearg = ""
+
+    # check passed optional arguments and commands
+    print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
+    print(40*'~'+' SCRIPT: Control.py '+40*'~')
+    print('\n'+20*'~'+' optional arguments '+20*'~')
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,osx,windows,flowsampling,packetsampling))
+    print('\n{}, n = {}'.format(samplingmode,n))
+    print('\n'+20*'~'+' paths & files '+20*'~')
+    print('\nlogs:\t{}'.format(logfolder))
+    print('dstat:\t{}'.format(dstatlog))
+    print('times:\t{}\n'.format(timelog))
+    print('flowfolder:\t{}'.format(flowfolder))
+    print('packetfolder:\t{}'.format(packetfolder))
+    print('go-flows:\t{}'.format(featurevectors[j]))
+    print('\n'+20*'~'+' commands '+20*'~')
+    print('\ndstat:\t{}'.format(dstat))
 
 
     # SAMPLING ALL CAPTURE FILES & MERGE
@@ -181,13 +213,13 @@ if __name__ == '__main__':
         # forge script execution-command out of given arguments
         if flowsampling: 
             sarg = " --flowsampling "
-            m = args.flowsampling[0]
+            #m = args.flowsampling[0]
             samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
             featurearg =" "+str(j)
             samplingcmd = "python FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
         elif packetsampling: 
             sarg = " --packetsampling "
-            m = args.packetsampling[0]
+            #m = args.packetsampling[0]
             samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
             featurearg =" "+str(j)
             samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
@@ -215,7 +247,7 @@ if __name__ == '__main__':
         print('\nControl.py\n[EPOCH, end]: {}'.format(t))
         print('[RUNTIME]: %.3f' % (end-start),'seconds')
         # write timestamp to csv
-        with open('/home/noooberino/timestamps.csv','a') as csvfile:
+        with open(timelog,'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Control.py','end'])
 
