@@ -513,7 +513,7 @@ if __name__ == '__main__':
     ytf = str(modelfolder)+str(filenames[findex])+"_Ytest.npy"
 
     # check passed optional arguments, filepaths and forged commands
-    print('\n\n'+40*' '+' FILE: {}_processed.csv'.format(filenames[findex]))
+    print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
     print(40*'~'+' SCRIPT: Classficiation.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,osx,windows,save,load,export))
