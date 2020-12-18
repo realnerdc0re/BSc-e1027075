@@ -51,8 +51,10 @@ packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
 
 # get working directory
 wd = os.getcwd()
+
 # forge logfolder, timestamps & dstat logs based on wd
 logfolder = wd+"/logs"
+if not os.path.exists(logfolder): os.mkdir(logfolder)
 dstatcsv = logfolder+"/dstat.csv"
 timecsv = logfolder+"/time.csv"
 # dstat command including arguments to pipe output do null and execute in background
