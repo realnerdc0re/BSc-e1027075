@@ -380,12 +380,11 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
     return Xpca
 # apply ML model
 def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: applyModel '+40*'~')
-    
+
     # load already fitted model
     if load:
         print('\n>>> loading model: {}'.format(modelfile))
@@ -405,9 +404,9 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     predictions = model.predict(Xtest)
     matrix = confusion_matrix(Ytest,predictions)
     report = classification_report(Ytest,predictions,digits=5)
-    
+
     if time: end = timer()
-      
+
     if verbose: 
         print('\n\n'+10*'~'+' {}: training '.format(model)+10*'~')
         print('\nXtrain:\n{}\n{}'.format(Xtrain,Xtrain.shape))
@@ -419,15 +418,15 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
         if (not time): input('\n...')
 
     # calculate results
-    mparams = model.get_params(deep=True)
-    accuracy = accuracy_score(Ytest,predictions)
-    fimportance = model.feature_importances_
+    parameters = model.get_params(deep=True)
+    accuracyscore = accuracy_score(Ytest,predictions)
+    featureimportance = model.feature_importances_
 
     # output final results
     print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
-    print('\nModel-Parameters:\n{}'.format(mparams))
-    print('\n\nAccuracy-Score: %.5f' % (accuracy))
-    print('\n\nFeature-Importance:\n{}'.format(fimportance))
+    print('\nModel-Parameters:\n{}'.format(parameters))
+    print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+    print('\n\nFeature-Importance:\n{}'.format(featureimportance))
     print('\n\nConfusion-Matrix:\n')
     print('t       p r e d i c t')
     print('r         "0"    "1"')
@@ -435,14 +434,17 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
     print('e  "1":',matrix[1])
     print('\n\nClassification-Report:\n\n',report)
 
-    if True:
-        characteristics = ['model','parameters','accuracy-score','feature-importance']
-        sresults = pd.DataFrame({'results':list()}, columns=['','results'])
-        print('\nresultsdf:\n\n{}'.format(sresults))
+    if export:
+        print('\n>>> exporting results to folder: {}'.format(logfolder))
+        # list of all informations we want to save for later evaluation
+        evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix]}
+        results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
+        # save results
+        results.to_csv(resultscsv)
+        report.to_csv(reportcsv)
 
-    
     if time: print('\napplyModel\n[TIME]: %.3f' % (end-start),'seconds')
-    
+
     return
 
 

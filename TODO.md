@@ -2,7 +2,9 @@
 
 
 ## INPROGRESS:
-- add paths for rpi/repository folders containing already fitted data & model
+- saving results to file not working when not loading right now
+- add command to only import model, but preprocess data on rpi -m --model....
+- dump dietPi installation because fucked up python module installations, reinstall correctly 64bit
 - implement automatic folder generation on script execution (os.path.exists(folder) and os.makedirs(folder)), do this with a separate python script for the base-folder structure. expand this structure if necessary for multiple test-runs? (important for wd/logs, and first time creation of time.csv if no file exists or if a file already exists on scriptstart outside of Control.py create new file (due to appending time within any other scripts than Control.py...))
 - improve filename generation, including working-directory instead of hardcoded /home/<user>/<project-folder>, maybe read folder-content, based on that create dictionary with filenames without extensions, use that and wd as base to forge filepaths and filenames 
 
@@ -10,6 +12,7 @@
 
 ## TODO:
 #### NEXT:
+- pyplot import only on non-rpi devices?
 - tweak Classification.py to read CSV line-by-line on rpi
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
 #### LATER:
@@ -26,6 +29,7 @@
 
 
 ## DONE:
+- add paths for rpi/repository folders containing already fitted data & model
 - expand save to add "_Xtest, _Ytest, _model" to the filenames when saving model & test-portions, to have all the files available in one folder
 - add functionality to save ML algorithm score with other relevant informations into file
 - save dstat logs, timestamps, results... in new folder BSc-e1027075/logs/...
