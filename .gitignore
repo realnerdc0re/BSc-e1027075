@@ -133,11 +133,10 @@ Labeling.py
 # files
 Merged.csv
 Merged_processed.csv
-Merged_model_64bit.csv
-Merged_model_32bit.csv
+Merged_model_64bit.pkl
+Merged_model_32bit.pkl
 dstat.csv
 results.csv
 report.csv
 time.csv
 NUL
-csv/flow-sampled/fitted/Merged_model_64bit.pkl
