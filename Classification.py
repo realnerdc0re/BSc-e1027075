@@ -58,10 +58,8 @@ parser.add_argument('-t','--time', action='store_true', help='measure function-r
 parser.add_argument('-e','--export', action='store_true', help='export results to file')
 parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-d','--data',action='store_true', help='import Xtest, Ytest')
-# force load/save choice
-loadgroup = parser.add_mutually_exclusive_group(required=True)
-loadgroup.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
-loadgroup.add_argument('-l','--load', action='store_true', help='import model and testdata for further classification')
+parser.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
+parser.add_argument('-l','--load', action='store_true', help='import model and testdata for further classification')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
@@ -465,6 +463,7 @@ if __name__ == '__main__':
     time = args.time  
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
+
     save = args.save
     load = args.load
     export = args.export
@@ -529,7 +528,7 @@ if __name__ == '__main__':
     print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
     print(40*'~'+' SCRIPT: Classficiation.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,osx,windows,save,load,export))
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--rpi\n{}\t--rpi\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,rpi,linux,osx,windows,save,load,export))
     print('\n'+20*'~'+' paths & files '+20*'~')
     print('\nlogs:\t{}'.format(logfolder))
     if export:
