@@ -56,6 +56,8 @@ parser.add_argument('-v','--verbose', action='store_true', help='output addition
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
 parser.add_argument('-e','--export', action='store_true', help='export results to file')
+parser.add_argument('-m','--model', action='store_true', help='import model')
+parser.add_argument('-d','--data',action='store_true', help='import Xtest, Ytest')
 # force load/save choice
 loadgroup = parser.add_mutually_exclusive_group(required=True)
 loadgroup.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
@@ -466,6 +468,8 @@ if __name__ == '__main__':
     save = args.save
     load = args.load
     export = args.export
+    model = args.model
+    data = args.data
 
     rpi = args.rpi
     windows = args.windows
@@ -500,17 +504,24 @@ if __name__ == '__main__':
         fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
         ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
 
-    # paths to processed files based on sampling choice
+    # paths to processed files/folders based on sampling choice
     if flowsampling:
+        # set filename for model file
         modelfolder = str(wd)+"/csv/flow-sampled/fitted/"
-        modelfile = str(modelfolder)+str(filenames[findex])+"_model.pkl"
+        if rpi: modelfile = str(modelfolder)+str(filenames[findex])+"_model_32bit.pkl"
+        else: modelfile = str(modelfolder)+str(filenames[findex])+"_model_64bit.pkl"
+        # set filename for pre-sampled, pre-processed datasets
         if windows: path = fpath+"\\"+csvname[findex]
         elif (linux or rpi): path = fpath+"/processed/"+filenames[findex]+"_processed.csv"
     elif packetsampling:
         modelfolder = str(wd)+"/csv/packet-sampled/fitted/"
-        modelfile = str(modelfolder)+str(filenames[findex])+"_model.pkl"
+        # set filename for model file
+        if rpi: modelfile = str(modelfolder)+str(filenames[findex])+"_model_32bit.pkl"
+        else: modelfile = str(modelfolder)+str(filenames[findex])+"_model_64bit.pkl"
+        # set filename for pre-sampled, pre-processed datasets
         if windows: path = ppath+"\\"+csvname[findex]
         elif (linux or rpi): path = ppath+"/processed/"+filenames[findex]+"_processed.csv"
+    # set filename for fitted portion of the dataset
     xtf = str(modelfolder)+str(filenames[findex])+"_Xtest.npy"
     ytf = str(modelfolder)+str(filenames[findex])+"_Ytest.npy"
 

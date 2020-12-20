@@ -3,7 +3,7 @@
 
 ## INPROGRESS:
 - saving results to file not working when not loading right now
-- add command to only import model, but preprocess data on rpi -m --model....
+- add command to only import model, but preprocess data on rpi -m --model.... & to import test data and fit model -d, --data...
 - dump dietPi installation because fucked up python module installations, reinstall correctly 64bit
 - implement automatic folder generation on script execution (os.path.exists(folder) and os.makedirs(folder)), do this with a separate python script for the base-folder structure. expand this structure if necessary for multiple test-runs? (important for wd/logs, and first time creation of time.csv if no file exists or if a file already exists on scriptstart outside of Control.py create new file (due to appending time within any other scripts than Control.py...))
 - improve filename generation, including working-directory instead of hardcoded /home/<user>/<project-folder>, maybe read folder-content, based on that create dictionary with filenames without extensions, use that and wd as base to forge filepaths and filenames 
