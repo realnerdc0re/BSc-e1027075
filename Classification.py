@@ -133,7 +133,7 @@ def printdata(dataset,heading,verbose=False):
     print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
     print('\n{}'.format(dataset))
     #if (not time): input('\n...')
-    print('\n{}'.format(dataset.describe()))
+    if not rpi: print('\n{}'.format(dataset.describe())) # skip for rpi
     if verbose and (not time): input('\n...')
     if verbose:
         verboseprint(dataset)
@@ -238,7 +238,7 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
     # very last column (label) put into Y as separate column
     Y = dataset.iloc[:,-1]
     
-    # splitting up the data into training & validation datasets into 80% training & 20% validation
+    # splitting up the data into training & validation datasets into 70% training & 30% validation
     # Xtrain & Ytrain for preparing models
     # Xtest & Ytest to use later for validation
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=testsize, random_state=1)
@@ -311,12 +311,14 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
     # TRAINING
     # fit & transform Xtrain
     tmp = datasets[0]
+    print('>>> fit & transform Xtrain...')
     tmp[features] = scaler.fit_transform(tmp[features])
     tmpscaled.append(tmp)
        
     # TEST (transform)
     # transform Xtest    
     tmp = datasets[1]
+    print('>>> transform Xtest...')
     tmp[features] = scaler.transform(tmp[features])
     tmpscaled.append(tmp)
     
@@ -474,16 +476,14 @@ if __name__ == '__main__':
     windows = args.windows
     osx = args.osx
     linux = args.linux
-    # index-position of chosen file
-    findex = args.file[0]
+    findex = args.file[0] # index-position of passed file
 
     # name for sampled & labeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
 
     if time: 
-        start = timer()
-        # save epochtime
-        t = epochtime.time()
+        start = timer() # runtime
+        t = epochtime.time() # epochtime
         print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
 
         # write timestamp to csv
@@ -528,7 +528,7 @@ if __name__ == '__main__':
     print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
     print(40*'~'+' SCRIPT: Classficiation.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--rpi\n{}\t--rpi\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,rpi,linux,osx,windows,save,load,export))
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--rpi\n{}\t--linux\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,rpi,linux,osx,windows,save,load,export))
     print('\n'+20*'~'+' paths & files '+20*'~')
     print('\nlogs:\t{}'.format(logfolder))
     if export:
@@ -608,13 +608,13 @@ if __name__ == '__main__':
 
     # create copy of splitdata to apply scaling to, to not overwrite original values
     # TODO: for improved memory efficiency just use original data, skipping this block
-    scaleinput = []        
-    scaleinput = copyDfList(datasplit,scaleinput,verbose,time)  
+    #scaleinput = []        
+    #scaleinput = copyDfList(datasplit,scaleinput,verbose,time)  
 
     # MinMax proportional scaling
     # TODO: apply scaling on original split-dataframe for less memory consumption
-    #datascaled = scalingDataframe(datasplit,[],verbose,time)
-    datascaled = scalingDataframe(scaleinput,[],verbose,time)
+    datascaled = scalingDataframe(datasplit,[],verbose,time)
+    #datascaled = scalingDataframe(scaleinput,[],verbose,time)
 
     # PCA (principal component analysis)
     # apply PCA on training data, returns dataset wtih n components
@@ -622,7 +622,7 @@ if __name__ == '__main__':
     Xpca = PCAnalysis(datascaled,n,verbose,time)
 
 
-    # SAVE pre-processed Xtest, Ytest
+    # SAVE pre-processed, scaled, applied PCA Xtest & Ytest
     if save:
         print('\n>>> save pre-processed data: {}'.format(xtf))
         np.save(xtf,Xpca[1])

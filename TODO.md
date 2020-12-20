@@ -2,10 +2,12 @@
 
 
 ## INPROGRESS:
+- tweak Classification.py to read CSV line-by-line into pandas dataframe on rpi (https://medium.com/analytics-vidhya/optimized-ways-to-read-large-csvs-in-python-ab2b36a7914e)
+- take care when using --time to check if /logs/time.csv is already existing to open with 'a' append, or with 'w' write
 - restructure Classification.py main depending on argument choices...
-	- saving results to file not working when not loading right now
+	- saving results to file not implemented on -l loading right now
 	- add command to only import model, but preprocess data on rpi -m --model.... & to import test data and fit model -d, --data...
-- tweak Classification.py to read CSV line-by-line on rpi
+
 
 
 
@@ -29,7 +31,10 @@
 
 
 
+
+
 ## DONE:
+- skip scaleinput = copyDfList in Classification.py
 - dump dietPi installation because fucked up python module installations, not able to upgrade scikit-learn to 0.23 necessary for importing models
 - add paths for rpi/repository folders containing already fitted data & model
 - expand save to add "_Xtest, _Ytest, _model" to the filenames when saving model & test-portions, to have all the files available in one folder
