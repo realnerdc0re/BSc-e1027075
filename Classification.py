@@ -32,6 +32,7 @@ import sys
 import csv
 import pickle
 import os
+import joblib
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
@@ -399,8 +400,9 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
         # save model to file for further classifications
         if save:
             print('\n>>> exporting model to file: {}'.format(modelfile))
-            with open(modelfile,'wb') as file:
-                pickle.dump(model,file)
+            #with open(modelfile,'wb') as file:
+                #pickle.dump(model,file)
+            joblib.dump(model,modelfile) # use joblib for saving model
 
     # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
     predictions = model.predict(Xtest)
@@ -549,8 +551,9 @@ if __name__ == '__main__':
         print('>>> importing Ytest...')
         Ytest = np.load(ytf)
         print('>>> loading model...')
-        with open(modelfile,'rb') as file:
-            model = pickle.load(file)
+        #with open(modelfile,'rb') as file:
+            #model = pickle.load(file)
+        model = joblib.load(modelfile)
 
         # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
         predictions = model.predict(Xtest)
