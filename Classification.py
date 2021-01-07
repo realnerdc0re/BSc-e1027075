@@ -58,7 +58,7 @@ parser.add_argument('--superverbose', action='store_true', help='output addition
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
 parser.add_argument('-e','--export', action='store_true', help='export results to file')
 parser.add_argument('-m','--model', action='store_true', help='import model')
-parser.add_argument('-d','--data',action='store_true', help='import Xtest, Ytest')
+parser.add_argument('-d','--data',action='store_true', help='import dataXtrain, Ytrain, Xtest, Ytest')
 parser.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
 parser.add_argument('-l','--load', action='store_true', help='import model and testdata for further classification')
 # force sampling choice
@@ -84,15 +84,25 @@ def resetpoptions():
     pd.reset_option('display.max_rows', 15)
     pd.reset_option('display.precision', 6)
 # import CSV
-def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):  
+def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
+    print('\n\n'+40*'~'+' FUNCTION: importCSV (chunksize: {}) '.format(chunksize)+40*'~')
     print('\n>>> importing CSV: {}'.format(csvpath))
-    csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
+
+    # if no chunksize is given, read CSV in one step, otherwise read in chunks
+    if chunksize == None:
+        # informational output
+        print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
+        print('\n>>> importing CSV: {}'.format(csvpath))
+        csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
+    # chunksize determines numbers of rows per chunk
+    else:
+        chunk = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize)
+        csvdata = pd.concat(chunk) # concatenate chunks into single dataframe
+
     if verbose:
-        print('\n{}'.format(csvdata.groupby('Label').size()))
+        print('\n{}\n'.format(csvdata.groupby('Label').size()))
         #print('\n{}'.format(csvdata.groupby('Attack').size()))
-        if (not time): input('\n...')
     return csvdata
 # dataset ext2numerical
 def ext2num(dataset,mapping,verbose):
@@ -381,7 +391,60 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
     if time: print('\nPCAnalysis\n[TIME]: %.3f' % (end-start),'seconds')
     
     return Xpca
-# apply ML model
+# make predicitons
+def makePredictions(model,Xtest,Ytest):
+
+    if time: start = timer()
+    print('\n\n'+40*'~'+' FUNCTION: makePredictions '+40*'~') # informational output
+
+    # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
+    print('>>> make predictions...')
+    predictions = model.predict(Xtest)
+    print('>>> create confusion-matrix...')
+    matrix = confusion_matrix(Ytest,predictions)
+    # saving the classification-report directly into pandas dataframe to enable easy export to csv if necessary
+    print('>>> create classification-report...')
+    report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
+
+    # save results
+    parameters = model.get_params(deep=True)
+    accuracyscore = accuracy_score(Ytest,predictions)
+    featureimportance = model.feature_importances_
+
+    # output final results
+    print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
+    print('\nModel-Parameters:\n{}'.format(parameters))
+    print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+    print('\n\nFeature-Importance:\n{}'.format(featureimportance))
+    print('\n\nConfusion-Matrix:\n')
+    print('t       p r e d i c t')
+    print('r         "0"    "1"')
+    print('u  "0":',matrix[0])
+    print('e  "1":',matrix[1])
+    print('\n\nClassification-Report:\n\n',report)
+
+    '''
+    # output to compare different results???
+    print(Xtest)
+    print(pd.DataFrame(Xtest).describe())
+    print(predictions)
+    '''
+
+    if export:
+        print('\n>>> exporting results to folder: {}'.format(logfolder))
+        # list of all informations we want to save for later evaluation
+        evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix]}
+        results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
+        # save results
+        results.to_csv(resultscsv)
+        report.to_csv(reportcsv)
+
+    if time: 
+        end = timer()
+        print('\nmakePredictions\n[TIME]: %.3f' % (end-start),'seconds')
+
+    return
+# apply ML model (replaced by makePredictions)
 def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
 
     if time: start = timer()
@@ -492,17 +555,19 @@ if __name__ == '__main__':
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Classification.py','start'])
 
-    # PATHS
-    # paths to sampled files based on OS choice
+    # PATHS & VARIABLES, based on OS choice
     if windows: 
         fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
         ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+        chunksize = None
     elif linux: 
         fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
         ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
+        chunksize = None
     elif rpi: 
         fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
         ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
+        chunksize = 10**3
 
     # paths to processed files/folders based on sampling choice
     if flowsampling:
@@ -521,126 +586,92 @@ if __name__ == '__main__':
         # set filename for pre-sampled, pre-processed datasets
         if windows: path = ppath+"\\"+csvname[findex]
         elif (linux or rpi): path = ppath+"/processed/"+filenames[findex]+"_processed.csv"
-    # set filename for fitted portion of the dataset
+
+    # set filepaths & filename
     xtf = str(modelfolder)+str(filenames[findex])+"_Xtest.npy"
     ytf = str(modelfolder)+str(filenames[findex])+"_Ytest.npy"
+    xtrf = str(modelfolder)+str(filenames[findex])+"_Xtrain.npy"
+    ytrf = str(modelfolder)+str(filenames[findex])+"_Ytrain.npy"
 
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
     print(40*'~'+' SCRIPT: Classficiation.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--rpi\n{}\t--linux\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export".format(verbose,superverbose,time,rpi,linux,osx,windows,save,load,export))
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--rpi\n{}\t--linux\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n{}\t--data".format(verbose,superverbose,time,rpi,linux,osx,windows,save,load,export,model,data))
     print('\n'+20*'~'+' paths & files '+20*'~')
     print('\nlogs:\t{}'.format(logfolder))
     if export:
         print('report:\t{}'.format(reportcsv))
         print('result:\t{}\n'.format(resultscsv))
-    if load or save:
-        print('model:\t{}'.format(modelfile))
+    if load or save or data:
+        if load: print('model:\t{}'.format(modelfile))
         print('Xtest:\t{}'.format(xtf))
         print('Ytest:\t{}'.format(ytf))
+        print('Xtrain:\t{}'.format(xtrf))
+        print('Ytrain:\t{}'.format(ytrf))
     if (not time): input('\n...')
 
-
-    # LOADING & CLASSIFICATION
-    if load:
-        # importing fitted model and Xtest, Ytest
-        print('\n>>> importing Xtest...')
+    # IMPORT: import already processed data
+    if load or data:
+        # importing Xtest, Ytest
+        print('\n>>> importing Xtest: {}'.format(xtf))
         Xtest = np.load(xtf)
-        print('>>> importing Ytest...')
+        print('>>> importing Ytest: {}'.format(ytf))
         Ytest = np.load(ytf)
-        print('>>> loading model...')
-        #with open(modelfile,'rb') as file:
-            #model = pickle.load(file)
-        model = joblib.load(modelfile)
+        # import Xtrain, Ytrain if no model is imported
+        if data:
+            print('>>> importing Xtrain: {}'.format(xtrf))
+            Xtrain = np.load(xtrf)
+            print('>>> importing Ytrain: {}'.format(ytrf))
+            Ytrain = np.load(ytrf)
 
-        # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
-        predictions = model.predict(Xtest)
-        matrix = confusion_matrix(Ytest,predictions)
-        # saving the classification-report directly into pandas dataframe to enable easy export to csv if necessary
-        report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
+    # PROCESS: split, scale & PCA
+    else:
+        # IMPORT: pre-processed data
+        chunksize = 10**3 # just for testing purpose, gets set with --rpi normally
+        dataset = importCSV(path,None,verbose,chunksize)
+        printdata(dataset,'pre-processed',verbose)
 
-        # save results
-        parameters = model.get_params(deep=True)
-        accuracyscore = accuracy_score(Ytest,predictions)
-        featureimportance = model.feature_importances_
+        # SPLIT: create split data for training and validation (test), format of returned data as list: [Xtrain,Xtest,Ytrain,Ytest]
+        datasplit = splitDataframe(dataset,0.30,verbose,time)
 
-        # output final results
-        print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
-        print('\nModel-Parameters:\n{}'.format(parameters))
-        print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
-        print('\n\nFeature-Importance:\n{}'.format(featureimportance))
-        print('\n\nConfusion-Matrix:\n')
-        print('t       p r e d i c t')
-        print('r         "0"    "1"')
-        print('u  "0":',matrix[0])
-        print('e  "1":',matrix[1])
-        print('\n\nClassification-Report:\n\n',report)
+        # SCALE: apply StandardScaler (z-score)
+        datascaled = scalingDataframe(datasplit,[],verbose,time)
 
-        if export:
-            print('\n>>> exporting results to folder: {}'.format(logfolder))
-            # list of all informations we want to save for later evaluation
-            evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix]}
-            results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
-            # save results
-            results.to_csv(resultscsv)
-            report.to_csv(reportcsv)
+        # PCA (principal component analysis): apply on training data, returns dataset with n components
+        n = 4
+        Xpca = PCAnalysis(datascaled,n,verbose,time)
 
-        if time:
-            end = timer()
-            t = epochtime.time()
-            print('\nClassification.py\n[EPOCH, end]: {}'.format(t))
-            print('[RUNTIME]: %.3f' % (end-start),'seconds')
-            # write timestamp to csv
-            with open(timecsv,'w') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'Classification.py','end'])
-        exit()
+        # set variables for further processing
+        Xtrain = Xpca[0]
+        Xtest = Xpca[1]
+        Ytrain = datasplit[2]
+        Ytest = datasplit[3]
 
-    # IMPORT pre-processed dataset
-    dataset = importCSV(path,None,verbose)
-    # output dataset informations
-    printdata(dataset,'pre-processed',verbose)
-
+    # SAVE: save processed data
+    if save and (not data) and (not load):
+        print('\n>>> saving Xtest: {}'.format(xtf))
+        np.save(xtf,Xtest)
+        print('>>> saving Ytest: {}'.format(ytf))
+        np.save(ytf,Ytest)
+        print('>>> saving Xtrain: {}'.format(xtrf))
+        np.save(xtrf,Xtrain)
+        print('>>> saving Ytrain: {}'.format(ytrf))
+        np.save(ytrf,Ytrain)
 
     # CLASSIFICATION
-    # get split data for training and validation, format of returned data as list: [Xtrain,Xtest,Ytrain,Ytest]
-    # accessing data for further Classification via datasplit[i], splitting training:test in ration 70:30
-    datasplit = splitDataframe(dataset,0.30,verbose,time)
-
-    # create copy of splitdata to apply scaling to, to not overwrite original values
-    # TODO: for improved memory efficiency just use original data, skipping this block
-    #scaleinput = []        
-    #scaleinput = copyDfList(datasplit,scaleinput,verbose,time)  
-
-    # MinMax proportional scaling
-    # TODO: apply scaling on original split-dataframe for less memory consumption
-    datascaled = scalingDataframe(datasplit,[],verbose,time)
-    #datascaled = scalingDataframe(scaleinput,[],verbose,time)
-
-    # PCA (principal component analysis)
-    # apply PCA on training data, returns dataset wtih n components
-    n = 4
-    Xpca = PCAnalysis(datascaled,n,verbose,time)
-
-
-    # SAVE pre-processed, scaled, applied PCA Xtest & Ytest
-    if save:
-        print('\n>>> save pre-processed data: {}'.format(xtf))
-        np.save(xtf,Xpca[1])
-        print('>>> save pre-processed data: {}'.format(ytf))
-        np.save(ytf,datasplit[3])
-
-
-    # MODEL
-    # create model using the Random Forest classifier
-    model = RandomForestClassifier()
-    # Xpca[0] = Xtrain, datasplit[2] = Ytrain
-    applyModel(model,Xpca[0],datasplit[2],Xpca[1],datasplit[3],verbose,time)
-    
-    # TODO: for comparison, use dataset without PCA & proportional scaling (Random Forest doesn't care about that)
-    #applyModel(model,datasplit[0],datasplit[2],datasplit[1],datasplit[3],verbose,time)
-    #cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+    if (model or load): # load model & make predictions
+        print('>>> loading model: {}'.format(modelfile))
+        model = joblib.load(modelfile) # load model
+        makePredictions(model,Xtest,Ytest) # make predictions
+    else: # fit model & make predictions
+        model = RandomForestClassifier()
+        print('>>> fitting model with {}...'.format(model))
+        model = model.fit(Xtrain,Ytrain)
+        if save: # save model via joblib
+            print('\n>>> save model: {}'.format(modelfile))
+            joblib.dump(model,modelfile)
+        makePredictions(model,Xtest,Ytest)
 
     if time:
         end = timer()
@@ -652,10 +683,15 @@ if __name__ == '__main__':
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'Classification.py','end'])
 
-    if (not time): input('\n...')
-    
+    exit()
+
+
     #sys.stdout.close()
     
+    # TODO: for comparison, use dataset without PCA & proportional scaling (Random Forest doesn't care about that)
+    #applyModel(model,datasplit[0],datasplit[2],datasplit[1],datasplit[3],verbose,time)
+    #cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+
     '''
     # SCATTER MATRIX
     # use some random features (takes quite some time to plot)
