@@ -34,6 +34,7 @@
 
 
 ## DONE:
+- switch to saving/loading model via joblib
 - skip scaleinput = copyDfList in Classification.py
 - dump dietPi installation because fucked up python module installations, not able to upgrade scikit-learn to 0.23 necessary for importing models
 - add paths for rpi/repository folders containing already fitted data & model

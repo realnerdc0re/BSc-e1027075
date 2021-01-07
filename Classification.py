@@ -385,8 +385,7 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
 def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
 
     if time: start = timer()
-    # informational output
-    print('\n\n'+40*'~'+' FUNCTION: applyModel '+40*'~')
+    print('\n\n'+40*'~'+' FUNCTION: applyModel '+40*'~') # informational output
 
     # load already fitted model
     if load:
@@ -400,9 +399,9 @@ def applyModel(model,Xtrain,Ytrain,Xtest,Ytest,verbose=False,time=False):
         # save model to file for further classifications
         if save:
             print('\n>>> exporting model to file: {}'.format(modelfile))
-            #with open(modelfile,'wb') as file:
-                #pickle.dump(model,file)
             joblib.dump(model,modelfile) # use joblib for saving model
+            #with open(modelfile,'wb') as file:
+            #    pickle.dump(model,file)
 
     # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
     predictions = model.predict(Xtest)
