@@ -9,12 +9,15 @@
 ## TODO:
 
 #### NEXT:
+
 - use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)
 - flowStartMilliseconds: remove feature direct after labeling
 - pyplot import only on non-rpi devices?
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
 
 #### LATER:
+
+- when going full in on rpi, avoid useless write/reads of dataset-files to speed up the whole process (e.g. merge Preprocessing.py and Classification.py when doing the preprocessing on rpi), pack as many functions into a single script as possible to avoid time-sconsuming write/reads!
 - write script to evaluate data logged with dstat in combination with ML scores and timestamps saved
 - think about the substitutions for NaNs & Infs in preprocessing
 - implement automatic folder generation on script execution (os.path.exists(folder) and os.makedirs(folder)), do this with a separate python script for the base-folder structure. expand this structure if necessary for multiple test-runs? (important for wd/logs, and first time creation of time.csv if no file exists or if a file already exists on scriptstart outside of Control.py create new file (due to appending time within any other scripts than Control.py...))

@@ -630,7 +630,6 @@ if __name__ == '__main__':
     # PROCESS: split, scale & PCA
     else:
         # IMPORT: pre-processed data
-        chunksize = 10**3 # just for testing purpose, gets set with --rpi normally
         dataset = importCSV(path,None,verbose,chunksize)
         printdata(dataset,'pre-processed',verbose)
 

@@ -78,6 +78,9 @@ def resetpoptions():
     pd.reset_option('display.precision', 6)
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
+
+    if time: start = timer()
+
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
     print('\n>>> importing CSV: {}'.format(csvpath))
@@ -94,6 +97,11 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
         print('\n{}'.format(csvdata.groupby('Label').size()))
         print('\n{}'.format(csvdata.groupby('Attack').size()))
         if (not time): input('\n...')
+
+    if time: 
+        end = timer()
+        print('\nimportCSV\n[TIME]: %.3f' % (end-start),'seconds')
+
     return csvdata
 # dataset ext2numerical
 def ext2num(dataset,mapping,verbose):
