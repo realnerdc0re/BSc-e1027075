@@ -717,8 +717,8 @@ if __name__ == '__main__':
         ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
         chunksize = None
     elif rpi:
-        fpath = r"/home/dietpi/BSc-e1027075/rpi/flow-sampled"
-        ppath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
+        fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
+        ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
         chunksize = 10**3
     # filenames of sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
