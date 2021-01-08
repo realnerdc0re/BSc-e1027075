@@ -2,8 +2,7 @@
 
 
 ## INPROGRESS:
-- improve speed for NaN replacement
-- better handling for time.csv creation (writing or appending, based on fresh script start or execution within Control.py)
+
 
 
 
@@ -33,6 +32,9 @@
 
 
 ## DONE:
+
+- improve speed for NaN replacement
+- better handling for time.csv creation (writing or appending, based on fresh script start or execution within Control.py)
 - tweak importCSV in Preprocessing.py to support chunksize on rpi
 - restructure Classification.py main depending on argument choices...
 	- saving results to file not implemented on -l loading right now
