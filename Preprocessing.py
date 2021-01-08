@@ -30,9 +30,18 @@ import numpy as np
 import pandas as pd
 import sys
 import csv
+import os
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
+
+# get working directory
+wd = os.getcwd()
+# forge logfolder, timestamps & dstat logs based on wd
+logfolder = wd+"/logs"
+reportcsv = logfolder+'/report.csv'
+resultscsv = logfolder+'/results.csv'
+timecsv = logfolder+'/time.csv'
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
@@ -44,10 +53,11 @@ parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file t
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
+parser.add_argument('-e','--export', action='store_true', help='export timestamps')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
-samplegroup.add_argument('--flowsampling', action='store_true', help='use flow-sampled CSV files')
-samplegroup.add_argument('--packetsampling', action='store_true', help='use per-packet sampled CSV files')
+samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
+samplegroup.add_argument('-p','--packetsampling', action='store_true', help='use per-packet sampled CSV files')
 # force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
 osgroup = parser.add_mutually_exclusive_group(required=True)
 osgroup.add_argument('--rpi', action='store_true', help='use Raspberry Pi paths (pre-sampled CSVs)')
@@ -67,11 +77,19 @@ def resetpoptions():
     pd.reset_option('display.max_rows', 15)
     pd.reset_option('display.precision', 6)
 # import CSV
-def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):  
+def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
     print('\n>>> importing CSV: {}'.format(csvpath))
-    csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
+
+    # if no chunksize is given, read CSV in one step, otherwise read in chunks
+    if chunksize == None:
+        csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
+    # chunksize determines numbers of rows per chunk
+    else:
+        chunk = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize)
+        csvdata = pd.concat(chunk) # concatenate chunks into single dataframe
+
     if verbose:
         print('\n{}'.format(csvdata.groupby('Label').size()))
         print('\n{}'.format(csvdata.groupby('Attack').size()))
@@ -115,9 +133,9 @@ def verboseprint(dataset):
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
     print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
-    print('\n{}'.format(dataset))
+    print('\n{}\n'.format(dataset))
     #if (not time): input('\n...')
-    print('\n{}'.format(dataset.describe()))
+    print('\n{}\n'.format(dataset.describe()))
     if verbose and (not time): input('\n...')
     if verbose:
         verboseprint(dataset)
@@ -265,7 +283,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
     # return whatever needed for method to clean specific cells or drop features    
     return
 # clean given df from any NaN values by replacement
-def cleanNaN(dataset,mode,verbose=False,time=False):
+def cleanNaN_original(dataset,mode,verbose=False,time=False):
     
     if time: start = timer()
     
@@ -316,6 +334,7 @@ def cleanNaN(dataset,mode,verbose=False,time=False):
         for i in range(0,dataset.shape[0]):
             if NaNtable[i] == True:
                 NaNindex.append(i)
+        
                 
         # create temporary array from index list
         tmp = np.array(NaNindex)
@@ -356,65 +375,91 @@ def cleanNaN(dataset,mode,verbose=False,time=False):
                 
             print('\n>>> replacing NaNs: {}'.format(column))
             writeCells(dataset,column,NaNRows[i],value,verbose,False)
-                
+
     if verbose:
         # display NaN summary after replacement
         vNaN = dataset.isnull().sum()
         print('\n\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(vNaN))
-        
+
         if (not time): input('\n...')
-        
+
     if time: end = timer()
     
     if time: print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
       
     return
+def cleanNaN(dataset,replacement,verbose=False,time=False):
+
+    if time: start = timer()
+
+    # informational output
+    print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
+    print('\n>>> searching NaNs...')
+
+    # summary for NaN values
+    vNaN = dataset.isnull().sum()
+    lNaN = []
+
+    if verbose: print('\n{}\n'.format(vNaN))
+
+    i = -1
+    for value in vNaN:
+        i += 1
+        # if there is at least one NaN value in the summary
+        if(value > 0):
+            lNaN.append(vNaN.index[i])
+
+    # cycles through features containing NaN values
+    for column in lNaN:
+        print('>>> replacing NaNs: {}'.format(column))
+        dataset[column] = dataset[column].replace(np.nan, replacement)
+
+    if time:
+        end = timer()
+        print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
+
+    return
 # remove features containing strings from given df
 def cleanString(dataset,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
-    # get table containgin object-types per feature
-    stype = dataset.dtypes
-    
+
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanString '+40*'~')
     print('\n>>> searching strings...')
-    
+
+    # table containing object-types per feature
+    stype = dataset.dtypes
+
+    if verbose: print('\n{}\n'.format(stype))
+
     # get features (index & label) containing Strings
-    # feature (column)-index
     istr=[]
-    # feature (colum)-label
     lstr=[]
-    
+
     # cycle through all features
     for i in range(0,len(stype)):
         if stype[i]=='object':
             istr.append(i)
             lstr.append(stype.index[i])
-    
+
     if (not istr): return
-    
-    if verbose:
-        print('\n{}\n\n'.format(stype))
-        
+
     # remove features containing string from dataset
-    # maybe extract before doing that
     removeFeatures(dataset,lstr,verbose,time)
-    
+
     if time:
         end = timer()
-    
-    stype = dataset.dtypes
-    
+
     if verbose:
+        stype = dataset.dtypes
         print('\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(stype))
         if (not time): input('\n...')
-    
+
     if time: print('\ncleanString\n[TIME]: %.3f' % (end-start),'seconds')
-    
+
     return
 # remove single-value-features from given df, since these contain no informations
 def cleanSingleValue(dataset,verbose=False,time=False):
@@ -423,14 +468,15 @@ def cleanSingleValue(dataset,verbose=False,time=False):
     
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
-    print('\n>>> searching single-unique-value features...')
-    
+    print('\n>>> searching unique-value features...')
+
     ldrop = []
-    # contains number of unique values contained (per feature)
+    # summary for non-unique values
     counts = dataset.nunique()
+
     # list of features contained in dataset
     labels = dataset.columns.values
-    
+
     # iterates over all features
     for i in range(0,len(counts)):
         # check for features containing a single unique value
@@ -438,23 +484,20 @@ def cleanSingleValue(dataset,verbose=False,time=False):
             # add such feature to droplist
             ldrop.append(labels[i])
 
-    # if single-value features in list, drop from dataset
-    if ldrop: 
-        if verbose: print('\n{}\n\n'.format(counts))
+    if ldrop: # if single-value features exists
+        if verbose: print('\n{}\n'.format(counts))
         removeFeatures(dataset,ldrop,verbose,time)
-    else: return
-    
-    if time: end = timer()
-        
-    if verbose:
-        counts = dataset.nunique()
-        print('\n\n'+20*'~'+' cleaned '+20*'~')
-        print('\n{}'.format(counts))
-        if (not time): input('\n...') 
-    
-    if time: print('\ncleanSingleValue\n[TIME]: %.3f' % (end-start),'seconds')
-    
-    return
+        if verbose:
+            counts = dataset.nunique()
+            print('\n\n'+20*'~'+' cleaned '+20*'~')
+            print('\n{}'.format(counts))
+        if time: print('\ncleanSingleValue\n[TIME]: %.3f' % (end-start),'seconds')
+        return
+
+    else: 
+        if time: end = timer()
+        print('\ncleanSingleValue\n[TIME]: %.3f' % (end-start),'seconds')
+        return
 
 # REMOVE/EXTRACT FEATURES
 # save features of given df from given list, drop everything else
@@ -513,24 +556,21 @@ def saveFeatures(dataset,features,verbose=False,time=False):
     return
 # remove given feature from given df
 def removeFeatures(dataset,feature,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     # informational output
-    print('>>> removing features...')
-    
+    for i in range(0,len(feature)):
+        print('>>> removing feature: {}'.format(feature[i]))
+
     # drop features to remove directly from dataset
     dataset.drop(axis=1,columns=feature,inplace=True)
-    
-    if time: end = timer()
-    
-    if verbose: 
-        print('\n\t{}'.format(feature))
-        if (not time): input('\n...')
-        
-    if time: print('\nremoveFeatures\n[TIME]: %.3f' % (end-start),'seconds')
-        
-    return    
+
+    if time:
+        end = timer()
+        print('\nremoveFeatures\n[TIME]: %.3f' % (end-start),'seconds')
+
+    return
 # copy given feature into new dataframe for further manipulation, without affecting original df
 def extractFeatures(dataset,feature,verbose=False,time=False):
     
@@ -554,54 +594,75 @@ def extractFeatures(dataset,feature,verbose=False,time=False):
 # REMOVE/MANIPULATE CELLS 
 # manipulate content of given cells from given dataframe-feature
 def writeCells(dataset,feature,cells,content,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     # informational output
     if verbose:
         print('\n'+10*'~'+' writeCells '+10*'~')
         print('\nvalue: {}'.format(content))
         print('cells: {}'.format(len(cells)))
         print('\n>>> replace cells content with {}...'.format(content))
-    
+
     # replace given cells with given content
     for j in cells:
         dataset.at[j,feature] = content
-    
+
     if time: 
         end = timer()
         print('\nwriteCells\n[TIME]: %.3f' % (end-start),'seconds')
-    
+
+    return
+# TODO: implement replacements via numpy.vectorize
+def writeCellsVectorized(dataset,feature,cells,content,verbose=False,time=False):
+
+    if time: start = timer()
+
+    # informational output
+    if verbose:
+        print('\n'+10*'~'+' writeCells '+10*'~')
+        print('\nvalue: {}'.format(content))
+        print('cells: {}'.format(len(cells)))
+        print('\n>>> replace cells content with {}...'.format(content))
+
+    # replace given cells with given content
+    for j in cells:
+        dataset.at[j,feature] = content
+
+    if time: 
+        end = timer()
+        print('\nwriteCells\n[TIME]: %.3f' % (end-start),'seconds')
+
     return
 # remove given cells from a copy of the given dataframe feature, return the manipulated copy for further calculations
 def removeCells(dataset,feature,cells,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     # informational output
     if verbose:
         print('\n'+10*'~'+' removeCells '+10*'~')
         print('\n>>> removing cells from features...')
-    
+
     # copy extracted features into new dataframe
     tmp = extractFeatures(dataset,feature,verbose)
-    
+
     if verbose:
         print('\n'+10*'~'+' removeCells, feature: {}, cells: {} '.format(feature,len(cells))+10*'~')
         print('\n{}'.format(tmp.describe()))
-    
+
     # drop cells from df copy containing given feature
     tmp.drop(axis=0,index=cells,inplace=True)
-    
+
     if time: end = timer()
-    
+
     if verbose:
         print('\n'+10*'~'+' removeCells, result '+10*'~')
         print('\n{}'.format(tmp.describe()))
         if (not time): input('\n...')
-     
-    if time: print('\nremoveCells\n[TIME]: %.3f' % (end-start),'seconds')
     
+    if time: print('\nremoveCells\n[TIME]: %.3f' % (end-start),'seconds')
+
     # return manipulated copy of the feature for further processing
     return tmp
 
@@ -618,37 +679,47 @@ if __name__ == '__main__':
     verbose = args.verbose
     superverbose = args.superverbose
     if superverbose: verbose = True
-    time = args.time  
+    time = args.time
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
+
+    export = args.export
+
     rpi = args.rpi
     windows = args.windows
     osx = args.osx
     linux = args.linux
     findex = args.file[0]
 
-    if time:
-        start = timer()
-        # save epochtime
-        t = epochtime.time()
+    if time: 
+        start = timer() # runtime
+        t = epochtime.time() # epochtime
         print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
-        # write timestamp to csv
-        with open('/home/noooberino/timestamps.csv','a') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=",")
-            csvwriter.writerow([t,'Classification.py','start'])
 
+        if export: # write timestamp to csv
+            if os.path.isfile(timecsv):
+                with open(timecsv,'a') as csvfile:
+                    csvwriter = csv.writer(csvfile, delimiter=",")
+                    csvwriter.writerow([t,'Preprocessing.py','start'])
+            else:
+                with open(timecsv,'w') as csvfile:
+                    csvwriter = csv.writer(csvfile, delimiter=",")
+                    csvwriter.writerow([t,'Preprocessing.py','start'])
 
     # FILEPATHS
     # path to CSV files based on OS choice
     if windows:
         fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
         ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+        chunksize = None
     elif linux:
         fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
         ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
+        chunksize = None
     elif rpi:
         fpath = r"/home/dietpi/BSc-e1027075/rpi/flow-sampled"
         ppath = r"/home/dietpi/BSc-e1027075/rpi/packet-sampled"
+        chunksize = 10**3
     # filenames of sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     # set path to sampeld CSV based on optional arguments and OS
@@ -671,7 +742,7 @@ if __name__ == '__main__':
 
 
     # IMPORT
-    dataset = importCSV(path,None,verbose)
+    dataset = importCSV(path,None,verbose,chunksize)
     # output basic dataset informations
     printdata(dataset,'original',verbose)
 
@@ -698,5 +769,16 @@ if __name__ == '__main__':
     filesave = str(savepath)+"/"+str(filenames[findex])+"_processed.csv"
     print('\n>>> save preprocessed data to CSV: {}'.format(filesave))
     dataset.to_csv(str(filesave), index = False,encoding='utf-8-sig')
+
+    if time:
+        end = timer()
+        t = epochtime.time()
+        print('\nPreprocessing.py\n[EPOCH, end]: {}'.format(t))
+        print('[RUNTIME]: %.3f' % (end-start),'seconds')
+        
+        if export: # write timestamps to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'Preprocessing.py','end'])
 
     exit()

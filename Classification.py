@@ -56,7 +56,7 @@ parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file t
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
-parser.add_argument('-e','--export', action='store_true', help='export results to file')
+parser.add_argument('-e','--export', action='store_true', help='export timestamps & results')
 parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-d','--data',action='store_true', help='import dataXtrain, Ytrain, Xtest, Ytest')
 parser.add_argument('-s','--save', action='store_true', help='export model and testdata for further classification')
@@ -91,9 +91,6 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
 
     # if no chunksize is given, read CSV in one step, otherwise read in chunks
     if chunksize == None:
-        # informational output
-        print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
-        print('\n>>> importing CSV: {}'.format(csvpath))
         csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
     # chunksize determines numbers of rows per chunk
     else:
@@ -392,7 +389,7 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
     
     return Xpca
 # make predicitons
-def makePredictions(model,Xtest,Ytest):
+def makePredictions(model,Xtest,Ytest,export):
 
     if time: start = timer()
     print('\n\n'+40*'~'+' FUNCTION: makePredictions '+40*'~') # informational output
@@ -550,10 +547,15 @@ if __name__ == '__main__':
         t = epochtime.time() # epochtime
         print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
 
-        # write timestamp to csv
-        with open(timecsv,'a') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=",")
-            csvwriter.writerow([t,'Classification.py','start'])
+        if export: # write timestamp to csv
+            if os.path.isfile(timecsv):
+                with open(timecsv,'a') as csvfile:
+                    csvwriter = csv.writer(csvfile, delimiter=",")
+                    csvwriter.writerow([t,'Classification.py','start'])
+            else:
+                with open(timecsv,'w') as csvfile:
+                    csvwriter = csv.writer(csvfile, delimiter=",")
+                    csvwriter.writerow([t,'Classification.py','start'])
 
     # PATHS & VARIABLES, based on OS choice
     if windows: 
@@ -614,15 +616,15 @@ if __name__ == '__main__':
     # IMPORT: import already processed data
     if load or data:
         # importing Xtest, Ytest
-        print('\n>>> importing Xtest: {}'.format(xtf))
+        print('\n>>> importing Xtest...')
         Xtest = np.load(xtf)
-        print('>>> importing Ytest: {}'.format(ytf))
+        print('>>> importing Ytest:...')
         Ytest = np.load(ytf)
         # import Xtrain, Ytrain if no model is imported
         if data:
-            print('>>> importing Xtrain: {}'.format(xtrf))
+            print('>>> importing Xtrain...')
             Xtrain = np.load(xtrf)
-            print('>>> importing Ytrain: {}'.format(ytrf))
+            print('>>> importing Ytrain...')
             Ytrain = np.load(ytrf)
 
     # PROCESS: split, scale & PCA
@@ -660,28 +662,30 @@ if __name__ == '__main__':
         np.save(ytrf,Ytrain)
 
     # CLASSIFICATION
-    if (model or load): # load model & make predictions
-        print('>>> loading model: {}'.format(modelfile))
+    if (model or load): # load model
+        print('>>> importing model...')
         model = joblib.load(modelfile) # load model
-        makePredictions(model,Xtest,Ytest) # make predictions
-    else: # fit model & make predictions
+
+    else: # fit model
         model = RandomForestClassifier()
         print('>>> fitting model with {}...'.format(model))
         model = model.fit(Xtrain,Ytrain)
         if save: # save model via joblib
             print('\n>>> save model: {}'.format(modelfile))
             joblib.dump(model,modelfile)
-        makePredictions(model,Xtest,Ytest)
+
+    makePredictions(model,Xtest,Ytest,export)
 
     if time:
         end = timer()
         t = epochtime.time()
         print('\nClassification.py\n[EPOCH, end]: {}'.format(t))
         print('[RUNTIME]: %.3f' % (end-start),'seconds')
-        # write timestamp to csv
-        with open(timecsv,'a') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=",")
-            csvwriter.writerow([t,'Classification.py','end'])
+        
+        if export: # write timestamps to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'Classification.py','end'])
 
     exit()
 

@@ -2,18 +2,16 @@
 
 
 ## INPROGRESS:
-
-- take care when using --time to check if /logs/time.csv is already existing to open with 'a' append, or with 'w' write
-- restructure Classification.py main depending on argument choices...
-	- saving results to file not implemented on -l loading right now
-
+- improve speed for NaN replacement
+- better handling for time.csv creation (writing or appending, based on fresh script start or execution within Control.py)
 
 
 
 ## TODO:
 
 #### NEXT:
-- tweak importCSV on all necessary scripts to support chunksize
+- use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)
+- flowStartMilliseconds: remove feature direct after labeling
 - pyplot import only on non-rpi devices?
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
 
@@ -24,7 +22,7 @@
 - improve filename generation, including working-directory instead of hardcoded /home/<user>/<project-folder>, maybe read folder-content, based on that create dictionary with filenames without extensions, use that and wd as base to forge filepaths and filenames 
   
 #### IMPROVEMENTS:
-- better handling for time.csv creation (writing or appending, based on fresh script start or execution within Control.py)
+
 - create config file to import, containing all necessary file- and folderpaths, paths to executable tools... and import this file instead of making definitions inside every script
 - choose another method to load/save data, model & results
 - improve FlowSampling method (function convertToList), now using actual lists instead of np array for iteration, etc..
@@ -35,6 +33,10 @@
 
 
 ## DONE:
+- tweak importCSV in Preprocessing.py to support chunksize on rpi
+- restructure Classification.py main depending on argument choices...
+	- saving results to file not implemented on -l loading right now
+- Classification.py: take care when using --time to check if /logs/time.csv is already existing to open with 'a' append, or with 'w' write
 - add command to only import model, but preprocess data on rpi via -m --model & to import test data only -d, --data
 - tweak Classification.py to read CSV line-by-line into pandas dataframe on rpi (chunksize)
 - switch to saving/loading model via joblib
