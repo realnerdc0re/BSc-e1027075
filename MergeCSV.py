@@ -12,11 +12,11 @@ import os
 import sys
 import pandas as pd
 
+wd = os.getcwd()
 
 # directories
-#rpi
-flowfolder = '/home/dietpi/BSc-e1027075/rpi/flow-sampled'
-packetfolder = '/home/dietpi/BSc-e1027075/rpi/packet-sampled'
+flowfolder = wd+'/csv/flow-sampled'
+packetfolder = wd+'/csv/packet-sampled'
 
 
 # ARGUMENT PARSING

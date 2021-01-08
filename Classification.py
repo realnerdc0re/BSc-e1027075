@@ -85,21 +85,31 @@ def resetpoptions():
     pd.reset_option('display.precision', 6)
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
+
+    if time: start = timer()
+
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: importCSV (chunksize: {}) '.format(chunksize)+40*'~')
     print('\n>>> importing CSV: {}'.format(csvpath))
+
+    csvdata = pd.DataFrame() # initialise empty dataframe
 
     # if no chunksize is given, read CSV in one step, otherwise read in chunks
     if chunksize == None:
         csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
     # chunksize determines numbers of rows per chunk
     else:
-        chunk = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize)
-        csvdata = pd.concat(chunk) # concatenate chunks into single dataframe
+        for chunk in read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize):
+        csvdata = csvdata.append(chunk)
 
     if verbose:
         print('\n{}\n'.format(csvdata.groupby('Label').size()))
         #print('\n{}'.format(csvdata.groupby('Attack').size()))
+
+    if time: 
+        end = timer()
+        print('\nimportCSV\n[TIME]: %.3f' % (end-start),'seconds')
+
     return csvdata
 # dataset ext2numerical
 def ext2num(dataset,mapping,verbose):
@@ -140,11 +150,11 @@ def verboseprint(dataset):
 def printdata(dataset,heading,verbose=False):
     print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
     print('\n{}'.format(dataset))
-    #if (not time): input('\n...')
-    if not rpi: print('\n{}'.format(dataset.describe())) # skip for rpi
-    if verbose and (not time): input('\n...')
-    if verbose:
-        verboseprint(dataset)
+
+    if not rpi: print('\n{}\n'.format(dataset.describe())) # skip for rpi
+
+    if verbose: verboseprint(dataset)
+
     return
 # dataset description and grouped summary for 'Label'
 def summary(dataset):

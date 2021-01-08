@@ -82,16 +82,23 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
     if time: start = timer()
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
+    print('\n\n'+40*'~'+' FUNCTION: importCSV (chunksize: {}) '.format(chunksize)+40*'~')
     print('\n>>> importing CSV: {}'.format(csvpath))
+
+    chunksize = 10**9
+
+    csvdata = pd.DataFrame() # initialise empty dataframe
 
     # if no chunksize is given, read CSV in one step, otherwise read in chunks
     if chunksize == None:
         csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
     # chunksize determines numbers of rows per chunk
     else:
-        chunk = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize)
-        csvdata = pd.concat(chunk) # concatenate chunks into single dataframe
+        for chunk in read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize):
+            csvdata = csvdata.append(chunk)
+
+    printdata(csvdata,'chunked')
+    input('blub')
 
     if verbose:
         print('\n{}'.format(csvdata.groupby('Label').size()))
@@ -136,17 +143,15 @@ def ext2num(dataset,mapping,verbose):
 def verboseprint(dataset):
     print('\n{}\n'.format(dataset.columns))
     print('\n{}'.format(dataset.info()))
-    if (not time): input('\n...')
     return
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
     print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
     print('\n{}\n'.format(dataset))
-    #if (not time): input('\n...')
-    print('\n{}\n'.format(dataset.describe()))
-    if verbose and (not time): input('\n...')
-    if verbose:
-        verboseprint(dataset)
+    if not rpi: print('\n{}\n'.format(dataset.describe())) # skip for rpi
+
+    if verbose: verboseprint(dataset)
+
     return
 # dataset description and grouped summary for 'Label'
 def summary(dataset):
