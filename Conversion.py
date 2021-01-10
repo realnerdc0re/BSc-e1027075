@@ -54,6 +54,7 @@ parser.add_argument('--superverbose', action='store_true', help='output addition
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
 parser.add_argument('-e','--export', action='store_true', help='export timestamps')
 parser.add_argument('-s','--save', action='store_true', help='save CSV for further processing')
+parser.add_argument('-l','--load', action='store_true', help='load CSV')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
@@ -86,12 +87,8 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
         for chunk in read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize):
             csvdata = csvdata.append(chunk)
 
-    printdata(csvdata,'imported')
-
-    if verbose:
-        print('\n{}'.format(csvdata.groupby('Label').size()))
-        print('\n{}'.format(csvdata.groupby('Attack').size()))
-        if (not time): input('\n...')
+    printdata(csvdata,'imported',True)
+    if (not time): input('\n...')
 
     if time: 
         end = timer()
@@ -126,38 +123,39 @@ def conversion(dataset):
     if time: start = timer()
 
     print('\n\n'+40*'~'+' FUNCTION: conversion '+40*'~')
-    features = list(dataset)
-    types = dataset.dtypes
+    features = list(dataset) # get feature labels
+    types = dataset.dtypes # get datatype per feature
+    maxValues = dataset.max() # get maximum values per feature
 
-    print('\n'+20*'~'+' datatypes: original '+20*'~')
+    print('\n'+20*'~'+' original '+20*'~')
     print('\n{}\n'.format(types))
+    #print('\n{}\n'.format(maxValues))
     if (not time): input('...')
 
-    # store index numbers of features in list
-    inttypes = []
-    floattypes = []
+    dicttype = {} # store index numbers and target-datatypes
 
-    # store index numbers and converting datatype into dictionary
-    intdict = {}
-    floatdict = {}
-    dicttype = {}
-
-    # determine int64/float64 features
-    # create dictionary for .astype usage afterwards
-    print('>>> search for 64bit numerical values...')
+    print('>>> searching for 64bit numerical values...')
     i = -1
-    for x in types:
+    for x in types: # determine int64/float64 features
         i = i + 1
-        if x == 'int64':
-            dicttype[features[i]] = 'int32'
-        elif x == 'float64':
-            dicttype[features[i]] = 'float32'
+        if (x == 'int64'):
+            if (-(2**8)/2 <= maxValues[i] <= (2**8)/2):
+                dicttype[features[i]] = 'int8'
+            elif (-(2**16)/2 <= maxValues[i] <= (2**16)/2):
+                dicttype[features[i]] = 'int16'
+            elif (-(2**32)/2 <= maxValues[i] <= (2**32)/2):
+                dicttype[features[i]] = 'int32'
+        elif (x == 'float64'):
+            if (-(2**16)/2 <= maxValues[i] <= (2**16)/2):
+                dicttype[features[i]] = 'float16'
+            elif (-(2**32)/2 <= maxValues[i] <= (2**32)/2):
+                dicttype[features[i]] = 'float32'
 
-    print('>>> convert 64bit numerical values into 32bit...')
+    print('>>> converting values...')
     dataset = dataset.astype(dicttype,copy=False)
 
     types = dataset.dtypes
-    print('\n'+20*'~'+' datatypes: converted '+20*'~')
+    print('\n'+20*'~'+' converted '+20*'~')
     print('\n{}\n'.format(types))
     if (not time): input('...')
 
@@ -168,6 +166,7 @@ def conversion(dataset):
         print('\nconversion\n[TIME]: %.3f' % (end-start),'seconds')
 
     return
+
 
 
 if __name__ == '__main__':
@@ -185,6 +184,7 @@ if __name__ == '__main__':
 
     export = args.export
     save = args.save
+    load = args.load
 
     rpi = args.rpi
     windows = args.windows
@@ -220,7 +220,7 @@ if __name__ == '__main__':
     elif rpi:
         fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
         ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
-        chunksize = 10**3
+        chunksize = 10**5
     # filenames of sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     # set path to sampeld CSV based on optional arguments and OS
@@ -241,19 +241,10 @@ if __name__ == '__main__':
     if (not time): input('\n...')
 
     # IMPORT
-    #dataset = importCSV('/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/processed/Friday-WorkingHours_converted.csv',None,verbose,chunksize)
     dataset = importCSV(path,None,verbose,chunksize)
-    printdata(dataset,'original',verbose)
 
     # CONVERSION
     conversion(dataset)
-
-    # SAVE
-    # save converted dtypes to CSV
-    if save:
-        filesave = str(savepath)+"/"+str(filenames[findex])+"_converted.csv"
-        print('\n>>> save preprocessed data to CSV: {}'.format(filesave))
-        dataset.to_csv(str(filesave), index = False,encoding='utf-8-sig')
 
     if time:
         end = timer()
