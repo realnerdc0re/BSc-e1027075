@@ -26,13 +26,12 @@ def monitor():
     # get all process IDs & total cpu usage of the system
     processids = psutil.pids()
     cputotalvalue = psutil.cpu_percent(interval=1)
-    
+
     # get process ID & cpu usage of the current process
     processid = os.getpid()
     processidinfos = psutil.Process(processid)
     cpupidvalue = processidinfos.cpu_percent(interval=1)
-    
-    
+
     print('\n\n'+40*'~'+' SCRIPT: Monitoring.py '+40*'~')
     print('\nCPU (total): {}'.format(cputotalvalue))
     print('\n\nPIDs: {}'.format(processids))

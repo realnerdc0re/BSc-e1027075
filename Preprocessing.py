@@ -85,8 +85,6 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
     print('\n\n'+40*'~'+' FUNCTION: importCSV (chunksize: {}) '.format(chunksize)+40*'~')
     print('\n>>> importing CSV: {}'.format(csvpath))
 
-    chunksize = 10**9
-
     csvdata = pd.DataFrame() # initialise empty dataframe
 
     # if no chunksize is given, read CSV in one step, otherwise read in chunks
@@ -97,8 +95,7 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
         for chunk in read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize):
             csvdata = csvdata.append(chunk)
 
-    printdata(csvdata,'chunked')
-    input('blub')
+    printdata(csvdata,'imported')
 
     if verbose:
         print('\n{}'.format(csvdata.groupby('Label').size()))
@@ -172,28 +169,28 @@ def createRandom(dataset,feature,verbose=False,time=False):
     return
 # clean given df from any infinite values by replacement
 def cleanInf(dataset,mode,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     modename = {0: 'value', 1: 'mean', 2: 'min', 3: 'max', 4: 'std'}
-    
+
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanInf '+40*'~')
     print('\n>>> searching Infs...')
-    
+
     # create pseudo-random values to a feature, add inf value for testing purpose
     #createRandom(dataset,'Random',False,False)
     #dataset.at[3,'Random'] = float("inf")
-    
+
     # get summary for maximum values
     vmax = dataset.max(numeric_only=True)
-    
+
     # get features (index & label) containing Infinite values
     # feature (column)-index
     iinf = []
     # feature (column)-label
     linf = []
-    
+
     i = -1
     for x in vmax:
         i=i+1
@@ -201,13 +198,13 @@ def cleanInf(dataset,mode,verbose=False,time=False):
         if(x == float('inf')):
             iinf.append(i)
             linf.append(vmax.index[i])
-    
+
     # get row-number for Infinite values
     # initialise empty list
     iindex=[]   
     # empty list to fill with numpy arrays containing the row numbers for infinite values
     infRows=[]
-    
+
     '''
     # variable i to adress numpy elements
     i = -1
@@ -226,7 +223,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
         # reset index list
         iindex=[]
     '''
-    
+
     # replace cells containing Infinite values with e.g. mean values of that feature or whatever is necessary
     if iinf:
         
@@ -246,17 +243,17 @@ def cleanInf(dataset,mode,verbose=False,time=False):
             infRows.append(tmp)
             # reset index list
             iindex=[]
-        
+
         if verbose: 
             print('\n{}'.format(vmax))
             if (not time): input('\n...')
-            
+
         i = -1
         # cycle through features and replace Infinite values
         for column in linf:    
             i = i+1
             Infcount = len(infRows[i])
-            
+
             # create series with removed Inf values
             tmp = removeCells(dataset,column,infRows[i],False,False)
             # calculate specific feature values for further replacement of Infs
@@ -264,48 +261,48 @@ def cleanInf(dataset,mode,verbose=False,time=False):
             tmax = tmp.max()
             tmin = tmp.min()
             tstd = tmp.std()
-            
+
             if verbose:
                 print('\n'+20*'~'+' replacement: {} '.format(column)+20*'~')
                 print('\nmean: {}\nstd: {}\nmin: {}\nmax: {}'.format(tmean,tstd,tmin,tmax))
                 print('\nmode: {}'.format(modename[mode]))
                 print('cells: {}'.format(Infcount))
-            
+
             # replacement-modes
             if mode == 0: value = 0
             elif mode == 1: value = tmean
             elif mode == 2: value = tmin
             elif mode == 3: value = tmax
             elif mode == 4: value = tstd
-            
+
             print('\n>>> replacing Infinite values: {}'.format(column))
             writeCells(dataset,column,infRows[i],value,verbose,False)
+
     else: return
-    
-    
+
     if verbose:
         vmax = dataset.max(numeric_only=True)
         print('\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(vmax))
         if (not time): input('\n...')
-    
+
     if time: 
         end = timer()
         print('\ncleanInf\n[TIME]: %.3f' % (end-start),'seconds')
-  
+
     # return whatever needed for method to clean specific cells or drop features    
     return
 # clean given df from any NaN values by replacement
 def cleanNaN_original(dataset,mode,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     modename = {0: 'value', 1: 'mean', 2: 'min', 3: 'max', 4: 'std'}
-    
+
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
     print('\n>>> searching NaNs...')
-    
+
     # summary for NaN values
     vNaN = dataset.isnull().sum()
 
@@ -321,20 +318,20 @@ def cleanNaN_original(dataset,mode,verbose=False,time=False):
         if(x > 0):
             iNaN.append(i)
             lNaN.append(vNaN.index[i])
-    
+
     if (not iNaN): return
-    
+
     # get row-number for NaN values
     # initialise empty lists 
     NaNindex=[]
     # empty list to fill with numpy arrays containing the row numbers for infinite values
     NaNRows=[]
     NaNtable=[]
-    
+
     # output table containing features with NaN counts
     if verbose: 
         print('\n{}'.format(vNaN))
-            
+
     # cycles through features containing NaN values
     # variable i to adress index-elements
     i = -1
@@ -342,20 +339,19 @@ def cleanNaN_original(dataset,mode,verbose=False,time=False):
         i = i+1
         # iterates through all rows of columns containing NaNs, returns table with 'True' or 'False' per row per feature
         NaNtable = dataset[column].isnull()
-        
+
         # cycling through NaNtable, identifying features containing NaNs
         for i in range(0,dataset.shape[0]):
             if NaNtable[i] == True:
                 NaNindex.append(i)
-        
-                
+
         # create temporary array from index list
         tmp = np.array(NaNindex)
         NaNRows.append(tmp)
         # reset index-list before next iteration
         NaNindex=[]
     if verbose and (not time): input('\n...') 
-    
+
     # replace cells containing NaN values with e.g. mean values of that feature
     if iNaN:
         i=-1
@@ -363,7 +359,7 @@ def cleanNaN_original(dataset,mode,verbose=False,time=False):
             i = i+1
             # get total number of contained NaNs
             NaNcount = len(NaNRows[i])
-            
+
             # create series with removed NaN values
             tmp = removeCells(dataset,column,NaNRows[i],False,False)
             # calculate specific feature values for further replacement of NaNs
@@ -371,21 +367,20 @@ def cleanNaN_original(dataset,mode,verbose=False,time=False):
             tmax = tmp.max()
             tmin = tmp.min()
             tstd = tmp.std()
-            
+
             if verbose:
                 print('\n'+20*'~'+' replacement: {} '.format(column)+20*'~')
                 print('\nmean: {}\nstd: {}\nmin: {}\nmax: {}'.format(tmean,tstd,tmin,tmax))
-            
                 print('\nmode: {}'.format(modename[mode]))
                 print('cells: {}'.format(NaNcount))
-            
+
             # replacement-modes
             if mode == 0: value = 0
             elif mode == 1: value = tmean
             elif mode == 2: value = tmin
             elif mode == 3: value = tmax
             elif mode == 4: value = tstd
-                
+
             print('\n>>> replacing NaNs: {}'.format(column))
             writeCells(dataset,column,NaNRows[i],value,verbose,False)
 
@@ -395,12 +390,10 @@ def cleanNaN_original(dataset,mode,verbose=False,time=False):
         print('\n\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(vNaN))
 
-        if (not time): input('\n...')
+    if time: 
+        end = timer()
+        print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
 
-    if time: end = timer()
-    
-    if time: print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
-      
     return
 def cleanNaN(dataset,replacement,verbose=False,time=False):
 
@@ -476,9 +469,9 @@ def cleanString(dataset,verbose=False,time=False):
     return
 # remove single-value-features from given df, since these contain no informations
 def cleanSingleValue(dataset,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
     print('\n>>> searching unique-value features...')
@@ -499,73 +492,73 @@ def cleanSingleValue(dataset,verbose=False,time=False):
 
     if ldrop: # if single-value features exists
         if verbose: print('\n{}\n'.format(counts))
+
         removeFeatures(dataset,ldrop,verbose,time)
+
         if verbose:
             counts = dataset.nunique()
             print('\n\n'+20*'~'+' cleaned '+20*'~')
             print('\n{}'.format(counts))
-        if time: print('\ncleanSingleValue\n[TIME]: %.3f' % (end-start),'seconds')
-        return
 
-    else: 
-        if time: end = timer()
+    if time: 
+        end = timer()
         print('\ncleanSingleValue\n[TIME]: %.3f' % (end-start),'seconds')
-        return
+
+    return
 
 # REMOVE/EXTRACT FEATURES
 # save features of given df from given list, drop everything else
 def saveFeatures(dataset,features,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     # informational output
     print('\n>>> saving features...')
     print('\n\t{}'.format(features))
     
     # list of all features from given dataset
     ldrop = dataset.columns.values
-    
+
     # index numbers for features
     index = []
     isave = []
     idrop = [i for i in range(0,len(ldrop))]
-    
+
     for i in range(0,len(ldrop)):
         for j in features:
             if j == ldrop.item(i):
                 index.append(i)
-    
+
     if (not index):
         print('[WARNING] features not found. Abort.')
         return
         
-    
+
     # create list of indexes from features to save
     isave = index.copy()
     isave.reverse()
-    
+
     # remove features to save from drop (labels & index)
     for x in isave:
         ldrop = np.delete(ldrop, x)
         idrop = np.delete(idrop, x)
     # drop features from dataset
     dataset.drop(axis=1,labels=ldrop,inplace=True)    
-    
+
     if time: end = timer()
-    
+
     if verbose:
         print('\n'+10*'~'+' save '+10*'~')
         print('\n{}'.format(features))
         print('\n{}'.format(len(features)))
-
         print('\n'+10*'~'+' remove '+10*'~')
         print('\n{}'.format(ldrop))
         print('\n{}'.format(len(ldrop)))
-        
+
         if (not time): input('\n...')
-    
+
     if time: print('\nsaveFeatures\n[TIME]: %.3f' % (end-start),'seconds')        
-        
+
     return
 # remove given feature from given df
 def removeFeatures(dataset,feature,verbose=False,time=False):
@@ -586,21 +579,21 @@ def removeFeatures(dataset,feature,verbose=False,time=False):
     return
 # copy given feature into new dataframe for further manipulation, without affecting original df
 def extractFeatures(dataset,feature,verbose=False,time=False):
-    
+
     if time: start = timer()
-    
+
     # informational output
     if verbose:
         print('\n>>> extracting features...')
         print('\n\t{}'.format(feature))
-    
+
     # create a new df containing given feature as copy of the original df
     new = dataset[feature].copy()
-    
+
     if time: 
         end = timer()
         print('\nextractFeatures\n[TIME]: %.3f' % (end-start),'seconds')
-    
+
     # return extracted features for further processing
     return new
 
@@ -788,7 +781,7 @@ if __name__ == '__main__':
         t = epochtime.time()
         print('\nPreprocessing.py\n[EPOCH, end]: {}'.format(t))
         print('[RUNTIME]: %.3f' % (end-start),'seconds')
-        
+
         if export: # write timestamps to csv
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")

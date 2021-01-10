@@ -297,18 +297,17 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
 # MinMax Scaler (proportional scaling) using numpy arrays
 def scalingArray(data,verbose=False,time=False):
     scaler = MinMaxScaler()
-    
+
     # X_train
     X = data[0]
-    
+
     # fit and transform
     X_scaled = scaler.fit_transform(X)
     print(X_scaled)
     print(np.max(X_scaled))
     print(np.min(X_scaled))
     if (not time): input('...')
-    
-    
+
     return
 # Standard (z-Score) Scaler (proportional scaling) using dataframe
 def scalingDataframe(datasets,features,verbose=False,time=False):

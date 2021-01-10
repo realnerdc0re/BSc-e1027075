@@ -3,8 +3,9 @@
 
 ## INPROGRESS:
 
+- change datatypes from int64/float64 to int32/float32 to save memory directly after sampling? (df.astype('int32') e.g.) - astype maybe has issues with features containing NaNs or Infs, check on specific dataset!
 - read CSV line-by-line: process data per chunk on rpi (https://www.codementor.io/@guidotournois/4-strategies-to-deal-with-large-datasets-using-pandas-qdw3an95k?utm_campaign=Data_Elixir&utm_medium=social) - create new script for RPI usage
-- change datatypes from int64/float64 to int32/float32 to save memory? (df.astype('int32') e.g.)
+- change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement)
 
 
 
