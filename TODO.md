@@ -4,6 +4,7 @@
 ## INPROGRESS:
 
 - change datatypes from int64/float64 to int32/16/8 or float32/float16 to save memory directly after sampling, include check to not convert features that require int64 (nonetheless, every imported CSV is imported with 64bit, so try to avoid unnecessary save/loads on rpi)
+- try different approach for the merged CSV on rpi: instead of merging all sampled CSVs into one large single CSV, read_csv workdays, preprocess those (including reducing memory size float16/32, int8/16/32, cleaning,...) and merge the preprocessed data right before doing the RandomForest classification
 - read CSV line-by-line: process data per chunk on rpi (https://www.codementor.io/@guidotournois/4-strategies-to-deal-with-large-datasets-using-pandas-qdw3an95k?utm_campaign=Data_Elixir&utm_medium=social) - create new script for RPI usage
 - change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement)
 
