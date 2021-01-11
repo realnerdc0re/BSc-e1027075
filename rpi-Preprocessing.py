@@ -526,9 +526,16 @@ if __name__ == '__main__':
         dataset = importCSV(path,None,verbose,chunksize)
     else:
         dataset = pd.DataFrame()
+        print('>>> importing CSV in chunks of {} lines...'.format(chunksize))
         # read csv in chunks
         for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
-            chunk = conversion(chunk,False) # convert to smaller datatypes for saving memory
+            chunk = conversion(chunk,False) # convert content into smaller datatypes
+
+
+
+            # INSERT PRE_PROCESSING HERE
+
+
             dataset = dataset.append(chunk)
 
 
