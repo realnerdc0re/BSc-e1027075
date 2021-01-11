@@ -48,6 +48,7 @@ import argparse
 parser = argparse.ArgumentParser(description='script for preprocessing labeled CSVs')
 # positional arguments
 parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
+parser.add_argument('chunk', metavar='chunk', type=int,nargs=1,help='choose numerical value as chunksize for CSV import')
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
@@ -467,6 +468,9 @@ if __name__ == '__main__':
     linux = args.linux
     findex = args.file[0]
 
+    chunksize = args.chunk[0]
+    if chunksize == 0: chunksize = None
+
     if time: 
         start = timer() # runtime
         t = epochtime.time() # epochtime
@@ -491,11 +495,11 @@ if __name__ == '__main__':
     elif linux:
         fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
         ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-        chunksize = None
+        #chunksize = None
     elif rpi:
         fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
         ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
-        chunksize = 10**3
+        #chunksize = 10**3
     # filenames of sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     # set path to sampeld CSV based on optional arguments and OS
@@ -517,21 +521,14 @@ if __name__ == '__main__':
     if (not time): input('\n...')
 
 
-    # IMPORT
-    #dataset = importCSV(path,None,verbose,chunksize)
-    dataset = pd.DataFrame()
-    # read csv in chunks
-    for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
-
+    # IMPORT depending on chosen chunksize
+    if chunksize == None:
+        dataset = importCSV(path,None,verbose,chunksize)
+    else:
+        dataset = pd.DataFrame()
+        # read csv in chunks
+        for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
             chunk = conversion(chunk,False) # convert to smaller datatypes for saving memory
-
-
-
-
-
-
-
-
             dataset = dataset.append(chunk)
 
 
