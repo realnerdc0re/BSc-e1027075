@@ -100,7 +100,7 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
     # chunksize determines numbers of rows per chunk
     else:
         for chunk in read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize):
-        csvdata = csvdata.append(chunk)
+            csvdata = csvdata.append(chunk)
 
     if verbose:
         print('\n{}\n'.format(csvdata.groupby('Label').size()))
