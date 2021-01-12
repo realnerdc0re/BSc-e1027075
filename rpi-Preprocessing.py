@@ -892,7 +892,13 @@ if __name__ == '__main__':
             # get conditions for next loop-iteration check
             n -= size
             size = min(batchsize, n)
+            gc.collect()
+
         del Xtrain # delete dataframe after scaling is done
+
+        gc.collect()
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after Xtrain fit: {}MB\n'.format(int(memoryUse)))
         '''
 
 
@@ -916,6 +922,8 @@ if __name__ == '__main__':
             # get conditions for next loop-iteration check
             n -= size
             size = min(batchsize, n)
+            gc.collect()
+
         del Xtest # delete dataframe after scaling is done
 
         gc.collect()
