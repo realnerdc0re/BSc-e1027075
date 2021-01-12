@@ -889,7 +889,7 @@ if __name__ == '__main__':
             # get conditions for next loop-iteration check
             n -= size
             size = min(batchsize, n)
-            #gc.collect()
+            gc.collect()
 
         del Xtest # delete dataframe after scaling is done
 
@@ -924,7 +924,7 @@ if __name__ == '__main__':
             # get conditions for next loop-iteration check
             n -= size
             size = min(batchsize, n)
-            #gc.collect()
+            gc.collect()
 
         del Xtrain # delete dataframe after scaling is done
 
