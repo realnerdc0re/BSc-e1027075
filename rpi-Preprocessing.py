@@ -458,8 +458,9 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
     if time: start = timer()
     
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: splitDataframe '+40*'~')
-    print('\n>>> splitting dataframe into training & test portion...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: splitDataframe '+40*'~')
+        print('\n>>> splitting dataframe into training & test portion...')
     
     
     # splitting dataset, to have data for comparison later to estimate algorithm accuracy
@@ -729,6 +730,8 @@ if __name__ == '__main__':
     dropfeature = []
     dropfeature.append('flowStartMilliseconds')
 
+
+
     # IMPORT depending on chosen chunksize
     if chunksize == None:
         dataset = importCSV(path,None,verbose,chunksize)
@@ -738,6 +741,14 @@ if __name__ == '__main__':
         cleanNaN(dataset,0,verbose,time)
     else:
         dataset = pd.DataFrame()
+
+        # 
+        Xtrain = pd.DataFrame()
+        Xtest = pd.DataFrame()
+        Ytrain = pd.Series(dtype=int)
+        Ytest = pd.Series(dtype=int)
+
+        data = []
         print('>>> importing CSV (chunksize={})...'.format(chunksize))
         # read csv in chunks
         for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
@@ -751,28 +762,54 @@ if __name__ == '__main__':
             cleanNaN(chunk,0,False,False)
 
 
+            # SPLITTING (split [Xtrain,Xtest,Ytrain,Ytest])
+            chunksplit = splitDataframe(chunk,0.30,False,False)
+            #print('\n{}\n'.format(type(chunlsplit[0])))
+            #input('blub')
+
+
             # INSERT PRE_PROCESSING HERE
 
 
-            dataset = dataset.append(chunk)
+            
+
+            # append chunks (should be skippable when everything is done)
+            #dataset = dataset.append(chunk)
+            Xtrain = Xtrain.append(chunksplit[0])
+            Xtest = Xtest.append(chunksplit[1])
+            Ytrain = Ytrain.append(chunksplit[2])
+            Ytest = Ytest.append(chunksplit[3])
+
+    # check processed data
+    verbose = False
+    #printdata(dataset,'original',True)
+    #input('...')
+    print('\n'+10*'~'+' Xtrain '+10*'~')
+    print('\n{}\n'.format(Xtrain))
+    #input('...')
+    print('\n'+10*'~'+' Ytrain '+10*'~')
+    print('\n{}\n'.format(Ytrain))
+    #input('...')
+    print('\n'+10*'~'+' Xtest '+10*'~')
+    print('\n{}\n'.format(Xtest))
+    #input('...')
+    print('\n'+10*'~'+' Ytest '+10*'~')
+    print('\n{}\n'.format(Ytest))
+    #input('...')
 
 
 
-    printdata(dataset,'original',True)
 
 
+    #datascaled = scalingDataframe(datasplit,[],verbose,time)
 
-    # 
-    datasplit = splitDataframe(dataset,0.30,verbose,time)
-    datascaled = scalingDataframe(datasplit,[],verbose,time)
+    #n=4
+    #Xpca = PCAnalysis(datascaled,n,verbose,time)
 
-    n=4
-    Xpca = PCAnalysis(datascaled,n,verbose,time)
-
-    Xtrain = Xpca[0]
-    Xtest = Xpca[1]
-    Ytrain = datasplit[2]
-    Ytest = datasplit[3]
+    #Xtrain = Xpca[0]
+    #Xtest = Xpca[1]
+    #Ytrain = datasplit[2]
+    #Ytest = datasplit[3]
 
     '''
     model = RandomForestClassifier()
