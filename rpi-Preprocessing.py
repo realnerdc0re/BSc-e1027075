@@ -783,6 +783,7 @@ if __name__ == '__main__':
             Xtest = Xtest.append(chunksplit[1])
             Ytrain = Ytrain.append(chunksplit[2])
             Ytest = Ytest.append(chunksplit[3])
+        exit()
 
         del chunksplit
         del chunk
@@ -820,15 +821,13 @@ if __name__ == '__main__':
         '''
 
 
-
+        # memory logging, debug output
         Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
         Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
         Ytrain_size_df = (Ytrain.nbytes/1024**2)
         Ytest_size_df = (Ytest.nbytes/1024**2)
         total_size_df = int(Xtrain_size_df+Xtest_size_df+Ytrain_size_df+Ytest_size_df)
         print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
-
-        #
         Xtrain.info(memory_usage="deep")
         Xtest.info(memory_usage="deep")
 
@@ -867,8 +866,9 @@ if __name__ == '__main__':
         '''
 
 
-        #print('Xtrain size original:\n{}\n'.format(int(Xtrain.memory_usage().sum())/1000**2))
+
         Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
+
         # scale Xtrain in batches
         print('>>> transform Xtrain in batches (batchsize={}, size={}MB)...'.format(batchsize,Xtrain_size_df))
         n = Xtrain.shape[0]
@@ -880,14 +880,13 @@ if __name__ == '__main__':
             Xtrain.drop(index=Xtrain.index[0:size],inplace=True) # immediately drop current batch from Xtest
             Xtrain_scaled = np.append(Xtrain_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
 
-            # memory usage monitoring
+            # memory logging, debug output
             Xtrain_size = int(Xtrain.memory_usage().sum()/1024**2)
             Xtrain_scaled_size = int(Xtrain_scaled.nbytes/1024**2)
             memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
             print('{}MB:\t{}MB\t/\t{}MB\t/\t\u0394 {}MB'.format(memoryUse,Xtrain_size,Xtrain_scaled_size,(Xtrain_size+Xtrain_scaled_size)-Xtrain_size_df))
 
             # get conditions for next loop-iteration check
-            #n = Xtrain.shape[0]
             n -= size
             size = min(batchsize, n)
         del Xtrain # delete dataframe after scaling is done
@@ -903,7 +902,7 @@ if __name__ == '__main__':
             Xtest = Xtest.drop(Xtest.index[0:size]) # immediately drop current batch from Xtest
             Xtest_scaled = np.append(Xtest_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
 
-            # memory usage monitoring
+            # memory logging, debug output
             Xtest_size = int(Xtest.memory_usage().sum()/1024**2)
             Xtest_scaled_size = int(Xtest_scaled.nbytes/1024**2)
             memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
