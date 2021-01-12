@@ -827,8 +827,8 @@ if __name__ == '__main__':
         Ytest_size_df = (Ytest.nbytes/1024**2)
         total_size_df = int(Xtrain_size_df+Xtest_size_df+Ytrain_size_df+Ytest_size_df)
         print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
-        Xtrain.info(memory_usage="deep")
-        Xtest.info(memory_usage="deep")
+        #Xtrain.info(memory_usage="deep")
+        #Xtest.info(memory_usage="deep")
 
 
         # SCALING
@@ -867,7 +867,7 @@ if __name__ == '__main__':
         '''
 
 
-
+        '''
         Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
 
         # scale Xtrain in batches
@@ -891,6 +891,8 @@ if __name__ == '__main__':
             n -= size
             size = min(batchsize, n)
         del Xtrain # delete dataframe after scaling is done
+        '''
+
 
         Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
         # scale Xtest in batches
