@@ -24,6 +24,9 @@ from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from timeit import default_timer as timer
 
+#https://pypi.org/project/memory-profiler/
+from memory_profiler import profile
+
 import time as epochtime
 import numpy as np
 import pandas as pd
@@ -516,34 +519,35 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
 def scalingDataframe(datasets,features,verbose=False,time=False):
     
     if time: start = timer()
-    
+
     #scaler = MinMaxScaler()
     scaler = StandardScaler()
     tmpscaled = []
-    
+
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: scalingDataframe: {} '.format(scaler)+40*'~')
-    print('\n>>> scaling values...')
-    
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: scalingDataframe: {} '.format(scaler)+40*'~')
+        print('\n>>> scaling values...')
+
     # get all features if no features are given as argument
     if not features: features = list(datasets[0])
-    
+
     # TRAINING
     # fit & transform Xtrain
     tmp = datasets[0]
-    print('>>> fit & transform Xtrain...')
+    if verbose: print('>>> fit & transform Xtrain...')
     tmp[features] = scaler.fit_transform(tmp[features])
     tmpscaled.append(tmp)
-       
+
     # TEST (transform)
-    # transform Xtest    
+    # transform Xtest
     tmp = datasets[1]
-    print('>>> transform Xtest...')
+    if verbose: print('>>> transform Xtest...')
     tmp[features] = scaler.transform(tmp[features])
     tmpscaled.append(tmp)
-    
+
     if time: end = timer()
-    
+
     if verbose:
         print('\n'+10*'~'+' Xtrain, original '+10*'~')
         print('\n{}'.format(datasplit[0]))
@@ -731,7 +735,6 @@ if __name__ == '__main__':
     dropfeature.append('flowStartMilliseconds')
 
 
-
     # IMPORT depending on chosen chunksize
     if chunksize == None:
         dataset = importCSV(path,None,verbose,chunksize)
@@ -748,8 +751,10 @@ if __name__ == '__main__':
         Ytrain = pd.Series(dtype=int)
         Ytest = pd.Series(dtype=int)
 
+        scaler = StandardScaler()
+
         data = []
-        print('>>> importing CSV (chunksize={})...'.format(chunksize))
+        print('>>> importing & pre-processing CSV (chunksize={})...'.format(chunksize))
         # read csv in chunks
         for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
 
@@ -762,37 +767,119 @@ if __name__ == '__main__':
             cleanNaN(chunk,0,False,False)
 
 
-            # SPLITTING (split [Xtrain,Xtest,Ytrain,Ytest])
-            chunksplit = splitDataframe(chunk,0.30,False,False)
-            #print('\n{}\n'.format(type(chunlsplit[0])))
-            #input('blub')
-
-
-            # INSERT PRE_PROCESSING HERE
-
-
-            
-
+            # SPLITTING
+            chunksplit = splitDataframe(chunk,0.30,False,False) # [Xtrain,Xtest,Ytrain,Ytest]
             # append chunks (should be skippable when everything is done)
             #dataset = dataset.append(chunk)
+
+            # accumulate chunks
             Xtrain = Xtrain.append(chunksplit[0])
             Xtest = Xtest.append(chunksplit[1])
             Ytrain = Ytrain.append(chunksplit[2])
             Ytest = Ytest.append(chunksplit[3])
 
+        del chunk
+        del chunksplit
+
+        # SCALING
+        batchsize = 10**5 # batchsize to feed scaler
+        Xtrain_scaled = []
+        Xtest_scaled = []
+
+        features = list(Xtrain)
+        print('\n{}\n'.format(features))
+
+        # applying scaler fit in batches, to not run into SWAP
+        n = Xtrain.shape[0] # number of rows
+        index = 0
+        print('>>> partial fit StandardScaler...')
+        while index < n:
+            size = min(batchsize, n-index) # for last iteration
+            Xtrain_partial = Xtrain[index:index+size] # get batches from original data
+            scaler.partial_fit(Xtrain_partial) # partial fit to batch
+            index += size
+
+        Xtrain_scaled = np.empty(shape=[0,len(features)])
+        Xtest_scaled = np.empty(shape=[0,len(features)])
+
+        '''
+        # create empty dataframe
+        n = Xtest.shape[0] # number of rows
+        tmpscaled=pd.DataFrame(index=np.arange(n),columns=features)
+
+        splitindex = list(Xtest.index.values) # get exact copy of the row-index from Xtest
+        tmp = pd.DataFrame(index=splitindex,columns=features) # create empty copy of Xtest
+        print(tmp)
+        '''
+
+
+        # scale Xtrain in batches
+        print('>>> transform Xtrain in batches...')
+        n = Xtrain.shape[0]
+        size = min(batchsize, n)
+        while size > 0:
+            #tmp = scaler.transform(Xtest[features][index:index+size],copy=None)
+            tmp = scaler.transform(Xtrain[features][0:size],copy=None)
+            Xtrain = Xtrain.drop(Xtrain.index[0:size]) # immediately drop current batch from Xtest
+
+            Xtrain_scaled = np.append(Xtrain_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
+
+            # get conditions for next loop-iteration check
+            n = Xtrain.shape[0]
+            size = min(batchsize, n)
+        del Xtrain # delete dataframe after scaling is done
+
+
+        # scale Xtest in batches
+        print('>>> transform Xtest in batches...')
+        n = Xtest.shape[0]
+        size = min(batchsize, n)
+        while size > 0:
+            #tmp = scaler.transform(Xtest[features][index:index+size],copy=None)
+            tmp = scaler.transform(Xtest[features][0:size],copy=None)
+            Xtest = Xtest.drop(Xtest.index[0:size]) # immediately drop current batch from Xtest
+
+            Xtest_scaled = np.append(Xtest_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
+
+            # get conditions for next loop-iteration check
+            n = Xtest.shape[0]
+            size = min(batchsize, n)
+        del Xtest # delete dataframe after scaling is done
+
+
+        print('\nXtrain_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
+        if not time: input('...')
+
+        print('\nXtest_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
+        if not time: input('...')
+
+        #Xtest = tmpscaled
+
+
+
+            # PCA
+
+
+            # MODEL & PREDICTION
+
+
+
+
+
     # check processed data
     verbose = False
     #printdata(dataset,'original',True)
     #input('...')
-    print('\n'+10*'~'+' Xtrain '+10*'~')
-    print('\n{}\n'.format(Xtrain))
+    #print('\n'+10*'~'+' Xtrain '+10*'~')
+    #print('\n{}\n{}\n'.format(Xtrain,Xtrain.describe()))
+    #types = Xtrain.dtypes
+    #print('\n'+10*'~'+' Xtrain: scaled '+10*'~')
+    #print('\n{}\n{}\n'.format(Xtrain,types))
     #input('...')
     print('\n'+10*'~'+' Ytrain '+10*'~')
     print('\n{}\n'.format(Ytrain))
     #input('...')
-    print('\n'+10*'~'+' Xtest '+10*'~')
-    print('\n{}\n'.format(Xtest))
-    #input('...')
+
     print('\n'+10*'~'+' Ytest '+10*'~')
     print('\n{}\n'.format(Ytest))
     #input('...')
