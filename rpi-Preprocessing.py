@@ -805,7 +805,6 @@ if __name__ == '__main__':
 
 
 
-
         '''
         print('Xtrain:\n{}\n'.format(Xtrain))
         input('...')
@@ -818,6 +817,7 @@ if __name__ == '__main__':
         print('Xtrain:\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
         input('...')
         '''
+
 
 
         # memory logging, debug output
@@ -916,6 +916,10 @@ if __name__ == '__main__':
         del Xtest # delete dataframe after scaling is done
 
 
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after Xtest fit: {}MB\n'.format(int(memoryUse)))
+
+
         print('\nXtrain_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
         if not time: input('...')
         print('\nXtest_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
@@ -935,7 +939,7 @@ if __name__ == '__main__':
 
 
     # check processed data
-    verbose = False
+    #verbose = False
     #printdata(dataset,'original',True)
     #input('...')
     #print('\n'+10*'~'+' Xtrain '+10*'~')
@@ -944,12 +948,12 @@ if __name__ == '__main__':
     #print('\n'+10*'~'+' Xtrain: scaled '+10*'~')
     #print('\n{}\n{}\n'.format(Xtrain,types))
     #input('...')
-    print('\n'+10*'~'+' Ytrain '+10*'~')
-    print('\n{}\n'.format(Ytrain))
+    #print('\n'+10*'~'+' Ytrain '+10*'~')
+    #print('\n{}\n'.format(Ytrain))
     #input('...')
 
-    print('\n'+10*'~'+' Ytest '+10*'~')
-    print('\n{}\n'.format(Ytest))
+    #print('\n'+10*'~'+' Ytest '+10*'~')
+    #print('\n{}\n'.format(Ytest))
     #input('...')
 
 
