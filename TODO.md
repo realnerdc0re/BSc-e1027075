@@ -3,6 +3,8 @@
 
 ## INPROGRESS:
 
+- get rid of unnecessary imports to save memory
+
 - implement partial_fit for the StandardScaler to process chunks to save memory usage, without this rpi will run into SWAP when applying scaling to the dataset
 
 - get rid of df and just use np array after transforming with scaler, its unnecessary to have column labels available at this point
