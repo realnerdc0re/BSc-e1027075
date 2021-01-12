@@ -118,6 +118,8 @@ def summary(dataset):
     if (not time): input('\n...')
     #resetpoptions()
     return
+
+# PRE-PROCESSING
 # convert to lower datatypes
 def conversion(dataset,verbose=False):
 
@@ -449,6 +451,205 @@ def writeCells(dataset,feature,cells,content,verbose=False,time=False):
 
     return
 
+# CLASSIFICATION
+# split given df into training & test portions
+def splitDataframe(dataset,testsize,verbose=False,time=False):
+    
+    if time: start = timer()
+    
+    # informational output
+    print('\n\n'+40*'~'+' FUNCTION: splitDataframe '+40*'~')
+    print('\n>>> splitting dataframe into training & test portion...')
+    
+    
+    # splitting dataset, to have data for comparison later to estimate algorithm accuracy
+    # write dataset values into array
+    #array = dataset.values
+    # empty list to return X_train, X_validation, Y_train, Y_validation
+    data = []
+
+    # all but the very last column put into X
+    X = dataset.iloc[:,:-1]
+    # very last column (label) put into Y as separate column
+    Y = dataset.iloc[:,-1]
+    
+    # splitting up the data into training & validation datasets into 70% training & 30% validation
+    # Xtrain & Ytrain for preparing models
+    # Xtest & Ytest to use later for validation
+    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=testsize, random_state=1)
+    
+    data.append(Xtrain)
+    data.append(Xtest)
+    data.append(Ytrain)
+    data.append(Ytest)
+   
+    if time: end = timer()
+    
+    if verbose:
+        print('\n'+20*'~'+' original '+20*'~')
+        print('\n{}'.format(dataset))
+        if (not time): input('\n...')
+        print('\n'+10*'~'+' X '+10*'~')
+        print('\n{}'.format(X))
+        print('\n'+10*'~'+' Y '+10*'~')
+        print('\n{}'.format(Y))
+        if (not time): input('\n...')
+        
+        print('\n'+10*'~'+' Xtrain '+10*'~')
+        print('\n{}'.format(Xtrain))
+        print('\n'+10*'~'+' Ytrain '+10*'~')
+        print('\n{}'.format(Ytrain))
+        if (not time): input('\n...')
+    
+        print('\n'+10*'~'+' Xtest '+10*'~')
+        print('\n{}'.format(Xtest))
+        print('\n'+10*'~'+' Ytest '+10*'~')
+        print('\n{}'.format(Ytest))
+        if (not time): input('\n...')
+        
+    if time: print('\nsplitFrame\n[TIME]: %.3f' % (end-start),'seconds')
+    
+    # return list of arrays or dataframes
+    return data
+# Standard (z-Score) Scaler (proportional scaling) using dataframe
+def scalingDataframe(datasets,features,verbose=False,time=False):
+    
+    if time: start = timer()
+    
+    #scaler = MinMaxScaler()
+    scaler = StandardScaler()
+    tmpscaled = []
+    
+    # informational output
+    print('\n\n'+40*'~'+' FUNCTION: scalingDataframe: {} '.format(scaler)+40*'~')
+    print('\n>>> scaling values...')
+    
+    # get all features if no features are given as argument
+    if not features: features = list(datasets[0])
+    
+    # TRAINING
+    # fit & transform Xtrain
+    tmp = datasets[0]
+    print('>>> fit & transform Xtrain...')
+    tmp[features] = scaler.fit_transform(tmp[features])
+    tmpscaled.append(tmp)
+       
+    # TEST (transform)
+    # transform Xtest    
+    tmp = datasets[1]
+    print('>>> transform Xtest...')
+    tmp[features] = scaler.transform(tmp[features])
+    tmpscaled.append(tmp)
+    
+    if time: end = timer()
+    
+    if verbose:
+        print('\n'+10*'~'+' Xtrain, original '+10*'~')
+        print('\n{}'.format(datasplit[0]))
+        print('\n'+10*'~'+' Xtest, original '+10*'~')
+        print('\n{}'.format(datasplit[1]))
+        if (not time): input('\n...')
+        
+        print('\n'+10*'~'+' Xtrain, fit & transformed '+10*'~')
+        print('\n{}'.format(tmpscaled[0]))
+        print('\n'+10*'~'+' Xtest, fit & transformed '+10*'~')
+        print('\n{}'.format(tmpscaled[1]))
+        if (not time): input('\n...')
+
+    if time: print('\nscalingDataframe\n[TIME]: %.3f' % (end-start),'seconds')
+
+    return tmpscaled
+# apply PCA on scaled data
+def PCAnalysis(dataset,components,verbose=False,time=False):
+    
+    if time: start = timer()
+    
+    # informational output
+    print('\n\n'+40*'~'+' FUNCTION: PCAnalysis '+40*'~')
+    print('\n>>> apply principal component analysis...')
+    
+    Xpca = []
+    
+    pca = PCA(n_components=components)
+    
+    # fit to Xtrain (generating learning model parameters from Xtrain)   
+    pca.fit(dataset[0])
+    # transform Xtrain & Xtest (applying generated model on Xtrain and Xtest)
+    for i in range(0,2):
+        tmp = pca.transform(dataset[i])
+        Xpca.append(tmp)
+    
+    if time: end = timer()
+    
+    if verbose:
+        print('\n\n'+10*'~'+' Xtrain, fit & transform '+10*'~')
+        print('\n{}'.format(Xpca[0]))
+        print('\n{}'.format(Xpca[0].shape))
+
+        print('\n\n'+10*'~'+' Xtest, fit & transform '+10*'~')
+        print('\n{}'.format(Xpca[1]))
+        print('\n{}'.format(Xpca[1].shape))
+
+        print('\n\n'+10*'~'+' PCA, explained variance '+10*'~')
+        print('\n{}'.format(pca.explained_variance_ratio_))
+        if (not time): input('\n...\n')
+    
+    if time: print('\nPCAnalysis\n[TIME]: %.3f' % (end-start),'seconds')
+    
+    return Xpca
+# make predicitons
+def makePredictions(model,Xtest,Ytest,export):
+
+    if time: start = timer()
+    print('\n\n'+40*'~'+' FUNCTION: makePredictions '+40*'~') # informational output
+
+    # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
+    print('>>> make predictions...')
+    predictions = model.predict(Xtest)
+    print('>>> create confusion-matrix...')
+    matrix = confusion_matrix(Ytest,predictions)
+    # saving the classification-report directly into pandas dataframe to enable easy export to csv if necessary
+    print('>>> create classification-report...')
+    report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
+
+    # save results
+    parameters = model.get_params(deep=True)
+    accuracyscore = accuracy_score(Ytest,predictions)
+    featureimportance = model.feature_importances_
+
+    # output final results
+    print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
+    print('\nModel-Parameters:\n{}'.format(parameters))
+    print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+    print('\n\nFeature-Importance:\n{}'.format(featureimportance))
+    print('\n\nConfusion-Matrix:\n')
+    print('t       p r e d i c t')
+    print('r         "0"    "1"')
+    print('u  "0":',matrix[0])
+    print('e  "1":',matrix[1])
+    print('\n\nClassification-Report:\n\n',report)
+
+    '''
+    # output to compare different results???
+    print(Xtest)
+    print(pd.DataFrame(Xtest).describe())
+    print(predictions)
+    '''
+
+    if export:
+        print('\n>>> exporting results to folder: {}'.format(logfolder))
+        # list of all informations we want to save for later evaluation
+        evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix]}
+        results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
+        # save results
+        results.to_csv(resultscsv)
+        report.to_csv(reportcsv)
+
+    if time: 
+        end = timer()
+        print('\nmakePredictions\n[TIME]: %.3f' % (end-start),'seconds')
+
+    return
 
 
 
@@ -517,7 +718,6 @@ if __name__ == '__main__':
         elif (linux or rpi): path = ppath+"/"+csvname[findex]
         savepath = ppath+r"/processed"
 
-
     # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
@@ -532,18 +732,22 @@ if __name__ == '__main__':
     # IMPORT depending on chosen chunksize
     if chunksize == None:
         dataset = importCSV(path,None,verbose,chunksize)
+        # CLEANING
+        removeFeatures(dataset,dropfeature,verbose,time)
+        cleanString(dataset,verbose,time)
+        cleanNaN(dataset,0,verbose,time)
     else:
         dataset = pd.DataFrame()
         print('>>> importing CSV (chunksize={})...'.format(chunksize))
         # read csv in chunks
         for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
-            removeFeatures(chunk,dropfeature,False,False)
+
+            removeFeatures(chunk,dropfeature,False,False) # should be done after labeling (flowStartMilliseconds)
 
             chunk = conversion(chunk,False) # convert content into smaller datatypes
 
-            # cleaning
+            # CLEANING
             cleanString(chunk,False,False)
-            cleanInf(chunk,0,False,False)
             cleanNaN(chunk,0,False,False)
 
 
@@ -558,9 +762,26 @@ if __name__ == '__main__':
 
 
 
+    # 
+    datasplit = splitDataframe(dataset,0.30,verbose,time)
+    datascaled = scalingDataframe(datasplit,[],verbose,time)
+
+    n=4
+    Xpca = PCAnalysis(datascaled,n,verbose,time)
 
 
+    Xtrain = Xpca[0]
+    Xtest = Xpca[1]
+    Ytrain = datasplit[2]
+    Ytest = datasplit[3]
 
+
+    '''
+    model = RandomForestClassifier()
+    print('>>> fitting model with {}...'.format(model))
+    model = model.fit(Xtrain,Ytrain)
+    makePredictions(model,Xtest,Ytest,False)
+    '''
 
     if time:
         end = timer()
