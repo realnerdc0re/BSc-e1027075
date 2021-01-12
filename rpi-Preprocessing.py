@@ -753,7 +753,7 @@ if __name__ == '__main__':
         Ytrain = pd.Series(dtype=int)
         Ytest = pd.Series(dtype=int)
 
-        scaler = StandardScaler()
+        scaler = StandardScaler(copy=False)
 
         data = []
         print('>>> importing & pre-processing CSV (chunksize={})...'.format(chunksize))
@@ -817,8 +817,9 @@ if __name__ == '__main__':
         '''
 
 
+
+
         # scale Xtrain in batches
-        '''
         print('>>> transform Xtrain in batches (batchsize={})...'.format(batchsize))
         n = Xtrain.shape[0]
         size = min(batchsize, n)
@@ -834,8 +835,6 @@ if __name__ == '__main__':
             n -= size
             size = min(batchsize, n)
         del Xtrain # delete dataframe after scaling is done
-        '''
-
 
         # scale Xtest in batches
         print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
@@ -852,6 +851,9 @@ if __name__ == '__main__':
             n -= size
             size = min(batchsize, n)
         del Xtest # delete dataframe after scaling is done
+
+
+
 
 
         print('\nXtrain_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
