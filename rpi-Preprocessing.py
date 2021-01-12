@@ -33,6 +33,7 @@ import psutil
 import sys
 import csv
 import os
+import gc
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
@@ -787,6 +788,7 @@ if __name__ == '__main__':
         del chunksplit
         del chunk
 
+        gc.collect()
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
         print('\nmem-usage after importing CSV: {}MB\n'.format(int(memoryUse)))
 
@@ -847,6 +849,7 @@ if __name__ == '__main__':
 
         del Xtrain_partial
 
+        gc.collect()
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
         print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
 
@@ -915,7 +918,7 @@ if __name__ == '__main__':
             size = min(batchsize, n)
         del Xtest # delete dataframe after scaling is done
 
-
+        gc.collect()
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
         print('\nmem-usage after Xtest fit: {}MB\n'.format(int(memoryUse)))
 
