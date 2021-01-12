@@ -850,7 +850,6 @@ if __name__ == '__main__':
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
         print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
 
-        exit()
 
         Xtrain_scaled = np.empty(shape=[0,len(features)])
         Xtest_scaled = np.empty(shape=[0,len(features)])
