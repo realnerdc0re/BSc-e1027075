@@ -51,6 +51,8 @@ parser = argparse.ArgumentParser(description='script for preprocessing labeled C
 # positional arguments
 parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
 parser.add_argument('chunk', metavar='chunk', type=int,nargs=1,help='choose numerical value as chunksize for CSV import')
+parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for batchsize for StandardScaler')
+
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
@@ -679,6 +681,7 @@ if __name__ == '__main__':
     findex = args.file[0]
 
     chunksize = args.chunk[0]
+    batchsize = args.batch[0]
     if chunksize == 0: chunksize = None
 
     if time: 
@@ -781,17 +784,17 @@ if __name__ == '__main__':
         del chunksplit
 
         # SCALING
-        batchsize = 10**5 # batchsize to feed scaler
+        #batchsize = 10**5 # batchsize to feed scaler
         Xtrain_scaled = []
         Xtest_scaled = []
 
         features = list(Xtrain)
-        print('\n{}\n'.format(features))
+        #print('\n{}\n'.format(features))
 
         # applying scaler fit in batches, to not run into SWAP
         n = Xtrain.shape[0] # number of rows
         index = 0
-        print('>>> partial fit StandardScaler...')
+        print('>>> partial fit StandardScaler (batchsize={})...'.format(batchsize))
         while index < n:
             size = min(batchsize, n-index) # for last iteration
             Xtrain_partial = Xtrain[index:index+size] # get batches from original data
@@ -813,7 +816,7 @@ if __name__ == '__main__':
 
 
         # scale Xtrain in batches
-        print('>>> transform Xtrain in batches...')
+        print('>>> transform Xtrain in batches (batchsize={})...'.format(batchsize))
         n = Xtrain.shape[0]
         size = min(batchsize, n)
         while size > 0:
@@ -830,7 +833,7 @@ if __name__ == '__main__':
 
 
         # scale Xtest in batches
-        print('>>> transform Xtest in batches...')
+        print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
         n = Xtest.shape[0]
         size = min(batchsize, n)
         while size > 0:
