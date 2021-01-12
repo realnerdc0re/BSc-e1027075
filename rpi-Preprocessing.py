@@ -769,12 +769,10 @@ if __name__ == '__main__':
     n=4
     Xpca = PCAnalysis(datascaled,n,verbose,time)
 
-
     Xtrain = Xpca[0]
     Xtest = Xpca[1]
     Ytrain = datasplit[2]
     Ytest = datasplit[3]
-
 
     '''
     model = RandomForestClassifier()
