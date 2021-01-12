@@ -178,8 +178,9 @@ def cleanInf(dataset,mode,verbose=False,time=False):
     modename = {0: 'value', 1: 'mean', 2: 'min', 3: 'max', 4: 'std'}
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanInf '+40*'~')
-    print('\n>>> searching Infs...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanInf '+40*'~')
+        print('\n>>> searching Infs...')
 
     # create pseudo-random values to a feature, add inf value for testing purpose
     #createRandom(dataset,'Random',False,False)
@@ -278,7 +279,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
             elif mode == 3: value = tmax
             elif mode == 4: value = tstd
 
-            print('\n>>> replacing Infinite values: {}'.format(column))
+            if verbose: print('\n>>> replacing Infinite values: {}'.format(column))
             writeCells(dataset,column,infRows[i],value,verbose,False)
 
     else: return
@@ -300,8 +301,9 @@ def cleanNaN(dataset,replacement,verbose=False,time=False):
     if time: start = timer()
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
-    print('\n>>> searching NaNs...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
+        print('\n>>> searching NaNs...')
 
     # summary for NaN values
     vNaN = dataset.isnull().sum()
@@ -318,7 +320,7 @@ def cleanNaN(dataset,replacement,verbose=False,time=False):
 
     # cycles through features containing NaN values
     for column in lNaN:
-        print('>>> replacing NaNs: {}'.format(column))
+        if verbose: print('>>> replacing NaNs: {}'.format(column))
         dataset[column] = dataset[column].replace(np.nan, replacement)
 
     if time:
@@ -332,8 +334,9 @@ def cleanString(dataset,verbose=False,time=False):
     if time: start = timer()
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanString '+40*'~')
-    print('\n>>> searching strings...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanString '+40*'~')
+        print('\n>>> searching strings...')
 
     # table containing object-types per feature
     stype = dataset.dtypes
@@ -373,8 +376,9 @@ def cleanSingleValue(dataset,verbose=False,time=False):
     if time: start = timer()
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
-    print('\n>>> searching unique-value features...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
+        print('\n>>> searching unique-value features...')
 
     ldrop = []
     # summary for non-unique values
@@ -411,8 +415,9 @@ def removeFeatures(dataset,feature,verbose=False,time=False):
     if time: start = timer()
 
     # informational output
-    for i in range(0,len(feature)):
-        print('>>> removing feature: {}'.format(feature[i]))
+    if verbose:
+        for i in range(0,len(feature)):
+            print('>>> removing feature: {}'.format(feature[i]))
 
     # drop features to remove directly from dataset
     dataset.drop(axis=1,columns=feature,inplace=True)
@@ -517,20 +522,29 @@ if __name__ == '__main__':
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,flowsampling,packetsampling))
-    print('\n\n{}'.format(path))
+    print('\n\n{}\n'.format(path))
     if (not time): input('\n...')
 
+    #chunksize = 10**6
+    dropfeature = []
+    dropfeature.append('flowStartMilliseconds')
 
     # IMPORT depending on chosen chunksize
     if chunksize == None:
         dataset = importCSV(path,None,verbose,chunksize)
     else:
         dataset = pd.DataFrame()
-        print('>>> importing CSV in chunks of {} lines...'.format(chunksize))
+        print('>>> importing CSV (chunksize={})...'.format(chunksize))
         # read csv in chunks
         for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
+            removeFeatures(chunk,dropfeature,False,False)
+
             chunk = conversion(chunk,False) # convert content into smaller datatypes
 
+            # cleaning
+            cleanString(chunk,False,False)
+            cleanInf(chunk,0,False,False)
+            cleanNaN(chunk,0,False,False)
 
 
             # INSERT PRE_PROCESSING HERE
@@ -540,7 +554,7 @@ if __name__ == '__main__':
 
 
 
-    printdata(dataset,'original',verbose)
+    printdata(dataset,'original',True)
 
 
 
