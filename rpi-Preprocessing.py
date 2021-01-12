@@ -801,6 +801,8 @@ if __name__ == '__main__':
             scaler.partial_fit(Xtrain_partial) # partial fit to batch
             index += size
 
+        del Xtrain_partial
+
         Xtrain_scaled = np.empty(shape=[0,len(features)])
         Xtest_scaled = np.empty(shape=[0,len(features)])
 
@@ -816,6 +818,7 @@ if __name__ == '__main__':
 
 
         # scale Xtrain in batches
+        '''
         print('>>> transform Xtrain in batches (batchsize={})...'.format(batchsize))
         n = Xtrain.shape[0]
         size = min(batchsize, n)
@@ -827,9 +830,11 @@ if __name__ == '__main__':
             Xtrain_scaled = np.append(Xtrain_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
 
             # get conditions for next loop-iteration check
-            n = Xtrain.shape[0]
+            #n = Xtrain.shape[0]
+            n -= size
             size = min(batchsize, n)
         del Xtrain # delete dataframe after scaling is done
+        '''
 
 
         # scale Xtest in batches
@@ -844,7 +849,7 @@ if __name__ == '__main__':
             Xtest_scaled = np.append(Xtest_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
 
             # get conditions for next loop-iteration check
-            n = Xtest.shape[0]
+            n -= size
             size = min(batchsize, n)
         del Xtest # delete dataframe after scaling is done
 
