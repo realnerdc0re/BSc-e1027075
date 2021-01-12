@@ -7,25 +7,24 @@ Created on Fri Jan 10 10:32:48 2021
 """
 
 from pandas import read_csv
-from pandas.plotting import scatter_matrix
-from matplotlib import pyplot
+#from pandas.plotting import scatter_matrix
+#from matplotlib import pyplot
 from scipy.stats import zscore
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+#from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.impute import SimpleImputer as Imputer
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import RepeatedStratifiedKFold
+#from sklearn.impute import SimpleImputer as Imputer
+#from sklearn.model_selection import cross_val_score
+#from sklearn.model_selection import StratifiedKFold
+#from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from timeit import default_timer as timer
 
-#https://pypi.org/project/memory-profiler/
-from memory_profiler import profile
+
 
 import time as epochtime
 import numpy as np
