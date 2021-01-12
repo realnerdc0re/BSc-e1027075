@@ -324,14 +324,14 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
     
     # get all features if no features are given as argument
     if not features: features = list(datasets[0])
-    
+
     # TRAINING
     # fit & transform Xtrain
     tmp = datasets[0]
     print('>>> fit & transform Xtrain...')
     tmp[features] = scaler.fit_transform(tmp[features])
     tmpscaled.append(tmp)
-       
+
     # TEST (transform)
     # transform Xtest    
     tmp = datasets[1]
@@ -340,7 +340,7 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
     tmpscaled.append(tmp)
     
     if time: end = timer()
-    
+
     if verbose:
         print('\n'+10*'~'+' Xtrain, original '+10*'~')
         print('\n{}'.format(datasplit[0]))

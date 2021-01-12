@@ -5,10 +5,13 @@
 
 - implement partial_fit for the StandardScaler to process chunks to save memory usage, without this rpi will run into SWAP when applying scaling to the dataset
 
+- get rid of df and just use np array after transforming with scaler, its unnecessary to have column labels available at this point
 
-
+- implement RandomForest classifier using RandomForest(warm_start=True) for fit on chunks
 
 - change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement)
+
+- verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data...
 
 
 
