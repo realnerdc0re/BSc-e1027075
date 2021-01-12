@@ -783,7 +783,6 @@ if __name__ == '__main__':
             Xtest = Xtest.append(chunksplit[1])
             Ytrain = Ytrain.append(chunksplit[2])
             Ytest = Ytest.append(chunksplit[3])
-        exit()
 
         del chunksplit
         del chunk
@@ -850,6 +849,8 @@ if __name__ == '__main__':
 
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
         print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
+
+        exit()
 
         Xtrain_scaled = np.empty(shape=[0,len(features)])
         Xtest_scaled = np.empty(shape=[0,len(features)])
