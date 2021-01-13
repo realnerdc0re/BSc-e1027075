@@ -664,10 +664,6 @@ def makePredictions(model,Xtest,Ytest,export):
 
 if __name__ == '__main__':
 
-    pid = os.getpid()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-    print('\nmem-usage at start: {}MB\n'.format(int(memoryUse)))
-
     global verbose 
     global time
     global dataset
@@ -691,6 +687,12 @@ if __name__ == '__main__':
     chunksize = args.chunk[0]
     batchsize = args.batch[0]
     if chunksize == 0: chunksize = None
+
+
+    if memory:
+        pid = os.getpid()
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
+        print('\nmem-usage at start: {}MB\n'.format(int(memoryUse)))
 
     if time: 
         start = timer() # runtime
@@ -748,10 +750,12 @@ if __name__ == '__main__':
     dropfeature.append('flowStartMilliseconds')
     #dropfeature.append('')
 
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-    print('\nmem-usage before importing CSV: {}MB\n'.format(int(memoryUse)))
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
+        print('\nmem-usage before importing CSV: {}MB\n'.format(int(memoryUse)))
 
-    # IMPORT depending on chosen chunksize
+    # IMPORT CSV
+    # depending on chosen chunksize
     if chunksize == None:
         dataset = importCSV(path,None,verbose,chunksize)
         # CLEANING
@@ -792,21 +796,21 @@ if __name__ == '__main__':
 
         del chunksplit
         del chunk
-
     gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-    print('\nmem-usage after importing CSV: {}MB\n'.format(int(memoryUse)))
 
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
+        print('\nmem-usage after importing CSV: {}MB\n'.format(int(memoryUse)))
 
-    # memory logging, debug output
-    Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
-    Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
-    Ytrain_size_df = (Ytrain.nbytes/1024**2)
-    Ytest_size_df = (Ytest.nbytes/1024**2)
-    total_size_df = int(Xtrain_size_df+Xtest_size_df+Ytrain_size_df+Ytest_size_df)
-    print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
-    #Xtrain.info(memory_usage="deep")
-    #Xtest.info(memory_usage="deep")
+        # memory logging, debug output
+        Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
+        Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
+        Ytrain_size_df = (Ytrain.nbytes/1024**2)
+        Ytest_size_df = (Ytest.nbytes/1024**2)
+        total_size_df = int(Xtrain_size_df+Xtest_size_df+Ytrain_size_df+Ytest_size_df)
+        print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
+        #Xtrain.info(memory_usage="deep")
+        #Xtest.info(memory_usage="deep")
 
     # STANDARDSCALER
     # PARTIAL FIT
@@ -823,10 +827,11 @@ if __name__ == '__main__':
         index += size
 
     del Xtrain_partial
-
     gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
+
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
 
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
@@ -836,46 +841,52 @@ if __name__ == '__main__':
     n = Xtrain.shape[0]
     splitsize = 5*10**5
     size = min(splitsize, n)
+    iteration = int(n/splitsize)+1
     i = 0
+    print('>>> split Xtrain (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
     while size > 0:
         i += 1
         npsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(i)+".npy"
-        print('\nsave: {}'.format(npsave))
+        if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         #npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
         npXtrain = Xtrain[:][0:size].to_numpy()
         Xtrain = Xtrain.drop(Xtrain.index[0:size])
-        print('\t<<< saving splitted Xtrain [{}]'.format(i))
+        print('\t<<< saving splitted Xtrain[{}]'.format(i))
         np.save(npsave,npXtrain)
-        print('\n{}\n{} {} {}MB\n'.format(npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
         n -= size
         size = min(splitsize, n)
 
     iXtrain = np.arange(1,i+1,1) # create array to restore splitted files afterwards
+
     del Xtrain
     del npXtrain
     gc.collect()
 
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
-    if not time: input('...')
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
+        if not time: input('...')
 
     # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
     n = Xtest.shape[0]
     splitsize = 5*10**5
     size = min(splitsize, n)
+    iteration = int(n/splitsize)+1
     i = 0
+    print('>>> split Xtest (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
     while size > 0:
         i += 1
         npsave = spath+"/tmp/"+filenames[findex]+"_Xtest_"+str(i)+".npy"
-        print('\nsave: {}'.format(npsave))
+        if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
         #npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
         Xtest = Xtest.drop(Xtest.index[0:size])
-        print('\t<<< saving splitted Xtest [{}]'.format(i))
+        print('\t<<< saving splitted Xtest[{}]'.format(i))
         np.save(npsave,npXtest)
-        print('\n{}\n{} {} {}MB\n'.format(npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
         n -= size
         size = min(splitsize, n)
 
@@ -884,11 +895,10 @@ if __name__ == '__main__':
     del npXtest
     gc.collect()
 
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
-    if not time: input('...')
-
-
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
+        if not time: input('...')
 
     # TRANSFORM splits into single array
     # Xtrain
@@ -898,49 +908,25 @@ if __name__ == '__main__':
 
         npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(index)+".npy" # forge path to load split-file
         print('\nload: {}'.format(npload))
-        print('\t<<< loading splitted Xtrain [{}]'.format(index))
+        print('\t<<< loading splitted Xtrain[{}]'.format(index))
 
         tmp = np.load(npload).astype(np.float32) # load split-file
-        #tmp = np.load(npload) # load split-file
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
-        print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
-
-        '''
-        # debug output
-        print('\n{}\n'.format(np.finfo(np.float32).max))
-        print('\n{}\n'.format(np.amax(tmp)))
-        result = np.where(tmp == np.amax(tmp))
-        print('pos max: {}\n'.format(result))
-
-        ar_inf = np.where(np.isinf(tmp))
-        print('\ninf: {}\n'.format(ar_inf))
-        '''
-
-        print('>>> transform Xtrain in batches (batchsize={})...'.format(batchsize))
+        print('\t<<< transform Xtrain[{}] in batches (batchsize={})...'.format(index,batchsize))
         n = tmp.shape[0]
         size = min(batchsize, n)
-
-        #print('tmp n (before loop): {}'.format(n))
-        #print('tmp size (before loop): {}'.format(size))
-
         while size > 0:
             tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
             tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
-            #tmpscaled = scaler.transform(tmp,copy=None)
+            Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
 
-            #Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
-            Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0)
-
-
-            print(tmpscaled)
-            print(Xtrain_scaled)
-            #del tmpscaled
+            if verbose:
+                print(tmpscaled)
+                print(Xtrain_scaled)
 
             n -= size
             size = min(batchsize,n)
-
-            #print('tmp n (end of loop): {}'.format(n))
-            #print('tmp size (end of loop): {}'.format(size))
 
         del tmpscaled
 
@@ -949,7 +935,7 @@ if __name__ == '__main__':
         print('\nsave: {}'.format(scaledsave))
         print('\t<<< saving scaled Xtrain [{}]'.format(index))
         np.save(scaledsave,Xtrain_scaled)
-        print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
+        if verbose: print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
         del Xtrain_scaled
     del tmp
 
@@ -964,46 +950,22 @@ if __name__ == '__main__':
         print('\t<<< loading splitted Xtest [{}]'.format(index))
 
         tmp = np.load(npload).astype(np.float32) # load split-file
-        #tmp = np.load(npload) # load split-file
-
-        print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
-
-        '''
-        # debug output
-        print('\n{}\n'.format(np.finfo(np.float32).max))
-        print('\n{}\n'.format(np.amax(tmp)))
-        result = np.where(tmp == np.amax(tmp))
-        print('pos max: {}\n'.format(result))
-
-        ar_inf = np.where(np.isinf(tmp))
-        print('\ninf: {}\n'.format(ar_inf))
-        '''
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
         print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
         n = tmp.shape[0]
         size = min(batchsize, n)
-
-        #print('tmp n (before loop): {}'.format(n))
-        #print('tmp size (before loop): {}'.format(size))
-
         while size > 0:
             tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
             tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
-            #tmpscaled = scaler.transform(tmp,copy=None)
+            Xtest_scaled = np.append(Xtest_scaled,tmpscaled,axis=0).astype(np.float32)
 
-            #Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
-            Xtest_scaled = np.append(Xtest_scaled,tmpscaled,axis=0)
-
-
-            print(tmpscaled)
-            print(Xtest_scaled)
-            #del tmpscaled
+            if verbose:
+                print(tmpscaled)
+                print(Xtest_scaled)
 
             n -= size
             size = min(batchsize,n)
-
-            #print('tmp n (end of loop): {}'.format(n))
-            #print('tmp size (end of loop): {}'.format(size))
 
         del tmpscaled
 
@@ -1012,11 +974,9 @@ if __name__ == '__main__':
         print('\nsave: {}'.format(scaledsave))
         print('\t<<< saving scaled Xtest [{}]'.format(index))
         np.save(scaledsave,Xtest_scaled)
-        print('\nXtest_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
+        if verbose: print('\nXtest_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
         del Xtest_scaled
     del tmp
-
-
 
 
     exit()
