@@ -902,18 +902,19 @@ if __name__ == '__main__':
 
     # TRANSFORM splits into single array
     # Xtrain
+    print('>>> transform Xtrain (batchsize={})...'.format(batchsize))
     for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
 
         Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
 
         npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(index)+".npy" # forge path to load split-file
-        print('\nload: {}'.format(npload))
+        if verbose: print('\nload: {}'.format(npload))
         print('\t<<< loading splitted Xtrain[{}]'.format(index))
 
         tmp = np.load(npload).astype(np.float32) # load split-file
         if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
-        print('\t<<< transform Xtrain[{}] in batches (batchsize={})...'.format(index,batchsize))
+        print('\t<<< transform Xtrain[{}]...'.format(index))
         n = tmp.shape[0]
         size = min(batchsize, n)
         while size > 0:
@@ -932,8 +933,8 @@ if __name__ == '__main__':
 
         # save scaled split to disk
         scaledsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
-        print('\nsave: {}'.format(scaledsave))
-        print('\t<<< saving scaled Xtrain [{}]'.format(index))
+        if verbose: print('\nsave: {}'.format(scaledsave))
+        print('\t<<< saving scaled Xtrain[{}]'.format(index))
         np.save(scaledsave,Xtrain_scaled)
         if verbose: print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
         del Xtrain_scaled
@@ -941,18 +942,19 @@ if __name__ == '__main__':
 
 
     # Xtest
+    print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
     for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
 
         Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
 
         npload = spath+"/tmp/"+filenames[findex]+"_Xtest_"+str(index)+".npy" # forge path to load split-file
-        print('\nload: {}'.format(npload))
-        print('\t<<< loading splitted Xtest [{}]'.format(index))
+        if verbose: print('\nload: {}'.format(npload))
+        print('\t<<< loading splitted Xtest[{}]'.format(index))
 
         tmp = np.load(npload).astype(np.float32) # load split-file
         if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
-        print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
+        print('\t<<< transform Xtest[{}]...'.format(index))
         n = tmp.shape[0]
         size = min(batchsize, n)
         while size > 0:
@@ -971,8 +973,8 @@ if __name__ == '__main__':
 
         # save scaled split to disk
         scaledsave = spath+"/tmp/"+filenames[findex]+"_Xtest_scaled_"+str(index)+".npy"
-        print('\nsave: {}'.format(scaledsave))
-        print('\t<<< saving scaled Xtest [{}]'.format(index))
+        if verbose: print('\nsave: {}'.format(scaledsave))
+        print('\t<<< saving scaled Xtest[{}]'.format(index))
         np.save(scaledsave,Xtest_scaled)
         if verbose: print('\nXtest_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
         del Xtest_scaled
