@@ -838,7 +838,8 @@ if __name__ == '__main__':
 
     # FIT SCALER
     features = list(Xtrain)
-    #print('\n{}\n'.format(features))
+
+    print('\n{}\n'.format(features))
 
     # applying scaler fit in batches, to not run into SWAP
     n = Xtrain.shape[0] # number of rows
@@ -856,12 +857,11 @@ if __name__ == '__main__':
     memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
     print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
 
-
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
 
     # SPLIT FILES
-    # split training data into smaller portions for transformation and save to disk to free up memory
+    # Xtrain: split training data into smaller portions for transformation and save to disk to free up memory
     n = Xtrain.shape[0]
     splitsize = 5*10**5
     size = min(splitsize, n)
@@ -871,7 +871,8 @@ if __name__ == '__main__':
         npsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(i)+".npy"
         print('\nsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
-        npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
+        #npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
+        npXtrain = Xtrain[:][0:size].to_numpy()
         Xtrain = Xtrain.drop(Xtrain.index[0:size])
         print('\t<<< saving splitted Xtrain [{}]'.format(i))
         np.save(npsave,npXtrain)
@@ -886,11 +887,9 @@ if __name__ == '__main__':
 
     memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
     print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
-
     if not time: input('...')
 
-
-    # split test data into smaller portions for transformation and save to disk to free up memory
+    # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
     n = Xtest.shape[0]
     splitsize = 5*10**5
     size = min(splitsize, n)
@@ -901,6 +900,7 @@ if __name__ == '__main__':
         print('\nsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
+        #npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
         Xtest = Xtest.drop(Xtest.index[0:size])
         print('\t<<< saving splitted Xtest [{}]'.format(i))
         np.save(npsave,npXtest)
@@ -915,38 +915,93 @@ if __name__ == '__main__':
 
     memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
     print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
-
     input('...')
 
 
 
     # TRANSFORM splits into single array
     # Xtrain
-    Xtrain_scaled = np.empty(shape=[0,len(features)]) # prepare empty np.array
-    for index in indexXtrain: # cycle through split-files and apply StandardScaler transform on the fly#
+    for index in indexXtrain: # cycle through split-files and apply StandardScaler transform on the fly
+
+        Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
+
         npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(index)+".npy" # forge path to load split-file
         print('\nload: {}'.format(npload))
         print('\t<<< loading splitted Xtrain [{}]'.format(index))
+
         tmp = np.load(npload).astype(np.float32) # load split-file
+        #tmp = np.load(npload) # load split-file
+
         print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
+
+        '''
+        # debug output
+        print('\n{}\n'.format(np.finfo(np.float32).max))
+        print('\n{}\n'.format(np.amax(tmp)))
+        result = np.where(tmp == np.amax(tmp))
+        print('pos max: {}\n'.format(result))
+
+        ar_inf = np.where(np.isinf(tmp))
+        print('\ninf: {}\n'.format(ar_inf))
+        '''
 
         print('>>> transform Xtrain in batches (batchsize={})...'.format(batchsize))
         n = tmp.shape[0]
         size = min(batchsize, n)
+
+        #print('tmp n (before loop): {}'.format(n))
+        #print('tmp size (before loop): {}'.format(size))
+
         while size > 0:
-            tmpscaled = scaler.transform(tmp[:][0:size],copy=None)
-            Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
+            tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
+            tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
+            #tmpscaled = scaler.transform(tmp,copy=None)
+
+            #Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
+            Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0)
+
 
             print(tmpscaled)
-
-            #input('blub')
             print(Xtrain_scaled)
-            #input('blab')
+            #del tmpscaled
+
             n -= size
             size = min(batchsize,n)
 
+            #print('tmp n (end of loop): {}'.format(n))
+            #print('tmp size (end of loop): {}'.format(size))
+
+        del tmpscaled
+
+        # save scaled split to disk
+        scaledsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        print('\nsave: {}'.format(scaledsave))
+        print('\t<<< saving scaled Xtrain [{}]'.format(index))
+        np.save(scaledsave,Xtrain_scaled)
+        print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
+        del Xtrain_scaled
+
+        '''
+        n = Xtrain_scaled.shape[0]
+        splitsize = 5*10**5
+        size = min(splitsize, n)
+        i = 0
+        while size > 0:
+            i += 1
+            npsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(i)+".npy"
+            print('\nsave: {}'.format(npsave))
+            print('\t<<< converting df to np.array[{}]'.format(i))
+            npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
+            Xtest = Xtest.drop(Xtest.index[0:size])
+            print('\t<<< saving splitted Xtest [{}]'.format(i))
+            np.save(npsave,npXtest)
+            print('\n{}\n{} {} {}MB\n'.format(npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
+            n -= size
+            size = min(splitsize, n)
+        '''
+
+
     del tmp
-    print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
 
     
     input('blob')
