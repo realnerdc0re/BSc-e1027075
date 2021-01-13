@@ -5,15 +5,15 @@
 
 - get rid of unnecessary imports to save memory
 
-- implement partial_fit for the StandardScaler to process chunks to save memory usage, without this rpi will run into SWAP when applying scaling to the dataset
+- possibility to save memory: save Xtest, Ytest, Ytrain to np.array file, delete data to free up memory, transform Xtrain, save to np.array, delete Xtrain to free up memory, load Xtest, transform Xtest, save as np.array, delete Xtest
 
 - get rid of df and just use np array after transforming with scaler, its unnecessary to have column labels available at this point
 
 - implement RandomForest classifier using RandomForest(warm_start=True) for fit on chunks
 
-- change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement)
+- change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
 
-- verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data...
+- minor: verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data...
 
 
 
@@ -47,6 +47,7 @@
 
 ## DONE:
 
+- implement partial_fit for the StandardScaler to process chunks to save memory usage, without this rpi will run into SWAP when applying scaling to the dataset
 - read CSV line-by-line: process data per chunk on rpi
 - change datatypes from int64/float64 to int32/16/8 or float32/float16 to save memory directly after sampling, include check to not convert features that require int64 (nonetheless, every imported CSV is imported with 64bit, so try to avoid unnecessary save/loads on rpi)
 - improve speed for NaN replacement

@@ -751,6 +751,7 @@ if __name__ == '__main__':
     dataset = importCSV(path,None,verbose,chunksize)
     # output basic dataset informations
     printdata(dataset,'original',verbose)
+    print('\nmemory-usage (bytes):\n\n{}\n'.format(dataset.memory_usage()))
 
 
     # PREPROCESSING
