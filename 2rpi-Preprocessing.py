@@ -849,8 +849,7 @@ if __name__ == '__main__':
         npsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(i)+".npy"
         if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
-        #npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
-        npXtrain = Xtrain[:][0:size].to_numpy()
+        npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
         Xtrain = Xtrain.drop(Xtrain.index[0:size])
         print('\t<<< saving splitted Xtrain[{}]'.format(i))
         np.save(npsave,npXtrain)
@@ -882,7 +881,6 @@ if __name__ == '__main__':
         if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
-        #npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
         Xtest = Xtest.drop(Xtest.index[0:size])
         print('\t<<< saving splitted Xtest[{}]'.format(i))
         np.save(npsave,npXtest)
