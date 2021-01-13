@@ -877,11 +877,53 @@ if __name__ == '__main__':
             np.save(npsave,npXtrain)
             n -= size
             size = min(splitsize, n)
-        input('...')
 
+        number = np.arange(0,i,1) # create array to restore splitted files afterwards
+        print('number: {}'.format(number))
         del Xtrain
         del npXtrain
         gc.collect()
+
+        gc.collect()
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
+
+        if not time: input('...')
+
+
+
+        '''
+        # split training data into smaller portions for transformation and save to disk to free up memory
+        n = Xtest.shape[0]
+        splitsize = 5*10**5
+        size = min(splitsize, n)
+        i = 0
+        while size > 0:
+            i += 1
+            npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
+            Xtrain = Xtrain.drop(Xtrain.index[0:size])
+            print('Xtrain as numpy-array:\n{}\n{} {} {}MB\n'.format(npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
+            npsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(i)+".npy"
+            print('npsave: {}'.format(npsave))
+            print('\t<<< saving splitted Xtrain numpy array [{}]'.format(i))
+            np.save(npsave,npXtrain)
+            n -= size
+            size = min(splitsize, n)
+
+        number = np.arange(0,i,1) # create array to restore splitted files afterwards
+        print('number: {}'.format(number))
+        del Xtrain
+        del npXtrain
+        gc.collect()
+
+        gc.collect()
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
+
+        input('...')
+        '''
+
+
 
 
 
@@ -924,9 +966,10 @@ if __name__ == '__main__':
 
         gc.collect()
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('\nmem-usage after Xtest fit: {}MB\n'.format(int(memoryUse)))
+        print('\nmem-usage after Xtest transform: {}MB\n'.format(int(memoryUse)))
 
-
+        if not time: input('...')
+        exit()
 
 
 
@@ -959,7 +1002,7 @@ if __name__ == '__main__':
 
         gc.collect()
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('\nmem-usage after Xtrain fit: {}MB\n'.format(int(memoryUse)))
+        print('\nmem-usage after Xtrain transform: {}MB\n'.format(int(memoryUse)))
 
 
 
