@@ -981,58 +981,69 @@ if __name__ == '__main__':
 
 
     # PCA
-
     Xpca = []
     n = 4
-
-    #pca = PCA(n_components = n)
     ipca = IncrementalPCA(n_components = n, batch_size = 10**5)
 
-    Xtrain = np.empty(shape=[0,len(features)])
-    print('\n>>> apply principal component analysis...')
-    # fit to Xtrain
+    print('>>> apply principal component analysis...')
+    # PARTIAL FIT to Xtrain
     for index in iXtrain: # cycle through split files
         npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
         split = np.load(npload).astype(np.float32)
         #Xtrain = np.append(Xtrain,split,axis=0)
-        print('\t<<< fit PCA...')
+        print('\t<<< partial fit to Xtrain[{}]...'.format(index))
         ipca.partial_fit(split)
     del split
 
-    # transform Xtrain & Xtest
+    # TRANSFORM
+    # Xtrain
+    Xtrain = np.empty(shape=[0,n]) # initialise empty numpy array
+    for index in iXtrain:
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        split = np.load(npload).astype(np.float32)
+        print('\t<<< transform Xtrain[{}]...'.format(index))
+        split = ipca.transform(split)
+        Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
+    del split
+
+    print('\nXtrain (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
+
+    Xtest = np.empty(shape=[0,n]) # initialise empty numpy array
+    for index in iXtest:
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtest_scaled_"+str(index)+".npy"
+        split = np.load(npload).astype(np.float32)
+        print('\t<<< transform Xtest[{}]...'.format(index))
+        split = ipca.transform(split)
+        Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
+    del split
+
+    print('\nXtest (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2)))
 
 
+    # RANDOM FOREST CLASSIFIER
 
+    model = RandomForestClassifier(warm_start=True)
+    model = model.fit(Xtrain,Ytrain)
+    predictions = model.predict(Xtest)
+    matrix = confusion_matrix(Ytest,predictions)
+    report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
 
-    
+    # save results
+    parameters = model.get_params(deep=True)
+    accuracyscore = accuracy_score(Ytest,predictions)
+    featureimportance = model.feature_importances_
 
-    #print('\nXtrain:\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
-
-    #print('\t<<< fit PCA...')
-    #pca.fit(Xtrain)
-
-
-
-
-
-    # transform Xtrain, Xtest
-
-
-
-    # MODEL & PREDICTION
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # output final results
+    print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
+    print('\nModel-Parameters:\n{}'.format(parameters))
+    print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+    print('\n\nFeature-Importance:\n{}'.format(featureimportance))
+    print('\n\nConfusion-Matrix:\n')
+    print('t       p r e d i c t')
+    print('r         "0"    "1"')
+    print('u  "0":',matrix[0])
+    print('e  "1":',matrix[1])
+    print('\n\nClassification-Report:\n\n',report)
 
 
 
