@@ -8,6 +8,7 @@
 - add timestamp saves and dstat to rpi-Preprocessing.py
 	- create spider-diagram for key values (mem, cpu, time, accuracy)
 - get rid of unnecessary imports to save memory
+- try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
 
 
 
