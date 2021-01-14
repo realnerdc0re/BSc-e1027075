@@ -766,7 +766,6 @@ if __name__ == '__main__':
     else:
         dataset = pd.DataFrame()
 
-        # 
         Xtrain = pd.DataFrame()
         Xtest = pd.DataFrame()
         Ytrain = pd.Series(dtype=int)
@@ -1053,15 +1052,6 @@ if __name__ == '__main__':
     print('e  "1":',matrix[1])
     print('\n\nClassification-Report:\n\n',report)
 
-
-
-
-
-
-
-
-
-
     if time:
         end = timer()
         t = epochtime.time()
@@ -1072,153 +1062,5 @@ if __name__ == '__main__':
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'Preprocessing.py','end'])
-
-    exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
-    # scale Xtest in batches
-    print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
-    n = Xtest.shape[0]
-    size = min(batchsize, n)
-    while size > 0:
-        #tmp = scaler.transform(Xtest[features][index:index+size],copy=None)
-        tmp = scaler.transform(Xtest[features][0:size],copy=None)
-        Xtest = Xtest.drop(Xtest.index[0:size]) # immediately drop current batch from Xtest
-        Xtest_scaled = np.append(Xtest_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
-
-        # memory logging, debug output
-        Xtest_size = int(Xtest.memory_usage().sum()/1024**2)
-        Xtest_scaled_size = int(Xtest_scaled.nbytes/1024**2)
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('{}MB:\t{}MB\t/\t{}MB\t/\t\u0394 {}MB'.format(memoryUse,Xtest_size,Xtest_scaled_size,(Xtest_size+Xtest_scaled_size)-Xtest_size_df))
-
-        # get conditions for next loop-iteration check
-        n -= size
-        size = min(batchsize, n)
-        #gc.collect()
-
-    del Xtest # delete dataframe after scaling is done
-
-    gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after Xtest transform: {}MB\n'.format(int(memoryUse)))
-
-    if not time: input('...')
-    exit()
-
-
-
-
-
-
-    Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
-
-    # scale Xtrain in batches
-    print('>>> transform Xtrain in batches (batchsize={}, size={}MB)...'.format(batchsize,Xtrain_size_df))
-    n = Xtrain.shape[0]
-    size = min(batchsize, n)
-    while size > 0:
-        #tmp = scaler.transform(Xtest[features][index:index+size],copy=None)
-        tmp = scaler.transform(Xtrain[features][0:size],copy=None)
-        #Xtrain = Xtrain.drop(index=Xtrain.index[0:size]) # immediately drop current batch from Xtest
-        Xtrain.drop(index=Xtrain.index[0:size],inplace=True) # immediately drop current batch from Xtest
-        Xtrain_scaled = np.append(Xtrain_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
-
-        # memory logging, debug output
-        Xtrain_size = int(Xtrain.memory_usage().sum()/1024**2)
-        Xtrain_scaled_size = int(Xtrain_scaled.nbytes/1024**2)
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('{}MB:\t{}MB\t/\t{}MB\t/\t\u0394 {}MB'.format(memoryUse,Xtrain_size,Xtrain_scaled_size,(Xtrain_size+Xtrain_scaled_size)-Xtrain_size_df))
-
-        # get conditions for next loop-iteration check
-        n -= size
-        size = min(batchsize, n)
-        #gc.collect()
-
-    del Xtrain # delete dataframe after scaling is done
-
-    gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after Xtrain transform: {}MB\n'.format(int(memoryUse)))
-
-
-
-    print('\nXtrain_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
-    if not time: input('...')
-    print('\nXtest_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
-    if not time: input('...')
-
-    #Xtest = tmpscaled
-
-
-
-    
-
-
-
-
-    # check processed data
-    #verbose = False
-    #printdata(dataset,'original',True)
-    #input('...')
-    #print('\n'+10*'~'+' Xtrain '+10*'~')
-    #print('\n{}\n{}\n'.format(Xtrain,Xtrain.describe()))
-    #types = Xtrain.dtypes
-    #print('\n'+10*'~'+' Xtrain: scaled '+10*'~')
-    #print('\n{}\n{}\n'.format(Xtrain,types))
-    #input('...')
-    #print('\n'+10*'~'+' Ytrain '+10*'~')
-    #print('\n{}\n'.format(Ytrain))
-    #input('...')
-
-    #print('\n'+10*'~'+' Ytest '+10*'~')
-    #print('\n{}\n'.format(Ytest))
-    #input('...')
-
-
-
-
-
-    #datascaled = scalingDataframe(datasplit,[],verbose,time)
-
-    #n=4
-    #Xpca = PCAnalysis(datascaled,n,verbose,time)
-
-    #Xtrain = Xpca[0]
-    #Xtest = Xpca[1]
-    #Ytrain = datasplit[2]
-    #Ytest = datasplit[3]
-
-    '''
-    model = RandomForestClassifier()
-    print('>>> fitting model with {}...'.format(model))
-    model = model.fit(Xtrain,Ytrain)
-    makePredictions(model,Xtest,Ytest,False)
-    '''
-
-
 
     exit()

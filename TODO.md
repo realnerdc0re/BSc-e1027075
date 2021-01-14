@@ -3,17 +3,14 @@
 
 ## INPROGRESS:
 
+- create flow chart (draw.io, export to PDF) and send to Fares
+	- explaining architecture, modules, sampling
+- add timestamp saves and dstat to rpi-Preprocessing.py
+	- create spider-diagram for key values (mem, cpu, time, accuracy)
 - get rid of unnecessary imports to save memory
 
-- possibility to save memory: save Xtest, Ytest, Ytrain to np.array file, delete data to free up memory, transform Xtrain, save to np.array, delete Xtrain to free up memory, load Xtest, transform Xtest, save as np.array, delete Xtest
 
-- get rid of df and just use np array after transforming with scaler, its unnecessary to have column labels available at this point
 
-- implement RandomForest classifier using RandomForest(warm_start=True) for fit on chunks
-
-- change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
-
-- minor: verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data...
 
 
 
@@ -21,6 +18,10 @@
 
 #### NEXT:
 
+
+- check actual sampling on rpi (flowsampling, packetsampling on original data)
+- use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html)
+- minor: verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data...
 - use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)
 - flowStartMilliseconds: remove feature direct after labeling
 - pyplot import only on non-rpi devices?
@@ -36,6 +37,7 @@
   
 #### IMPROVEMENTS:
 
+- change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
 - create config file to import, containing all necessary file- and folderpaths, paths to executable tools... and import this file instead of making definitions inside every script
 - choose another method to load/save data, model & results
 - improve FlowSampling method (function convertToList), now using actual lists instead of np array for iteration, etc..
@@ -76,6 +78,7 @@
 
 ## DISCARDED:
 
+- implement RandomForest classifier using RandomForest(warm_start=True) for fit on chunks
 - try different approach for the merged CSV on rpi: instead of merging all sampled CSVs into one large single CSV, read_csv workdays, preprocess those (including reducing memory size float16/32, int8/16/32, cleaning,...) and merge the preprocessed data right before doing the RandomForest classification
 - change rpi distro from dietPi to piCore (http://www.tinycorelinux.net/ports.html, check http://forum.tinycorelinux.net/index.php/topic,24392.0.html to import integrated wifi firmware), reason: available piCore packages not suitable for this application
 - tweak dstat delay for average values over a given time: its not possible to set delays below the default 1 second
