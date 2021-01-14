@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 #from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.decomposition import IncrementalPCA
 #from sklearn.impute import SimpleImputer as Imputer
 #from sklearn.model_selection import cross_val_score
 #from sklearn.model_selection import StratifiedKFold
@@ -812,8 +813,7 @@ if __name__ == '__main__':
         #Xtrain.info(memory_usage="deep")
         #Xtest.info(memory_usage="deep")
 
-    # STANDARDSCALER
-    # PARTIAL FIT
+    # SCALER FIT
     features = list(Xtrain) # used later to initialise empty numpy arrays via len(features)
 
     # applying scaler fit in batches, to not run into SWAP
@@ -836,7 +836,7 @@ if __name__ == '__main__':
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
 
-    # SPLIT FILES
+    # SPLIT FILE
     # Xtrain: split training data into smaller portions for transformation and save to disk to free up memory
     n = Xtrain.shape[0]
     splitsize = 5*10**5
@@ -868,6 +868,7 @@ if __name__ == '__main__':
         print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
         if not time: input('...')
 
+    # SPLIT FILE
     # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
     n = Xtest.shape[0]
     splitsize = 5*10**5
@@ -898,7 +899,7 @@ if __name__ == '__main__':
         print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
         if not time: input('...')
 
-    # TRANSFORM splits into single array
+    # SCALER TRANSFORM
     # Xtrain
     print('>>> transform Xtrain (batchsize={})...'.format(batchsize))
     for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
@@ -938,7 +939,7 @@ if __name__ == '__main__':
         del Xtrain_scaled
     del tmp
 
-
+    # SCALER TRANSFORM
     # Xtest
     print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
     for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
@@ -979,7 +980,103 @@ if __name__ == '__main__':
     del tmp
 
 
+    # PCA
+
+    Xpca = []
+    n = 4
+
+    #pca = PCA(n_components = n)
+    ipca = IncrementalPCA(n_components = n, batch_size = 10**5)
+
+    Xtrain = np.empty(shape=[0,len(features)])
+    print('\n>>> apply principal component analysis...')
+    # fit to Xtrain
+    for index in iXtrain: # cycle through split files
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        split = np.load(npload).astype(np.float32)
+        #Xtrain = np.append(Xtrain,split,axis=0)
+        print('\t<<< fit PCA...')
+        ipca.partial_fit(split)
+    del split
+
+    # transform Xtrain & Xtest
+
+
+
+
+    
+
+    #print('\nXtrain:\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
+
+    #print('\t<<< fit PCA...')
+    #pca.fit(Xtrain)
+
+
+
+
+
+    # transform Xtrain, Xtest
+
+
+
+    # MODEL & PREDICTION
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if time:
+        end = timer()
+        t = epochtime.time()
+        print('\nPreprocessing.py\n[EPOCH, end]: {}'.format(t))
+        print('[RUNTIME]: %.3f' % (end-start),'seconds')
+
+        if export: # write timestamps to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'Preprocessing.py','end'])
+
     exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
@@ -1012,6 +1109,8 @@ if __name__ == '__main__':
 
     if not time: input('...')
     exit()
+
+
 
 
 
@@ -1057,11 +1156,7 @@ if __name__ == '__main__':
 
 
 
-    # PCA
-
-
-    # MODEL & PREDICTION
-
+    
 
 
 
@@ -1105,15 +1200,6 @@ if __name__ == '__main__':
     makePredictions(model,Xtest,Ytest,False)
     '''
 
-    if time:
-        end = timer()
-        t = epochtime.time()
-        print('\nPreprocessing.py\n[EPOCH, end]: {}'.format(t))
-        print('[RUNTIME]: %.3f' % (end-start),'seconds')
 
-        if export: # write timestamps to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'Preprocessing.py','end'])
 
     exit()
