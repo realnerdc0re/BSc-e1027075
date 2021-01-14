@@ -1023,12 +1023,20 @@ if __name__ == '__main__':
     # RANDOM FOREST CLASSIFIER
 
     model = RandomForestClassifier(warm_start=True)
+    print('>>> fit RandomForestClassifier...')
     model = model.fit(Xtrain,Ytrain)
+    del Xtrain
+
+    print('>>> create predictions...')
     predictions = model.predict(Xtest)
+
+    print('>>> create confusion-matrix...')
     matrix = confusion_matrix(Ytest,predictions)
+
+    print('>>> create classification-report...')
     report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
 
-    # save results
+    print('>>> save parameters, accuracy-score and feature-importance...')
     parameters = model.get_params(deep=True)
     accuracyscore = accuracy_score(Ytest,predictions)
     featureimportance = model.feature_importances_
