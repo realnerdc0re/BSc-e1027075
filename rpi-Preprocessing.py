@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 #from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.decomposition import IncrementalPCA
 #from sklearn.impute import SimpleImputer as Imputer
 #from sklearn.model_selection import cross_val_score
 #from sklearn.model_selection import StratifiedKFold
@@ -62,6 +63,7 @@ parser.add_argument('-t','--time', action='store_true', help='measure function-r
 parser.add_argument('-e','--export', action='store_true', help='export timestamps')
 parser.add_argument('-s','--save', action='store_true', help='save CSV for further processing')
 parser.add_argument('-l','--load', action='store_true', help='load CSV')
+parser.add_argument('-m','--memory', action='store_true', help='output memory-usage')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
@@ -663,10 +665,6 @@ def makePredictions(model,Xtest,Ytest,export):
 
 if __name__ == '__main__':
 
-    pid = os.getpid()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-    print('\nmem-usage at start: {}MB\n'.format(int(memoryUse)))
-
     global verbose 
     global time
     global dataset
@@ -679,6 +677,7 @@ if __name__ == '__main__':
     packetsampling = args.packetsampling
 
     export = args.export
+    memory = args.memory
 
     rpi = args.rpi
     windows = args.windows
@@ -689,6 +688,12 @@ if __name__ == '__main__':
     chunksize = args.chunk[0]
     batchsize = args.batch[0]
     if chunksize == 0: chunksize = None
+
+
+    if memory:
+        pid = os.getpid()
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
+        print('\nmem-usage at start: {}MB\n'.format(int(memoryUse)))
 
     if time: 
         start = timer() # runtime
@@ -719,6 +724,7 @@ if __name__ == '__main__':
         fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
         ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
         #chunksize = 10**3
+
     # filenames of sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     # set path to sampeld CSV based on optional arguments and OS
@@ -726,10 +732,12 @@ if __name__ == '__main__':
         if windows: path = fpath+"\\"+csvname[findex]
         elif (linux or rpi): path = fpath+"/"+csvname[findex]
         savepath = fpath+r"/processed"
+        spath = fpath
     elif packetsampling:
         if windows: path = ppath+"\\"+csvname[findex]
         elif (linux or rpi): path = ppath+"/"+csvname[findex]
         savepath = ppath+r"/processed"
+        spath = ppath
 
     # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
@@ -743,10 +751,12 @@ if __name__ == '__main__':
     dropfeature.append('flowStartMilliseconds')
     #dropfeature.append('')
 
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-    print('\nmem-usage before importing CSV: {}MB\n'.format(int(memoryUse)))
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
+        print('\nmem-usage before importing CSV: {}MB\n'.format(int(memoryUse)))
 
-    # IMPORT depending on chosen chunksize
+    # IMPORT CSV
+    # depending on chosen chunksize
     if chunksize == None:
         dataset = importCSV(path,None,verbose,chunksize)
         # CLEANING
@@ -756,7 +766,6 @@ if __name__ == '__main__':
     else:
         dataset = pd.DataFrame()
 
-        # 
         Xtrain = pd.DataFrame()
         Xtest = pd.DataFrame()
         Ytrain = pd.Series(dtype=int)
@@ -787,55 +796,24 @@ if __name__ == '__main__':
 
         del chunksplit
         del chunk
-
     gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-    print('\nmem-usage after importing CSV: {}MB\n'.format(int(memoryUse)))
 
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
+        print('\nmem-usage after importing CSV: {}MB\n'.format(int(memoryUse)))
 
-    #print('{}'.format(type(chunksplit[0])))
+        # memory logging, debug output
+        Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
+        Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
+        Ytrain_size_df = (Ytrain.nbytes/1024**2)
+        Ytest_size_df = (Ytest.nbytes/1024**2)
+        total_size_df = int(Xtrain_size_df+Xtest_size_df+Ytrain_size_df+Ytest_size_df)
+        print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
+        #Xtrain.info(memory_usage="deep")
+        #Xtest.info(memory_usage="deep")
 
-    #Xtrain = conversion(Xtrain,True)
-    #print('Xtrain:\n{}\n'.format(type(Xtrain)))
-    #printdata(Xtrain,True,False)
-
-    #print('Ytrain:\n{}\n'.format(type(Ytrain)))
-    #print(Ytrain)
-    #Ytrain = Ytrain.to_numpy().astype(np.int8)
-    #print('Ytrain:\n{}\n'.format(type(Ytrain)))
-    #print(Ytrain)
-
-
-
-    '''
-    print('Xtrain:\n{}\n'.format(Xtrain))
-    input('...')
-
-    Xtrain = Xtrain.to_numpy().astype(np.float32)
-    Xtest = Xtest.to_numpy()
-    Ytrain = Ytrain.to_numpy()
-    Ytest = Ytest.to_numpy()
-
-    print('Xtrain:\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
-    input('...')
-    '''
-
-
-
-    # memory logging, debug output
-    Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
-    Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
-    Ytrain_size_df = (Ytrain.nbytes/1024**2)
-    Ytest_size_df = (Ytest.nbytes/1024**2)
-    total_size_df = int(Xtrain_size_df+Xtest_size_df+Ytrain_size_df+Ytest_size_df)
-    print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
-    #Xtrain.info(memory_usage="deep")
-    #Xtest.info(memory_usage="deep")
-
-
-    # SCALING
-    features = list(Xtrain)
-    #print('\n{}\n'.format(features))
+    # SCALER FIT
+    features = list(Xtrain) # used later to initialise empty numpy arrays via len(features)
 
     # applying scaler fit in batches, to not run into SWAP
     n = Xtrain.shape[0] # number of rows
@@ -848,151 +826,231 @@ if __name__ == '__main__':
         index += size
 
     del Xtrain_partial
-
     gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
 
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
 
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
 
-
-    '''
-    # create empty dataframe
-    n = Xtest.shape[0] # number of rows
-    tmpscaled=pd.DataFrame(index=np.arange(n),columns=features)
-
-    splitindex = list(Xtest.index.values) # get exact copy of the row-index from Xtest
-    tmp = pd.DataFrame(index=splitindex,columns=features) # create empty copy of Xtest
-    print(tmp)
-    '''
-
-
-    Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
-    # scale Xtest in batches
-    print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
-    n = Xtest.shape[0]
-    size = min(batchsize, n)
-    while size > 0:
-        #tmp = scaler.transform(Xtest[features][index:index+size],copy=None)
-        tmp = scaler.transform(Xtest[features][0:size],copy=None)
-        Xtest = Xtest.drop(Xtest.index[0:size]) # immediately drop current batch from Xtest
-        Xtest_scaled = np.append(Xtest_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
-
-        # memory logging, debug output
-        Xtest_size = int(Xtest.memory_usage().sum()/1024**2)
-        Xtest_scaled_size = int(Xtest_scaled.nbytes/1024**2)
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('{}MB:\t{}MB\t/\t{}MB\t/\t\u0394 {}MB'.format(memoryUse,Xtest_size,Xtest_scaled_size,(Xtest_size+Xtest_scaled_size)-Xtest_size_df))
-
-        # get conditions for next loop-iteration check
-        n -= size
-        size = min(batchsize, n)
-        #gc.collect()
-
-    del Xtest # delete dataframe after scaling is done
-
-    gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after Xtest fit: {}MB\n'.format(int(memoryUse)))
-
-
-
-
-
-
-    Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
-
-    # scale Xtrain in batches
-    print('>>> transform Xtrain in batches (batchsize={}, size={}MB)...'.format(batchsize,Xtrain_size_df))
+    # SPLIT FILE
+    # Xtrain: split training data into smaller portions for transformation and save to disk to free up memory
     n = Xtrain.shape[0]
-    size = min(batchsize, n)
+    splitsize = 5*10**5
+    size = min(splitsize, n)
+    iteration = int(n/splitsize)+1
+    i = 0
+    print('>>> split Xtrain (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
     while size > 0:
-        #tmp = scaler.transform(Xtest[features][index:index+size],copy=None)
-        tmp = scaler.transform(Xtrain[features][0:size],copy=None)
-        #Xtrain = Xtrain.drop(index=Xtrain.index[0:size]) # immediately drop current batch from Xtest
-        Xtrain.drop(index=Xtrain.index[0:size],inplace=True) # immediately drop current batch from Xtest
-        Xtrain_scaled = np.append(Xtrain_scaled,tmp,axis=0).astype(np.float32) # append, and convert to float32 on-the-fly
-
-        # memory logging, debug output
-        Xtrain_size = int(Xtrain.memory_usage().sum()/1024**2)
-        Xtrain_scaled_size = int(Xtrain_scaled.nbytes/1024**2)
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('{}MB:\t{}MB\t/\t{}MB\t/\t\u0394 {}MB'.format(memoryUse,Xtrain_size,Xtrain_scaled_size,(Xtrain_size+Xtrain_scaled_size)-Xtrain_size_df))
-
-        # get conditions for next loop-iteration check
+        i += 1
+        npsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(i)+".npy"
+        if verbose: print('\tsave: {}'.format(npsave))
+        print('\t<<< converting df to np.array[{}]'.format(i))
+        npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
+        Xtrain = Xtrain.drop(Xtrain.index[0:size])
+        print('\t<<< saving splitted Xtrain[{}]'.format(i))
+        np.save(npsave,npXtrain)
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
         n -= size
-        size = min(batchsize, n)
-        #gc.collect()
+        size = min(splitsize, n)
 
-    del Xtrain # delete dataframe after scaling is done
+    iXtrain = np.arange(1,i+1,1) # create array to restore splitted files afterwards
 
+    del Xtrain
+    del npXtrain
     gc.collect()
-    memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-    print('\nmem-usage after Xtrain fit: {}MB\n'.format(int(memoryUse)))
 
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
+        if not time: input('...')
 
+    # SPLIT FILE
+    # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
+    n = Xtest.shape[0]
+    splitsize = 5*10**5
+    size = min(splitsize, n)
+    iteration = int(n/splitsize)+1
+    i = 0
+    print('>>> split Xtest (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
+    while size > 0:
+        i += 1
+        npsave = spath+"/tmp/"+filenames[findex]+"_Xtest_"+str(i)+".npy"
+        if verbose: print('\tsave: {}'.format(npsave))
+        print('\t<<< converting df to np.array[{}]'.format(i))
+        npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
+        Xtest = Xtest.drop(Xtest.index[0:size])
+        print('\t<<< saving splitted Xtest[{}]'.format(i))
+        np.save(npsave,npXtest)
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
+        n -= size
+        size = min(splitsize, n)
 
+    iXtest = np.arange(1,i+1,1) # create array to restore splitted files afterwards
+    del Xtest
+    del npXtest
+    gc.collect()
 
+    if memory:
+        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
+        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
+        if not time: input('...')
 
+    # SCALER TRANSFORM
+    # Xtrain
+    print('>>> transform Xtrain (batchsize={})...'.format(batchsize))
+    for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
 
-    print('\nXtrain_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
-    if not time: input('...')
-    print('\nXtest_scaled:\n\n{}\n\n{}, {}, {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
-    if not time: input('...')
+        Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
 
-    #Xtest = tmpscaled
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(index)+".npy" # forge path to load split-file
+        if verbose: print('\nload: {}'.format(npload))
+        print('\t<<< loading splitted Xtrain[{}]'.format(index))
 
+        tmp = np.load(npload).astype(np.float32) # load split-file
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
+
+        print('\t<<< transform Xtrain[{}]...'.format(index))
+        n = tmp.shape[0]
+        size = min(batchsize, n)
+        while size > 0:
+            tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
+            tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
+            Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
+
+            if verbose:
+                print(tmpscaled)
+                print(Xtrain_scaled)
+
+            n -= size
+            size = min(batchsize,n)
+
+        del tmpscaled
+
+        # save scaled split to disk
+        scaledsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        if verbose: print('\nsave: {}'.format(scaledsave))
+        print('\t<<< saving scaled Xtrain[{}]'.format(index))
+        np.save(scaledsave,Xtrain_scaled)
+        if verbose: print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
+        del Xtrain_scaled
+    del tmp
+
+    # SCALER TRANSFORM
+    # Xtest
+    print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
+    for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
+
+        Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
+
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtest_"+str(index)+".npy" # forge path to load split-file
+        if verbose: print('\nload: {}'.format(npload))
+        print('\t<<< loading splitted Xtest[{}]'.format(index))
+
+        tmp = np.load(npload).astype(np.float32) # load split-file
+        if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
+
+        print('\t<<< transform Xtest[{}]...'.format(index))
+        n = tmp.shape[0]
+        size = min(batchsize, n)
+        while size > 0:
+            tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
+            tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
+            Xtest_scaled = np.append(Xtest_scaled,tmpscaled,axis=0).astype(np.float32)
+
+            if verbose:
+                print(tmpscaled)
+                print(Xtest_scaled)
+
+            n -= size
+            size = min(batchsize,n)
+
+        del tmpscaled
+
+        # save scaled split to disk
+        scaledsave = spath+"/tmp/"+filenames[findex]+"_Xtest_scaled_"+str(index)+".npy"
+        if verbose: print('\nsave: {}'.format(scaledsave))
+        print('\t<<< saving scaled Xtest[{}]'.format(index))
+        np.save(scaledsave,Xtest_scaled)
+        if verbose: print('\nXtest_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
+        del Xtest_scaled
+    del tmp
 
 
     # PCA
+    Xpca = []
+    n = 4
+    ipca = IncrementalPCA(n_components = n, batch_size = 10**5)
+
+    print('>>> apply principal component analysis...')
+    # PARTIAL FIT to Xtrain
+    for index in iXtrain: # cycle through split files
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        split = np.load(npload).astype(np.float32)
+        #Xtrain = np.append(Xtrain,split,axis=0)
+        print('\t<<< partial fit to Xtrain[{}]...'.format(index))
+        ipca.partial_fit(split)
+    del split
+
+    # TRANSFORM
+    # Xtrain
+    Xtrain = np.empty(shape=[0,n]) # initialise empty numpy array
+    for index in iXtrain:
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        split = np.load(npload).astype(np.float32)
+        print('\t<<< transform Xtrain[{}]...'.format(index))
+        split = ipca.transform(split)
+        Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
+    del split
+
+    print('\nXtrain (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
+
+    Xtest = np.empty(shape=[0,n]) # initialise empty numpy array
+    for index in iXtest:
+        npload = spath+"/tmp/"+filenames[findex]+"_Xtest_scaled_"+str(index)+".npy"
+        split = np.load(npload).astype(np.float32)
+        print('\t<<< transform Xtest[{}]...'.format(index))
+        split = ipca.transform(split)
+        Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
+    del split
+
+    print('\nXtest (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2)))
 
 
-    # MODEL & PREDICTION
+    # RANDOM FOREST CLASSIFIER
 
-
-
-
-
-    # check processed data
-    #verbose = False
-    #printdata(dataset,'original',True)
-    #input('...')
-    #print('\n'+10*'~'+' Xtrain '+10*'~')
-    #print('\n{}\n{}\n'.format(Xtrain,Xtrain.describe()))
-    #types = Xtrain.dtypes
-    #print('\n'+10*'~'+' Xtrain: scaled '+10*'~')
-    #print('\n{}\n{}\n'.format(Xtrain,types))
-    #input('...')
-    #print('\n'+10*'~'+' Ytrain '+10*'~')
-    #print('\n{}\n'.format(Ytrain))
-    #input('...')
-
-    #print('\n'+10*'~'+' Ytest '+10*'~')
-    #print('\n{}\n'.format(Ytest))
-    #input('...')
-
-
-
-
-
-    #datascaled = scalingDataframe(datasplit,[],verbose,time)
-
-    #n=4
-    #Xpca = PCAnalysis(datascaled,n,verbose,time)
-
-    #Xtrain = Xpca[0]
-    #Xtest = Xpca[1]
-    #Ytrain = datasplit[2]
-    #Ytest = datasplit[3]
-
-    '''
-    model = RandomForestClassifier()
-    print('>>> fitting model with {}...'.format(model))
+    model = RandomForestClassifier(warm_start=True)
+    print('>>> fit RandomForestClassifier...')
     model = model.fit(Xtrain,Ytrain)
-    makePredictions(model,Xtest,Ytest,False)
-    '''
+    del Xtrain
+
+    print('>>> create predictions...')
+    predictions = model.predict(Xtest)
+
+    print('>>> create confusion-matrix...')
+    matrix = confusion_matrix(Ytest,predictions)
+
+    print('>>> create classification-report...')
+    report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
+
+    print('>>> save parameters, accuracy-score and feature-importance...')
+    parameters = model.get_params(deep=True)
+    accuracyscore = accuracy_score(Ytest,predictions)
+    featureimportance = model.feature_importances_
+
+    # output final results
+    print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
+    print('\nModel-Parameters:\n{}'.format(parameters))
+    print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+    print('\n\nFeature-Importance:\n{}'.format(featureimportance))
+    print('\n\nConfusion-Matrix:\n')
+    print('t       p r e d i c t')
+    print('r         "0"    "1"')
+    print('u  "0":',matrix[0])
+    print('e  "1":',matrix[1])
+    print('\n\nClassification-Report:\n\n',report)
 
     if time:
         end = timer()
