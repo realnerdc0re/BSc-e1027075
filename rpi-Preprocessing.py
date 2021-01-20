@@ -26,9 +26,6 @@ from sklearn.ensemble import RandomForestClassifier
 from timeit import default_timer as timer
 from pathlib import Path, PureWindowsPath
 
-
-
-
 import time as epochtime
 import numpy as np
 import pandas as pd
@@ -38,61 +35,27 @@ import csv
 import os
 import gc
 
+
+
+# FILES & PATHS
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
-
-# get working directory
-#wd = os.getcwd()
-
-
-# FILES
-# files and working directory
+# filenames of sampled, unlabeled CSVs
+csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
+# working directory
 wd = Path.cwd()
-reportf = 'report.csv'
-resultf = 'result.csv'
-timef = 'time.csv'
-# FILEPATHS
 # logs
 logd = wd / 'logs'
-reportp = logd / reportf
-resultp = logd / resultf
-timep = logd / timef
-# CSVs
+reportcsv = logd / 'report.csv'
+resultcsv = logd / 'result.csv'
+timecsv = logd / 'time.csv'
+# sampled CSVs
 fpath = wd / 'csv' / 'flow-sampled'
 ppath = wd / 'csv' / 'packet-sampled'
-
-'''
-print(reportp)
-print(resultp)
-print(timep)
-
-input('blub')
-'''
-
-
-
-'''
-
-    # FILEPATHS
-    # path to CSV files based on OS choice
-    if windows:
-        fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-        ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
-        chunksize = None
-    elif linux:
-        fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
-        ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-        #chunksize = None
-    elif rpi:
-        fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
-        ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
-
-logfolder = wd+"/logs"
-
-reportcsv = logfolder+'/report.csv'
-resultscsv = logfolder+'/results.csv'
-timecsv = logfolder+'/time.csv'
-'''
+# directory & files to save np arrays splits
+npsaved = wd / 'tmp'
+Xtrainnpy = 'Xtrain_split_{}v{}.npy'
+Xtestnpy =  'Xtest_split_{}v{}.npy'
 
 
 # ARGUMENT PARSING
@@ -103,7 +66,6 @@ parser = argparse.ArgumentParser(description='script for preprocessing labeled C
 parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
 parser.add_argument('chunk', metavar='chunk', type=int,nargs=1,help='choose numerical value as chunksize for CSV import')
 parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for batchsize for StandardScaler')
-
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
@@ -112,17 +74,10 @@ parser.add_argument('-e','--export', action='store_true', help='export timestamp
 parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-s','--save', action='store_true', help='save CSV for further processing')
 parser.add_argument('-l','--load', action='store_true', help='load CSV')
-#parser.add_argument('-m','--memory', action='store_true', help='output memory-usage')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
 samplegroup.add_argument('-p','--packetsampling', action='store_true', help='use per-packet sampled CSV files')
-# force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
-osgroup = parser.add_mutually_exclusive_group(required=True)
-osgroup.add_argument('--rpi', action='store_true', help='use Raspberry Pi paths (pre-sampled CSVs)')
-osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
-osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
-osgroup.add_argument('--windows', action='store_true', help='use windows paths')
 args = parser.parse_args()
 
 
@@ -721,34 +676,21 @@ if __name__ == '__main__':
     verbose = args.verbose
     superverbose = args.superverbose
     if superverbose: verbose = True
-    time = args.time
+
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
 
+    time = args.time
     save = args.save
     load = args.load
     export = args.export
-    #memory = args.memory
     model = args.model
 
-
-    rpi = args.rpi
-    windows = args.windows
-    osx = args.osx
-    linux = args.linux
     findex = args.file[0]
 
-    chunksize = args.chunk[0]
     batchsize = args.batch[0]
+    chunksize = args.chunk[0]
     if chunksize == 0: chunksize = None
-
-    '''
-    if memory:
-        pid = os.getpid()
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-        print('\nmem-usage at start: {}MB\n'.format(int(memoryUse)))
-    '''
-
 
     if time: 
         start = timer() # runtime
@@ -765,56 +707,17 @@ if __name__ == '__main__':
                     csvwriter = csv.writer(csvfile, delimiter=",")
                     csvwriter.writerow([t,'Preprocessing.py','start'])
 
-    '''
-    # FILEPATHS
-    # path to CSV files based on OS choice
-    if windows:
-        fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-        ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
-        chunksize = None
-    elif linux:
-        fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
-        ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-        #chunksize = None
-    elif rpi:
-        fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
-        ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
-        #chunksize = 10**3
-        '''
-
-    # filenames of sampled, unlabeled CSVs
-    csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
-    # set path to sampeld CSV based on optional arguments and OS
-    
-    '''
-    if flowsampling:
-        if windows: path = fpath+"\\"+csvname[findex]
-        elif (linux or rpi): path = fpath+"/"+csvname[findex]
-        savepath = fpath+r"/processed"
-        spath = fpath
-    elif packetsampling:
-        if windows: path = ppath+"\\"+csvname[findex]
-        elif (linux or rpi): path = ppath+"/"+csvname[findex]
-        savepath = ppath+r"/processed"
-        spath = ppath
-        '''
-
 
     if flowsampling:
         path = fpath / csvname[findex]
-        savepath = fpath / 'processed'
-        spath = fpath
     elif packetsampling:
-        if windows: path = ppath+"\\"+csvname[findex]
-        elif (linux or rpi): path = ppath+"/"+csvname[findex]
-        savepath = ppath+r"/processed"
-        spath = ppath
+        path = ppath / csvname[findex]
 
 
     # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--rpi\n{}\t--linux\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model".format(verbose,superverbose,time,rpi,linux,osx,windows,save,load,export,model))
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,save,load,export,model,flowsampling,packetsampling))
     print('\n\n{}\n'.format(path))
     if (not time): input('\n...')
 
@@ -823,11 +726,6 @@ if __name__ == '__main__':
     dropfeature.append('flowStartMilliseconds')
     #dropfeature.append('')
 
-    '''
-    if memory:
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-        print('\nmem-usage before importing CSV: {}MB\n'.format(int(memoryUse)))
-    '''
 
     # IMPORT CSV
     # depending on chosen chunksize
@@ -873,23 +771,6 @@ if __name__ == '__main__':
     gc.collect()
 
 
-    '''
-    if memory:
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
-        print('\nmem-usage after importing CSV: {}MB\n'.format(int(memoryUse)))
-
-        # memory logging, debug output
-        Xtrain_size_df = int(Xtrain.memory_usage().sum()/1024**2)
-        Xtest_size_df = int(Xtest.memory_usage().sum()/1024**2)
-        Ytrain_size_df = (Ytrain.nbytes/1024**2)
-        Ytest_size_df = (Ytest.nbytes/1024**2)
-        total_size_df = int(Xtrain_size_df+Xtest_size_df+Ytrain_size_df+Ytest_size_df)
-        print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
-        #Xtrain.info(memory_usage="deep")
-        #Xtest.info(memory_usage="deep")
-    '''
-
-
     # SCALER FIT
     features = list(Xtrain) # used later to initialise empty numpy arrays via len(features)
 
@@ -906,11 +787,6 @@ if __name__ == '__main__':
     del Xtrain_partial
     gc.collect()
 
-    '''
-    if memory:
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
-    '''
 
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
@@ -925,7 +801,7 @@ if __name__ == '__main__':
     print('>>> split Xtrain (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
     while size > 0:
         i += 1
-        npsave = spath / 'tmp' / (filenames[findex]+"_Xtrain_"+str(i)+".npy")
+        npsave = npsaved / Xtrainnpy.format(i,iteration)
         if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
@@ -942,13 +818,6 @@ if __name__ == '__main__':
     del npXtrain
     gc.collect()
 
-    '''
-    if memory:
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
-        if not time: input('...')
-    '''
-
 
     # SPLIT FILE
     # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
@@ -960,7 +829,7 @@ if __name__ == '__main__':
     print('>>> split Xtest (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
     while size > 0:
         i += 1
-        npsave = spath / 'tmp' / (filenames[findex]+"_Xtest_"+str(i)+".npy")
+        npsave = npsaved / Xtestnpy.format(i,iteration)
         if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
@@ -976,13 +845,6 @@ if __name__ == '__main__':
     del npXtest
     gc.collect()
 
-    '''
-    if memory:
-        memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
-        print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
-        if not time: input('...')
-    '''
-
 
     # SCALER TRANSFORM
     # Xtrain
@@ -991,7 +853,9 @@ if __name__ == '__main__':
 
         Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
 
-        npload = spath / 'tmp' / (filenames[findex]+"_Xtrain_"+str(index)+".npy") # forge path to load split-file
+        npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
+
+        #npload = spath / 'tmp' / (filenames[findex]+"_Xtrain_"+str(index)+".npy") # forge path to load split-file
         if verbose: print('\nload: {}'.format(npload))
         print('\t<<< loading splitted Xtrain[{}]'.format(index))
 
@@ -1016,10 +880,11 @@ if __name__ == '__main__':
         del tmpscaled
 
         # save scaled split to disk
-        scaledsave = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
+        npsave = npsaved / Xtrainnpy.format(index,len(iXtrain))
+        #scaledsave = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         if verbose: print('\nsave: {}'.format(scaledsave))
         print('\t<<< saving scaled Xtrain[{}]'.format(index))
-        np.save(scaledsave,Xtrain_scaled)
+        np.save(npsave,Xtrain_scaled)
         if verbose: print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
         del Xtrain_scaled
     del tmp
@@ -1031,7 +896,8 @@ if __name__ == '__main__':
 
         Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
 
-        npload = spath / "tmp" / (filenames[findex]+"_Xtest_"+str(index)+".npy") # forge path to load split-file
+        npload = npsaved / Xtestnpy.format(index,len(iXtest))
+        #npload = spath / "tmp" / (filenames[findex]+"_Xtest_"+str(index)+".npy") # forge path to load split-file
         if verbose: print('\nload: {}'.format(npload))
         print('\t<<< loading splitted Xtest[{}]'.format(index))
 
@@ -1056,10 +922,11 @@ if __name__ == '__main__':
         del tmpscaled
 
         # save scaled split to disk
-        scaledsave = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
+        npsave = npsaved / Xtestnpy.format(index,len(iXtest))
+        #scaledsave = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
         if verbose: print('\nsave: {}'.format(scaledsave))
         print('\t<<< saving scaled Xtest[{}]'.format(index))
-        np.save(scaledsave,Xtest_scaled)
+        np.save(npsave,Xtest_scaled)
         if verbose: print('\nXtest_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
         del Xtest_scaled
     del tmp
@@ -1073,7 +940,8 @@ if __name__ == '__main__':
     print('>>> apply principal component analysis...')
     # PARTIAL FIT to Xtrain
     for index in iXtrain: # cycle through split files
-        npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
+        npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
+        #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
         #Xtrain = np.append(Xtrain,split,axis=0)
         print('\t<<< partial fit to Xtrain[{}]...'.format(index))
@@ -1084,7 +952,8 @@ if __name__ == '__main__':
     # Xtrain
     Xtrain = np.empty(shape=[0,n]) # initialise empty numpy array
     for index in iXtrain:
-        npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
+        #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
+        npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
         split = np.load(npload).astype(np.float32)
         print('\t<<< transform Xtrain[{}]...'.format(index))
         split = ipca.transform(split)
@@ -1095,7 +964,8 @@ if __name__ == '__main__':
 
     Xtest = np.empty(shape=[0,n]) # initialise empty numpy array
     for index in iXtest:
-        npload = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
+        npload = npsaved / Xtestnpy.format(index,len(iXtest))
+        #npload = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
         print('\t<<< transform Xtest[{}]...'.format(index))
         split = ipca.transform(split)
@@ -1107,7 +977,7 @@ if __name__ == '__main__':
 
     # RANDOM FOREST CLASSIFIER
 
-    model = RandomForestClassifier(warm_start=True)
+    model = RandomForestClassifier()
     print('>>> fit RandomForestClassifier...')
     model = model.fit(Xtrain,Ytrain)
     del Xtrain
