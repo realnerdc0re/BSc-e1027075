@@ -24,6 +24,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from timeit import default_timer as timer
+from pathlib import Path, PureWindowsPath
+
 
 
 
@@ -35,18 +37,63 @@ import sys
 import csv
 import os
 import gc
-import pathlib
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 
 # get working directory
-wd = os.getcwd()
-# forge logfolder, timestamps & dstat logs based on wd
+#wd = os.getcwd()
+
+
+# FILES
+# files and working directory
+wd = Path.cwd()
+reportf = 'report.csv'
+resultf = 'result.csv'
+timef = 'time.csv'
+# FILEPATHS
+# logs
+logd = wd / 'logs'
+reportp = logd / reportf
+resultp = logd / resultf
+timep = logd / timef
+# CSVs
+fpath = wd / 'csv' / 'flow-sampled'
+ppath = wd / 'csv' / 'packet-sampled'
+
+'''
+print(reportp)
+print(resultp)
+print(timep)
+
+input('blub')
+'''
+
+
+
+'''
+
+    # FILEPATHS
+    # path to CSV files based on OS choice
+    if windows:
+        fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
+        ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
+        chunksize = None
+    elif linux:
+        fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
+        ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
+        #chunksize = None
+    elif rpi:
+        fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
+        ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
+
 logfolder = wd+"/logs"
+
 reportcsv = logfolder+'/report.csv'
 resultscsv = logfolder+'/results.csv'
 timecsv = logfolder+'/time.csv'
+'''
+
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
@@ -718,6 +765,7 @@ if __name__ == '__main__':
                     csvwriter = csv.writer(csvfile, delimiter=",")
                     csvwriter.writerow([t,'Preprocessing.py','start'])
 
+    '''
     # FILEPATHS
     # path to CSV files based on OS choice
     if windows:
@@ -732,14 +780,29 @@ if __name__ == '__main__':
         fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
         ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
         #chunksize = 10**3
+        '''
 
     # filenames of sampled, unlabeled CSVs
     csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
     # set path to sampeld CSV based on optional arguments and OS
+    
+    '''
     if flowsampling:
         if windows: path = fpath+"\\"+csvname[findex]
         elif (linux or rpi): path = fpath+"/"+csvname[findex]
         savepath = fpath+r"/processed"
+        spath = fpath
+    elif packetsampling:
+        if windows: path = ppath+"\\"+csvname[findex]
+        elif (linux or rpi): path = ppath+"/"+csvname[findex]
+        savepath = ppath+r"/processed"
+        spath = ppath
+        '''
+
+
+    if flowsampling:
+        path = fpath / csvname[findex]
+        savepath = fpath / 'processed'
         spath = fpath
     elif packetsampling:
         if windows: path = ppath+"\\"+csvname[findex]
@@ -862,7 +925,7 @@ if __name__ == '__main__':
     print('>>> split Xtrain (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
     while size > 0:
         i += 1
-        npsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(i)+".npy"
+        npsave = spath / 'tmp' / (filenames[findex]+"_Xtrain_"+str(i)+".npy")
         if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
@@ -897,7 +960,7 @@ if __name__ == '__main__':
     print('>>> split Xtest (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
     while size > 0:
         i += 1
-        npsave = spath+"/tmp/"+filenames[findex]+"_Xtest_"+str(i)+".npy"
+        npsave = spath / 'tmp' / (filenames[findex]+"_Xtest_"+str(i)+".npy")
         if verbose: print('\tsave: {}'.format(npsave))
         print('\t<<< converting df to np.array[{}]'.format(i))
         npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
@@ -928,7 +991,7 @@ if __name__ == '__main__':
 
         Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
 
-        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_"+str(index)+".npy" # forge path to load split-file
+        npload = spath / 'tmp' / (filenames[findex]+"_Xtrain_"+str(index)+".npy") # forge path to load split-file
         if verbose: print('\nload: {}'.format(npload))
         print('\t<<< loading splitted Xtrain[{}]'.format(index))
 
@@ -953,7 +1016,7 @@ if __name__ == '__main__':
         del tmpscaled
 
         # save scaled split to disk
-        scaledsave = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        scaledsave = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         if verbose: print('\nsave: {}'.format(scaledsave))
         print('\t<<< saving scaled Xtrain[{}]'.format(index))
         np.save(scaledsave,Xtrain_scaled)
@@ -968,7 +1031,7 @@ if __name__ == '__main__':
 
         Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
 
-        npload = spath+"/tmp/"+filenames[findex]+"_Xtest_"+str(index)+".npy" # forge path to load split-file
+        npload = spath / "tmp" / (filenames[findex]+"_Xtest_"+str(index)+".npy") # forge path to load split-file
         if verbose: print('\nload: {}'.format(npload))
         print('\t<<< loading splitted Xtest[{}]'.format(index))
 
@@ -993,7 +1056,7 @@ if __name__ == '__main__':
         del tmpscaled
 
         # save scaled split to disk
-        scaledsave = spath+"/tmp/"+filenames[findex]+"_Xtest_scaled_"+str(index)+".npy"
+        scaledsave = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
         if verbose: print('\nsave: {}'.format(scaledsave))
         print('\t<<< saving scaled Xtest[{}]'.format(index))
         np.save(scaledsave,Xtest_scaled)
@@ -1010,7 +1073,7 @@ if __name__ == '__main__':
     print('>>> apply principal component analysis...')
     # PARTIAL FIT to Xtrain
     for index in iXtrain: # cycle through split files
-        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
         #Xtrain = np.append(Xtrain,split,axis=0)
         print('\t<<< partial fit to Xtrain[{}]...'.format(index))
@@ -1021,7 +1084,7 @@ if __name__ == '__main__':
     # Xtrain
     Xtrain = np.empty(shape=[0,n]) # initialise empty numpy array
     for index in iXtrain:
-        npload = spath+"/tmp/"+filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy"
+        npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
         print('\t<<< transform Xtrain[{}]...'.format(index))
         split = ipca.transform(split)
@@ -1032,7 +1095,7 @@ if __name__ == '__main__':
 
     Xtest = np.empty(shape=[0,n]) # initialise empty numpy array
     for index in iXtest:
-        npload = spath+"/tmp/"+filenames[findex]+"_Xtest_scaled_"+str(index)+".npy"
+        npload = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
         print('\t<<< transform Xtest[{}]...'.format(index))
         split = ipca.transform(split)
