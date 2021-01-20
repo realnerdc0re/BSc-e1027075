@@ -35,6 +35,7 @@ import sys
 import csv
 import os
 import gc
+import pathlib
 
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
@@ -61,9 +62,10 @@ parser.add_argument('-v','--verbose', action='store_true', help='output addition
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
 parser.add_argument('-e','--export', action='store_true', help='export timestamps')
+parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-s','--save', action='store_true', help='save CSV for further processing')
 parser.add_argument('-l','--load', action='store_true', help='load CSV')
-parser.add_argument('-m','--memory', action='store_true', help='output memory-usage')
+#parser.add_argument('-m','--memory', action='store_true', help='output memory-usage')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
@@ -676,8 +678,12 @@ if __name__ == '__main__':
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
 
+    save = args.save
+    load = args.load
     export = args.export
-    memory = args.memory
+    #memory = args.memory
+    model = args.model
+
 
     rpi = args.rpi
     windows = args.windows
@@ -689,11 +695,13 @@ if __name__ == '__main__':
     batchsize = args.batch[0]
     if chunksize == 0: chunksize = None
 
-
+    '''
     if memory:
         pid = os.getpid()
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
         print('\nmem-usage at start: {}MB\n'.format(int(memoryUse)))
+    '''
+
 
     if time: 
         start = timer() # runtime
@@ -739,10 +747,11 @@ if __name__ == '__main__':
         savepath = ppath+r"/processed"
         spath = ppath
 
+
     # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,flowsampling,packetsampling))
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--rpi\n{}\t--linux\n{}\t--osx\n{}\t--windows\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model".format(verbose,superverbose,time,rpi,linux,osx,windows,save,load,export,model))
     print('\n\n{}\n'.format(path))
     if (not time): input('\n...')
 
@@ -751,9 +760,11 @@ if __name__ == '__main__':
     dropfeature.append('flowStartMilliseconds')
     #dropfeature.append('')
 
+    '''
     if memory:
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
         print('\nmem-usage before importing CSV: {}MB\n'.format(int(memoryUse)))
+    '''
 
     # IMPORT CSV
     # depending on chosen chunksize
@@ -798,6 +809,8 @@ if __name__ == '__main__':
         del chunk
     gc.collect()
 
+
+    '''
     if memory:
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1000**2)
         print('\nmem-usage after importing CSV: {}MB\n'.format(int(memoryUse)))
@@ -811,6 +824,8 @@ if __name__ == '__main__':
         print('\nmem-usage: Xtrain={}MB, Xtest={}MB, Ytrain={}MB, Ytest={}MB, Total={}MB'.format(Xtrain_size_df,Xtest_size_df,Ytrain_size_df,Ytest_size_df,total_size_df))
         #Xtrain.info(memory_usage="deep")
         #Xtest.info(memory_usage="deep")
+    '''
+
 
     # SCALER FIT
     features = list(Xtrain) # used later to initialise empty numpy arrays via len(features)
@@ -828,9 +843,11 @@ if __name__ == '__main__':
     del Xtrain_partial
     gc.collect()
 
+    '''
     if memory:
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
         print('\nmem-usage after partial fit: {}MB\n'.format(int(memoryUse)))
+    '''
 
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
@@ -862,10 +879,13 @@ if __name__ == '__main__':
     del npXtrain
     gc.collect()
 
+    '''
     if memory:
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
         print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
         if not time: input('...')
+    '''
+
 
     # SPLIT FILE
     # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
@@ -893,10 +913,13 @@ if __name__ == '__main__':
     del npXtest
     gc.collect()
 
+    '''
     if memory:
         memoryUse = int(psutil.Process(pid).memory_info()[0]/1024**2)
         print('\nmem-usage after splitting Xtrain: {}MB\n'.format(int(memoryUse)))
         if not time: input('...')
+    '''
+
 
     # SCALER TRANSFORM
     # Xtrain

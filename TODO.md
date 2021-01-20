@@ -3,10 +3,9 @@
 
 ## INPROGRESS:
 
-- create flow chart (draw.io, export to PDF) and send to Fares
-	- explaining architecture, modules, sampling
+
 - add timestamp saves and dstat to rpi-Preprocessing.py
-	- create spider-diagram for key values (mem, cpu, time, accuracy)
+- create spider-diagram for key values (mem, cpu, time, accuracy)
 - get rid of unnecessary imports to save memory
 - try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
 
@@ -19,8 +18,8 @@
 
 #### NEXT:
 
-
-- check actual sampling on rpi (flowsampling, packetsampling on original data)
+- create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
+- check sampling on rpi (flowsampling, packetsampling on original data)
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html)
 - minor: verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data...
 - use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)
@@ -50,6 +49,7 @@
 
 ## DONE:
 
+- create basic chart using draw.io (including blocks for sampling, preprocessing, classification...)and send to Fares
 - implement partial_fit for the StandardScaler to process chunks to save memory usage, without this rpi will run into SWAP when applying scaling to the dataset
 - read CSV line-by-line: process data per chunk on rpi
 - change datatypes from int64/float64 to int32/16/8 or float32/float16 to save memory directly after sampling, include check to not convert features that require int64 (nonetheless, every imported CSV is imported with 64bit, so try to avoid unnecessary save/loads on rpi)
