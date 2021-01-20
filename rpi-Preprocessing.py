@@ -36,7 +36,6 @@ import os
 import gc
 
 
-
 # FILES & PATHS
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
@@ -64,7 +63,6 @@ import argparse
 parser = argparse.ArgumentParser(description='script for preprocessing labeled CSVs')
 # positional arguments
 parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
-parser.add_argument('chunk', metavar='chunk', type=int,nargs=1,help='choose numerical value as chunksize for CSV import')
 parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for batchsize for StandardScaler')
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
@@ -101,7 +99,7 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
             csvdata = csvdata.append(chunk)
 
     printdata(csvdata,'imported',True)
-    if (not time): input('\n...')
+    if (not time): input('\n')
 
     if time: 
         end = timer()
@@ -127,7 +125,7 @@ def summary(dataset):
     print('\n'+20*'~'+' summary '+20*'~')
     print('\n{}'.format(dataset.describe()))
     print('\n{}'.format(dataset.groupby('Label').size()))
-    if (not time): input('\n...')
+    if (not time): input('\n')
     #resetpoptions()
     return
 
@@ -147,11 +145,11 @@ def conversion(dataset,verbose=False):
         print('\n'+20*'~'+' original '+20*'~')
         print('\n{}\n'.format(types))
         #print('\n{}\n'.format(maxValues))
-        if (not time): input('...')
+        if (not time): input('')
 
     dicttype = {} # store index numbers and target-datatypes
 
-    if verbose: print('>>> searching for 64bit numerical values...')
+    if verbose: print('>>> searching for 64bit numerical values')
     i = -1
     for x in types: # determine int64/float64 features
         i = i + 1
@@ -168,14 +166,14 @@ def conversion(dataset,verbose=False):
             elif (-(2**32)/2 <= maxValues[i] <= (2**32)/2):
                 dicttype[features[i]] = 'float32'
 
-    if verbose: print('>>> converting values...')
+    if verbose: print('>>> converting values')
     dataset = dataset.astype(dicttype,copy=False)
 
     types = dataset.dtypes
     if verbose:
         print('\n'+20*'~'+' converted '+20*'~')
         print('\n{}\n'.format(types))
-        if (not time): input('...')
+        if (not time): input('')
 
     if verbose: printdata(dataset,'after-conversion',True)
 
@@ -194,7 +192,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
     # informational output
     if verbose:
         print('\n\n'+40*'~'+' FUNCTION: cleanInf '+40*'~')
-        print('\n>>> searching Infs...')
+        print('\n>>> searching Infs')
 
     # create pseudo-random values to a feature, add inf value for testing purpose
     #createRandom(dataset,'Random',False,False)
@@ -264,7 +262,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
 
         if verbose: 
             print('\n{}'.format(vmax))
-            if (not time): input('\n...')
+            if (not time): input('\n')
 
         i = -1
         # cycle through features and replace Infinite values
@@ -302,7 +300,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
         vmax = dataset.max(numeric_only=True)
         print('\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(vmax))
-        if (not time): input('\n...')
+        if (not time): input('\n')
 
     if time: 
         end = timer()
@@ -317,7 +315,7 @@ def cleanNaN(dataset,replacement,verbose=False,time=False):
     # informational output
     if verbose:
         print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
-        print('\n>>> searching NaNs...')
+        print('\n>>> searching NaNs')
 
     # summary for NaN values
     vNaN = dataset.isnull().sum()
@@ -350,7 +348,7 @@ def cleanString(dataset,verbose=False,time=False):
     # informational output
     if verbose:
         print('\n\n'+40*'~'+' FUNCTION: cleanString '+40*'~')
-        print('\n>>> searching strings...')
+        print('\n>>> searching strings')
 
     # table containing object-types per feature
     stype = dataset.dtypes
@@ -379,7 +377,7 @@ def cleanString(dataset,verbose=False,time=False):
         stype = dataset.dtypes
         print('\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(stype))
-        if (not time): input('\n...')
+        if (not time): input('\n')
 
     if time: print('\ncleanString\n[TIME]: %.3f' % (end-start),'seconds')
 
@@ -392,7 +390,7 @@ def cleanSingleValue(dataset,verbose=False,time=False):
     # informational output
     if verbose:
         print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
-        print('\n>>> searching unique-value features...')
+        print('\n>>> searching unique-value features')
 
     ldrop = []
     # summary for non-unique values
@@ -451,7 +449,7 @@ def writeCells(dataset,feature,cells,content,verbose=False,time=False):
         print('\n'+10*'~'+' writeCells '+10*'~')
         print('\nvalue: {}'.format(content))
         print('cells: {}'.format(len(cells)))
-        print('\n>>> replace cells content with {}...'.format(content))
+        print('\n>>> replace cells content with {}'.format(content))
 
     # replace given cells with given content
     for j in cells:
@@ -472,7 +470,7 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
     # informational output
     if verbose:
         print('\n\n'+40*'~'+' FUNCTION: splitDataframe '+40*'~')
-        print('\n>>> splitting dataframe into training & test portion...')
+        print('\n>>> splitting dataframe into training & test portion')
     
     
     # splitting dataset, to have data for comparison later to estimate algorithm accuracy
@@ -501,24 +499,24 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
     if verbose:
         print('\n'+20*'~'+' original '+20*'~')
         print('\n{}'.format(dataset))
-        if (not time): input('\n...')
+        if (not time): input('\n')
         print('\n'+10*'~'+' X '+10*'~')
         print('\n{}'.format(X))
         print('\n'+10*'~'+' Y '+10*'~')
         print('\n{}'.format(Y))
-        if (not time): input('\n...')
+        if (not time): input('\n')
         
         print('\n'+10*'~'+' Xtrain '+10*'~')
         print('\n{}'.format(Xtrain))
         print('\n'+10*'~'+' Ytrain '+10*'~')
         print('\n{}'.format(Ytrain))
-        if (not time): input('\n...')
+        if (not time): input('\n')
     
         print('\n'+10*'~'+' Xtest '+10*'~')
         print('\n{}'.format(Xtest))
         print('\n'+10*'~'+' Ytest '+10*'~')
         print('\n{}'.format(Ytest))
-        if (not time): input('\n...')
+        if (not time): input('\n')
         
     if time: print('\nsplitFrame\n[TIME]: %.3f' % (end-start),'seconds')
     
@@ -536,7 +534,7 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
     # informational output
     if verbose:
         print('\n\n'+40*'~'+' FUNCTION: scalingDataframe: {} '.format(scaler)+40*'~')
-        print('\n>>> scaling values...')
+        print('\n>>> scaling values')
 
     # get all features if no features are given as argument
     if not features: features = list(datasets[0])
@@ -544,14 +542,14 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
     # TRAINING
     # fit & transform Xtrain
     tmp = datasets[0]
-    if verbose: print('>>> fit & transform Xtrain...')
+    if verbose: print('>>> fit & transform Xtrain')
     tmp[features] = scaler.fit_transform(tmp[features])
     tmpscaled.append(tmp)
 
     # TEST (transform)
     # transform Xtest
     tmp = datasets[1]
-    if verbose: print('>>> transform Xtest...')
+    if verbose: print('>>> transform Xtest')
     tmp[features] = scaler.transform(tmp[features])
     tmpscaled.append(tmp)
 
@@ -562,13 +560,13 @@ def scalingDataframe(datasets,features,verbose=False,time=False):
         print('\n{}'.format(datasplit[0]))
         print('\n'+10*'~'+' Xtest, original '+10*'~')
         print('\n{}'.format(datasplit[1]))
-        if (not time): input('\n...')
+        if (not time): input('\n')
         
         print('\n'+10*'~'+' Xtrain, fit & transformed '+10*'~')
         print('\n{}'.format(tmpscaled[0]))
         print('\n'+10*'~'+' Xtest, fit & transformed '+10*'~')
         print('\n{}'.format(tmpscaled[1]))
-        if (not time): input('\n...')
+        if (not time): input('\n')
 
     if time: print('\nscalingDataframe\n[TIME]: %.3f' % (end-start),'seconds')
 
@@ -580,7 +578,7 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
     
     # informational output
     print('\n\n'+40*'~'+' FUNCTION: PCAnalysis '+40*'~')
-    print('\n>>> apply principal component analysis...')
+    print('\n>>> apply principal component analysis')
     
     Xpca = []
     
@@ -606,7 +604,7 @@ def PCAnalysis(dataset,components,verbose=False,time=False):
 
         print('\n\n'+10*'~'+' PCA, explained variance '+10*'~')
         print('\n{}'.format(pca.explained_variance_ratio_))
-        if (not time): input('\n...\n')
+        if (not time): input('\n\n')
     
     if time: print('\nPCAnalysis\n[TIME]: %.3f' % (end-start),'seconds')
     
@@ -618,12 +616,12 @@ def makePredictions(model,Xtest,Ytest,export):
     print('\n\n'+40*'~'+' FUNCTION: makePredictions '+40*'~') # informational output
 
     # make predictions for the validation data Xtest, create reports based on predictions and the GT-table Ytest
-    print('>>> make predictions...')
+    print('>>> make predictions')
     predictions = model.predict(Xtest)
-    print('>>> create confusion-matrix...')
+    print('>>> create confusion-matrix')
     matrix = confusion_matrix(Ytest,predictions)
     # saving the classification-report directly into pandas dataframe to enable easy export to csv if necessary
-    print('>>> create classification-report...')
+    print('>>> create classification-report')
     report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
 
     # save results
@@ -669,28 +667,31 @@ def makePredictions(model,Xtest,Ytest,export):
 
 if __name__ == '__main__':
 
-    global verbose 
-    global time
-    global dataset
+    # to not exceed rpi RAM size, split files into 500k rows per file
+    splitsize = 5*10**5
+    # read CSV line-by-line
+    chunksize = 1
+    # number of components for PCA
+    n_Xpca = 4
 
+    # optional arguments
     verbose = args.verbose
     superverbose = args.superverbose
     if superverbose: verbose = True
-
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
-
     time = args.time
     save = args.save
     load = args.load
     export = args.export
     model = args.model
-
+    # positional arguments
     findex = args.file[0]
-
     batchsize = args.batch[0]
-    chunksize = args.chunk[0]
-    if chunksize == 0: chunksize = None
+
+    # set path to sampled CSV
+    if flowsampling: path = fpath / csvname[findex]
+    elif packetsampling: path = ppath / csvname[findex]
 
     if time: 
         start = timer() # runtime
@@ -708,86 +709,74 @@ if __name__ == '__main__':
                     csvwriter.writerow([t,'Preprocessing.py','start'])
 
 
-    if flowsampling:
-        path = fpath / csvname[findex]
-    elif packetsampling:
-        path = ppath / csvname[findex]
-
-
     # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,save,load,export,model,flowsampling,packetsampling))
-    print('\n\n{}\n'.format(path))
-    if (not time): input('\n...')
+    print('\n'+20*'~'+' processing '+20*'~')
+    print('\nbatchsize = {}\nsplitsize = {}'.format(batchsize,splitsize))
+    print('\n'+20*'~'+' file '+20*'~')
+    print('\n{}\n\n\n'.format(path))
+    if (not time): input('\n')
 
-    #chunksize = 10**6
+
+    # DO THIS AFTER LABELING, JUST TEMPORARY FIX HERE
     dropfeature = []
     dropfeature.append('flowStartMilliseconds')
-    #dropfeature.append('')
 
 
     # IMPORT CSV
-    # depending on chosen chunksize
-    if chunksize == None:
-        dataset = importCSV(path,None,verbose,chunksize)
-        # CLEANING
-        removeFeatures(dataset,dropfeature,verbose,time)
-        cleanString(dataset,verbose,time)
-        cleanNaN(dataset,0,verbose,time)
-    else:
-        dataset = pd.DataFrame()
+    dataset = pd.DataFrame()
 
-        Xtrain = pd.DataFrame()
-        Xtest = pd.DataFrame()
-        Ytrain = pd.Series(dtype=int)
-        Ytest = pd.Series(dtype=int)
+    Xtrain = pd.DataFrame()
+    Xtest = pd.DataFrame()
+    Ytrain = pd.Series(dtype=int)
+    Ytest = pd.Series(dtype=int)
 
-        scaler = StandardScaler(copy=False)
+    scaler = StandardScaler(copy=False)
 
-        data = []
-        print('>>> importing & pre-processing CSV (chunksize={})...'.format(chunksize))
-        # read csv in chunks
-        for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
+    data = []
+    print('>>> importing & pre-processing CSV line-by-line')
+    # read csv in chunks
+    for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'):
 
-            removeFeatures(chunk,dropfeature,False,False) # should be done after labeling (flowStartMilliseconds)
+        # DO THIS AFTER LABELING (flowStartMilliseconds)
+        removeFeatures(chunk,dropfeature,False,False)
 
-            chunk = conversion(chunk,False) # convert content into smaller datatypes
+        chunk = conversion(chunk,False) # convert values into smaller datatypes
+        # clean features
+        cleanString(chunk,False,False)
+        cleanNaN(chunk,0,False,False)
+        # split into training & test portion on the fly
+        chunksplit = splitDataframe(chunk,0.30,False,False) # [Xtrain,Xtest,Ytrain,Ytest]
+        # accumulate splits
+        Xtrain = Xtrain.append(chunksplit[0])
+        Xtest = Xtest.append(chunksplit[1])
+        Ytrain = Ytrain.append(chunksplit[2])
+        Ytest = Ytest.append(chunksplit[3])
 
-            # CLEANING
-            cleanString(chunk,False,False)
-            cleanNaN(chunk,0,False,False)
-
-            # SPLITTING
-            chunksplit = splitDataframe(chunk,0.30,False,False) # [Xtrain,Xtest,Ytrain,Ytest]
-            # accumulate chunk-splits
-            Xtrain = Xtrain.append(chunksplit[0])
-            Xtest = Xtest.append(chunksplit[1])
-            Ytrain = Ytrain.append(chunksplit[2])
-            Ytest = Ytest.append(chunksplit[3])
-
-        del chunksplit
-        del chunk
+    del chunksplit
+    del chunk
     gc.collect()
 
 
     # SCALER FIT
     features = list(Xtrain) # used later to initialise empty numpy arrays via len(features)
-
-    # applying scaler fit in batches, to not run into SWAP
     n = Xtrain.shape[0] # number of rows
-    index = 0
-    print('>>> partial fit StandardScaler (batchsize={})...'.format(batchsize))
-    while index < n:
-        size = min(batchsize, n-index) # for last iteration
-        Xtrain_partial = Xtrain[index:index+size] # get batches from original data
-        scaler.partial_fit(Xtrain_partial) # partial fit to batch
-        index += size
+    processed = 0
 
-    del Xtrain_partial
-    gc.collect()
+    print('>>> partial fit StandardScaler')
+    # iterating over given data without dropping already processed rows
+    while processed < n:
+        toprocess = min(batchsize, n-processed) # current number of rows to process
+        #Xtrain_partial = Xtrain[processed:processed+toprocess] # specific slice to process in current iteration
+        scaler.partial_fit(Xtrain[processed:processed+toprocess]) # partial_fit scaler on current slice
+        processed += toprocess # number of already processed rows, used to determin when to leave the loop
 
+    #del Xtrain_partial
+    #gc.collect()
 
+    # initialise empty numpy arrays
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
 
@@ -795,24 +784,26 @@ if __name__ == '__main__':
     # Xtrain: split training data into smaller portions for transformation and save to disk to free up memory
     n = Xtrain.shape[0]
     splitsize = 5*10**5
-    size = min(splitsize, n)
+    toprocess = min(splitsize, n)
     iteration = int(n/splitsize)+1
-    i = 0
-    print('>>> split Xtrain (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
-    while size > 0:
-        i += 1
-        npsave = npsaved / Xtrainnpy.format(i,iteration)
+    index = 0
+
+    print('>>> split Xtrain')
+    while toprocess > 0:
+        index += 1
+        npsave = npsaved / Xtrainnpy.format(index,iteration)
         if verbose: print('\tsave: {}'.format(npsave))
-        print('\t<<< converting df to np.array[{}]'.format(i))
-        npXtrain = Xtrain[:][0:size].to_numpy().astype(np.float32)
-        Xtrain = Xtrain.drop(Xtrain.index[0:size])
-        print('\t<<< saving splitted Xtrain[{}]'.format(i))
+        print('\t{}/{}:'.format(index,iteration))
+        print('\t\t<<< converting df to np.array')
+        npXtrain = Xtrain[:][0:toprocess].to_numpy().astype(np.float32) # convert slice into np array
+        Xtrain = Xtrain.drop(Xtrain.index[0:toprocess]) # drop processed slice from df
+        print('\t\t<<< saving splitted Xtrain')
         np.save(npsave,npXtrain)
         if verbose: print('\n{}\n{} {} {}MB\n'.format(npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
-        n -= size
-        size = min(splitsize, n)
+        n -= toprocess # number of rows that need to be processed
+        toprocess = min(splitsize, n)# get slice-size for next iteration
 
-    iXtrain = np.arange(1,i+1,1) # create array to restore splitted files afterwards
+    iXtrain = np.arange(1,index+1,1) # create array to restore splitted files afterwards
 
     del Xtrain
     del npXtrain
@@ -822,25 +813,25 @@ if __name__ == '__main__':
     # SPLIT FILE
     # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
     n = Xtest.shape[0]
-    splitsize = 5*10**5
     size = min(splitsize, n)
     iteration = int(n/splitsize)+1
-    i = 0
-    print('>>> split Xtest (splitsize={}, iterations={})...'.format(int(splitsize),int(iteration)))
+    fnumber = iteration
+    index = 0
+    print('>>> split Xtest (splitsize={})'.format(int(splitsize)))
     while size > 0:
-        i += 1
-        npsave = npsaved / Xtestnpy.format(i,iteration)
+        index += 1
+        npsave = npsaved / Xtestnpy.format(index,iteration)
         if verbose: print('\tsave: {}'.format(npsave))
-        print('\t<<< converting df to np.array[{}]'.format(i))
+        print('\t<<< converting df to np.array[{}]'.format(index))
         npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
         Xtest = Xtest.drop(Xtest.index[0:size])
-        print('\t<<< saving splitted Xtest[{}]'.format(i))
+        print('\t<<< saving splitted Xtest[{}]'.format(index))
         np.save(npsave,npXtest)
         if verbose: print('\n{}\n{} {} {}MB\n'.format(npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
         n -= size
         size = min(splitsize, n)
 
-    iXtest = np.arange(1,i+1,1) # create array to restore splitted files afterwards
+    iXtest = np.arange(1,index+1,1) # create array to restore splitted files afterwards
     del Xtest
     del npXtest
     gc.collect()
@@ -848,7 +839,7 @@ if __name__ == '__main__':
 
     # SCALER TRANSFORM
     # Xtrain
-    print('>>> transform Xtrain (batchsize={})...'.format(batchsize))
+    print('>>> transform Xtrain (batchsize={})'.format(batchsize))
     for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
 
         Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
@@ -862,7 +853,7 @@ if __name__ == '__main__':
         tmp = np.load(npload).astype(np.float32) # load split-file
         if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
-        print('\t<<< transform Xtrain[{}]...'.format(index))
+        print('\t<<< transform Xtrain[{}]'.format(index))
         n = tmp.shape[0]
         size = min(batchsize, n)
         while size > 0:
@@ -891,7 +882,7 @@ if __name__ == '__main__':
 
     # SCALER TRANSFORM
     # Xtest
-    print('>>> transform Xtest in batches (batchsize={})...'.format(batchsize))
+    print('>>> transform Xtest in batches (batchsize={})'.format(batchsize))
     for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
 
         Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
@@ -904,7 +895,7 @@ if __name__ == '__main__':
         tmp = np.load(npload).astype(np.float32) # load split-file
         if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
-        print('\t<<< transform Xtest[{}]...'.format(index))
+        print('\t<<< transform Xtest[{}]'.format(index))
         n = tmp.shape[0]
         size = min(batchsize, n)
         while size > 0:
@@ -934,40 +925,39 @@ if __name__ == '__main__':
 
     # PCA
     Xpca = []
-    n = 4
-    ipca = IncrementalPCA(n_components = n, batch_size = 10**5)
+    ipca = IncrementalPCA(n_components = n_Xpca, batch_size = 10**5)
 
-    print('>>> apply principal component analysis...')
+    print('>>> apply principal component analysis')
     # PARTIAL FIT to Xtrain
     for index in iXtrain: # cycle through split files
         npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
         #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
         #Xtrain = np.append(Xtrain,split,axis=0)
-        print('\t<<< partial fit to Xtrain[{}]...'.format(index))
+        print('\t<<< partial fit to Xtrain[{}]'.format(index))
         ipca.partial_fit(split)
     del split
 
     # TRANSFORM
     # Xtrain
-    Xtrain = np.empty(shape=[0,n]) # initialise empty numpy array
+    Xtrain = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
     for index in iXtrain:
         #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
         split = np.load(npload).astype(np.float32)
-        print('\t<<< transform Xtrain[{}]...'.format(index))
+        print('\t<<< transform Xtrain[{}]'.format(index))
         split = ipca.transform(split)
         Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
     del split
 
     print('\nXtrain (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
 
-    Xtest = np.empty(shape=[0,n]) # initialise empty numpy array
+    Xtest = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
     for index in iXtest:
         npload = npsaved / Xtestnpy.format(index,len(iXtest))
         #npload = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
-        print('\t<<< transform Xtest[{}]...'.format(index))
+        print('\t<<< transform Xtest[{}]'.format(index))
         split = ipca.transform(split)
         Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
     del split
@@ -978,20 +968,20 @@ if __name__ == '__main__':
     # RANDOM FOREST CLASSIFIER
 
     model = RandomForestClassifier()
-    print('>>> fit RandomForestClassifier...')
+    print('>>> fit RandomForestClassifier')
     model = model.fit(Xtrain,Ytrain)
     del Xtrain
 
-    print('>>> create predictions...')
+    print('>>> create predictions')
     predictions = model.predict(Xtest)
 
-    print('>>> create confusion-matrix...')
+    print('>>> create confusion-matrix')
     matrix = confusion_matrix(Ytest,predictions)
 
-    print('>>> create classification-report...')
+    print('>>> create classification-report')
     report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
 
-    print('>>> save parameters, accuracy-score and feature-importance...')
+    print('>>> save parameters, accuracy-score and feature-importance')
     parameters = model.get_params(deep=True)
     accuracyscore = accuracy_score(Ytest,predictions)
     featureimportance = model.feature_importances_
