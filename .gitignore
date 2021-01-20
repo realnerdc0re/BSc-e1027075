@@ -140,4 +140,5 @@ dstat.csv
 results.csv
 report.csv
 time.csv
+*.pcap
 NUL
