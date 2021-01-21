@@ -131,6 +131,7 @@ dmypy.json
 # scripts
 Labeling.py
 mem-rpi-Preprocessing.py
+PCAPreader.py
 # folders
 CIC-IDS2017/*
 tmp/*
