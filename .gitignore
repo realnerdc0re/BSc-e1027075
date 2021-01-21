@@ -134,6 +134,10 @@ mem-rpi-Preprocessing.py
 # folders
 CIC-IDS2017/*
 tmp/*
+csv/flow-sampled/tmp/*
+csv/packet-sampled/tmp/*
+logs/*
+rpi-logs/*
 # files
 Merged.csv
 Merged_processed.csv
