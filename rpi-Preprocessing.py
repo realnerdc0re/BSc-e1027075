@@ -726,13 +726,11 @@ if __name__ == '__main__':
             if os.path.isfile(timecsv): # check if file already exists
                 with open(timecsv,'a') as csvfile:
                     csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow([filenames[findex],description]) # basic info
                     csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
                     csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
             else:
                 with open(timecsv,'w') as csvfile: # create file
                     csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow([filenames[findex],description]) # basic info
                     csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
                     csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
 
