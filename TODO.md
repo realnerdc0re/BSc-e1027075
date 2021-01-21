@@ -3,12 +3,11 @@
 
 ## INPROGRESS:
 
-
-- add timestamp saves and dstat to rpi-Preprocessing.py
-- create spider-diagram for key values (mem, cpu, time, accuracy)
+- write script for evaluation of stored results
+	- create spider-diagram for key values (mem, cpu, time, accuracy)
 - get rid of unnecessary imports to save memory
 - try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
-
+- add information about sampling-modes, sampling-steps and used feature-vector somewhere for further evaluation of results- and logging-output
 
 
 
@@ -49,6 +48,8 @@
 
 ## DONE:
 
+- add timestamp saves and dstat to rpi-Preprocessing.py
+- rpi-Preprocessing.py: use pathlib to forge filepaths to get rid of OS choice
 - create basic chart using draw.io (including blocks for sampling, preprocessing, classification...)and send to Fares
 - implement partial_fit for the StandardScaler to process chunks to save memory usage, without this rpi will run into SWAP when applying scaling to the dataset
 - read CSV line-by-line: process data per chunk on rpi
