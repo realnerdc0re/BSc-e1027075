@@ -720,14 +720,19 @@ if __name__ == '__main__':
         #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
 
         if export: # write timestamp to csv
+            if flowsampling: description = 'flow-sampled'
+            elif packetsampling: description = 'packet-sampled'
+
             if os.path.isfile(timecsv): # check if file already exists
                 with open(timecsv,'a') as csvfile:
                     csvwriter = csv.writer(csvfile, delimiter=",")
+                    csvwriter.writerow([filenames[findex],description]) # basic info
                     csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
                     csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
             else:
                 with open(timecsv,'w') as csvfile: # create file
                     csvwriter = csv.writer(csvfile, delimiter=",")
+                    csvwriter.writerow([filenames[findex],description]) # basic info
                     csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
                     csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
 
@@ -886,15 +891,16 @@ if __name__ == '__main__':
     iteration = int(n/splitsize)+1
     fnumber = iteration
     index = 0
-    print('>>> split Xtest (splitsize={})'.format(int(splitsize)))
+    print('>>> split Xtest')
     while size > 0:
         index += 1
         npsave = npsaved / Xtestnpy.format(index,iteration)
         if verbose: print('\tsave: {}'.format(npsave))
-        print('\t<<< converting df to np.array[{}]'.format(index))
+        print('\t{}/{}:'.format(index,iteration))
+        print('\t\t<<< converting df to np.array')
         npXtest = Xtest[:][0:size].to_numpy().astype(np.float32)
         Xtest = Xtest.drop(Xtest.index[0:size])
-        print('\t<<< saving splitted Xtest[{}]'.format(index))
+        print('\t\t<<< saving splitted Xtest')
         np.save(npsave,npXtest)
         if verbose: print('\n{}\n{} {} {}MB\n'.format(npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
         n -= size
@@ -926,7 +932,7 @@ if __name__ == '__main__':
                 csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtrain','start'])
 
     # Xtrain
-    print('>>> transform Xtrain (batchsize={})'.format(batchsize))
+    print('>>> transform Xtrain')
     for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
 
         Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
@@ -935,12 +941,13 @@ if __name__ == '__main__':
 
         #npload = spath / 'tmp' / (filenames[findex]+"_Xtrain_"+str(index)+".npy") # forge path to load split-file
         if verbose: print('\nload: {}'.format(npload))
-        print('\t<<< loading splitted Xtrain[{}]'.format(index))
+        print('\t{}/{}:'.format(index,len(iXtrain)))
+        print('\t\t<<< loading splitted Xtrain')
 
         tmp = np.load(npload).astype(np.float32) # load split-file
         if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
-        print('\t<<< transform Xtrain[{}]'.format(index))
+        print('\t\t<<< transform Xtrain')
         n = tmp.shape[0]
         size = min(batchsize, n)
         while size > 0:
@@ -961,7 +968,7 @@ if __name__ == '__main__':
         npsave = npsaved / Xtrainnpy.format(index,len(iXtrain))
         #scaledsave = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         if verbose: print('\nsave: {}'.format(scaledsave))
-        print('\t<<< saving scaled Xtrain[{}]'.format(index))
+        print('\t\t<<< saving scaled Xtrain')
         np.save(npsave,Xtrain_scaled)
         if verbose: print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
         del Xtrain_scaled
@@ -986,7 +993,7 @@ if __name__ == '__main__':
                 csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtest','start'])
 
     # Xtest
-    print('>>> transform Xtest in batches (batchsize={})'.format(batchsize))
+    print('>>> transform Xtest')
     for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
 
         Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
@@ -994,12 +1001,13 @@ if __name__ == '__main__':
         npload = npsaved / Xtestnpy.format(index,len(iXtest))
         #npload = spath / "tmp" / (filenames[findex]+"_Xtest_"+str(index)+".npy") # forge path to load split-file
         if verbose: print('\nload: {}'.format(npload))
-        print('\t<<< loading splitted Xtest[{}]'.format(index))
+        print('\t{}/{}:'.format(index,len(iXtest)))
+        print('\t\t<<< loading splitted Xtest')
 
         tmp = np.load(npload).astype(np.float32) # load split-file
         if verbose: print('\n{}\n{} {} {}MB\n'.format(tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
-        print('\t<<< transform Xtest[{}]'.format(index))
+        print('\t\t<<< transform Xtest')
         n = tmp.shape[0]
         size = min(batchsize, n)
         while size > 0:
@@ -1020,7 +1028,7 @@ if __name__ == '__main__':
         npsave = npsaved / Xtestnpy.format(index,len(iXtest))
         #scaledsave = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
         if verbose: print('\nsave: {}'.format(scaledsave))
-        print('\t<<< saving scaled Xtest[{}]'.format(index))
+        print('\t\t<<< saving scaled Xtest')
         np.save(npsave,Xtest_scaled)
         if verbose: print('\nXtest_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
         del Xtest_scaled
@@ -1048,14 +1056,15 @@ if __name__ == '__main__':
     Xpca = []
     ipca = IncrementalPCA(n_components = n_Xpca, batch_size = 10**5)
 
-    print('>>> apply principal component analysis')
+    print('>>> apply PCA partial fit')
     # PARTIAL FIT to Xtrain
     for index in iXtrain: # cycle through split files
         npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
         #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
         #Xtrain = np.append(Xtrain,split,axis=0)
-        print('\t<<< partial fit to Xtrain[{}]'.format(index))
+        print('\t{}/{}:'.format(index,len(iXtrain)))
+        print('\t\t<<< partial fit to Xtrain')
         ipca.partial_fit(split)
     del split
 
@@ -1065,11 +1074,13 @@ if __name__ == '__main__':
 
     # Xtrain
     Xtrain = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
+    print('>>> apply PCA transform Xtrain')
     for index in iXtrain:
         #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
         npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
         split = np.load(npload).astype(np.float32)
-        print('\t<<< transform Xtrain[{}]'.format(index))
+        print('\t{}/{}:'.format(index,len(iXtrain)))
+        print('\t\t<<< transform Xtrain')
         split = ipca.transform(split)
         Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
     del split
@@ -1082,7 +1093,7 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-fit-transform-Xtrain','end'])
 
-    print('\nXtrain (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
+    if verbose: print('\nXtrain (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
 
     if time:
         t = epochtime.time()
@@ -1093,11 +1104,13 @@ if __name__ == '__main__':
                 csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-transform-Xtest','start'])
 
     Xtest = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
+    print('>>> apply PCA transform Xtest')
     for index in iXtest:
         npload = npsaved / Xtestnpy.format(index,len(iXtest))
         #npload = spath / "tmp" / (filenames[findex]+"_Xtest_scaled_"+str(index)+".npy")
         split = np.load(npload).astype(np.float32)
-        print('\t<<< transform Xtest[{}]'.format(index))
+        print('\t{}/{}:'.format(index,len(iXtest)))
+        print('\t\t<<< transform Xtest')
         split = ipca.transform(split)
         Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
     del split
@@ -1110,7 +1123,7 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-transform-Xtest','end'])
 
-    print('\nXtest (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2)))
+    if verbose: print('\nXtest (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2)))
 
 
     # RANDOM FOREST CLASSIFIER
