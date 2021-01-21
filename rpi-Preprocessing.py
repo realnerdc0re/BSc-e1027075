@@ -59,7 +59,7 @@ Xtrainnpy = 'Xtrain_split_{}v{}.npy'
 Xtestnpy =  'Xtest_split_{}v{}.npy'
 
 # COMMANDS
-dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output {} > /dev/null 2>&1 &'
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --output {} > /dev/null 2>&1 &'
 
 
 # ARGUMENT PARSING
