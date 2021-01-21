@@ -14,7 +14,7 @@ import numpy as np
 
 
 # import CSV
-def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
+def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):
 
     if time: start = timer()
 
@@ -60,11 +60,11 @@ if __name__ == '__main__':
 
     pd.set_option('display.float_format', lambda x: '%.5f' % x) # force float output for epoch time
 
-    # IMPORT
+    # IMPORT various logged data
     timestamps = read_csv(timecsv,delimiter=',',encoding='utf-8')
     print(timestamps)
-    
-    dstat = read_csv(dstatcsv,delimiter=r'[,\t]',header=5,encoding='utf-8')
+
+    dstat = read_csv(dstatcsv,delimiter='[,\t]',header=5,encoding='utf-8',engine='python')
     print(dstat)
 
     report = read_csv(reportcsv,delimiter=',',encoding='utf-8')
@@ -81,22 +81,20 @@ if __name__ == '__main__':
     print('\n\n{}\n'.format(matrix))
 
     # get actual numbers from saved confusion-matrix
-    matrix = matrix.replace('\n',r'').replace('[',r'').replace(']',r'') # remove unnecessary characters
-
+    tmp = matrix.replace('\n',r'').replace('[',r'').replace(']',r'') # remove unnecessary characters
     s=''
-    npmatrix = np.empty(shape=[0,4])
+    npmatrix = np.empty(shape=[0,4]) # initialise empty np array
     index = 0
-    for string in matrix.split():
+    for string in tmp.split():
     	index += 1
     	for character in string:
     		if character.isdecimal():
     			s += character
-    	#print('{}: {} {}'.format(index,type(s),s))
     	if s.isdigit(): 
     		i = int(s)
-    		npmatrix = np.append(matrix,i,axis=1)
-    		#print('{}: {} {}'.format(index,type(i),i))
+    		npmatrix = np.append(npmatrix,i)
     	s = ''
+    del tmp
 
-    print(npmatrix)
+    print('{}\n{}'.format(npmatrix,type(npmatrix)))
     exit()
