@@ -133,6 +133,7 @@ Labeling.py
 mem-rpi-Preprocessing.py
 # folders
 CIC-IDS2017/*
+tmp/*
 # files
 Merged.csv
 Merged_processed.csv
