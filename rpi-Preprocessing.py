@@ -30,6 +30,7 @@ import time as epochtime
 import numpy as np
 import pandas as pd
 import psutil
+import threading
 import sys
 import csv
 import os
@@ -48,6 +49,7 @@ logd = wd / 'logs'
 reportcsv = logd / 'report.csv'
 resultcsv = logd / 'result.csv'
 timecsv = logd / 'time.csv'
+dstatcsv = logd / 'dstat.csv'
 # sampled CSVs
 fpath = wd / 'csv' / 'flow-sampled'
 ppath = wd / 'csv' / 'packet-sampled'
@@ -55,6 +57,9 @@ ppath = wd / 'csv' / 'packet-sampled'
 npsaved = wd / 'tmp'
 Xtrainnpy = 'Xtrain_split_{}v{}.npy'
 Xtestnpy =  'Xtest_split_{}v{}.npy'
+
+# COMMANDS
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output {} > /dev/null 2>&1 &'
 
 
 # ARGUMENT PARSING
@@ -67,8 +72,8 @@ parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose nume
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
-parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
-parser.add_argument('-e','--export', action='store_true', help='export timestamps')
+parser.add_argument('-t','--time', action='store_true', help='measure runtimes & resource usage')
+parser.add_argument('-e','--export', action='store_true', help='export timestamps & resource logs')
 parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-s','--save', action='store_true', help='save CSV for further processing')
 parser.add_argument('-l','--load', action='store_true', help='load CSV')
@@ -78,6 +83,15 @@ samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use f
 samplegroup.add_argument('-p','--packetsampling', action='store_true', help='use per-packet sampled CSV files')
 args = parser.parse_args()
 
+
+
+# starting dstat threaded
+def threadFunc():
+    os.system(dstat.format(dstatcsv))
+    #proc = subprocess.Popen(["/usr/bin/dstat","--epoch","--cpu-adv","--output /home/noooberino/control.csv"],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT,shell=True)
+    #log = open('/home/noooberino/control.csv','a')
+    #proc = subprocess.Popen(["/usr/bin/dstat","--epoch","--cpu-adv"],stdout=log,shell=True)
+th = threading.Thread(target=threadFunc)
 
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):
@@ -684,6 +698,7 @@ if __name__ == '__main__':
     save = args.save
     load = args.load
     export = args.export
+
     model = args.model
     # positional arguments
     findex = args.file[0]
@@ -693,20 +708,28 @@ if __name__ == '__main__':
     if flowsampling: path = fpath / csvname[findex]
     elif packetsampling: path = ppath / csvname[findex]
 
+    if export: # remove any exisiting CSV
+        for file in os.listdir(logd):
+            Path.unlink(logd / file)
+
     if time: 
+        os.system('killall dstat') # kill any running dstat process
         start = timer() # runtime
         t = epochtime.time() # epochtime
-        print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
+        th.start() # start dstat loggin
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
 
         if export: # write timestamp to csv
-            if os.path.isfile(timecsv):
+            if os.path.isfile(timecsv): # check if file already exists
                 with open(timecsv,'a') as csvfile:
                     csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow([t,'Preprocessing.py','start'])
+                    csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
+                    csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
             else:
-                with open(timecsv,'w') as csvfile:
+                with open(timecsv,'w') as csvfile: # create file
                     csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow([t,'Preprocessing.py','start'])
+                    csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
+                    csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
 
 
     # OUTPUT passed optional arguments & filepath
@@ -725,15 +748,23 @@ if __name__ == '__main__':
     dropfeature.append('flowStartMilliseconds')
 
 
+
     # IMPORT CSV
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','importCSV','start'])
+
     dataset = pd.DataFrame()
 
     Xtrain = pd.DataFrame()
     Xtest = pd.DataFrame()
     Ytrain = pd.Series(dtype=int)
     Ytest = pd.Series(dtype=int)
-
-    scaler = StandardScaler(copy=False)
 
     data = []
     print('>>> importing & pre-processing CSV line-by-line')
@@ -759,8 +790,27 @@ if __name__ == '__main__':
     del chunk
     gc.collect()
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','importCSV','end'])
+
+
 
     # SCALER FIT
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Standardscaler-fit','start'])
+
+    scaler = StandardScaler(copy=False)
     features = list(Xtrain) # used later to initialise empty numpy arrays via len(features)
     n = Xtrain.shape[0] # number of rows
     processed = 0
@@ -780,7 +830,26 @@ if __name__ == '__main__':
     Xtrain_scaled = np.empty(shape=[0,len(features)])
     Xtest_scaled = np.empty(shape=[0,len(features)])
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Standardscaler-fit','end'])
+
+
+
     # SPLIT FILE
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Split','start'])
+
     # Xtrain: split training data into smaller portions for transformation and save to disk to free up memory
     n = Xtrain.shape[0]
     splitsize = 5*10**5
@@ -836,8 +905,26 @@ if __name__ == '__main__':
     del npXtest
     gc.collect()
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Split','stop'])
+
+
 
     # SCALER TRANSFORM
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtrain','start'])
+
     # Xtrain
     print('>>> transform Xtrain (batchsize={})'.format(batchsize))
     for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
@@ -880,7 +967,24 @@ if __name__ == '__main__':
         del Xtrain_scaled
     del tmp
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtrain','end'])
+
     # SCALER TRANSFORM
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtest','start'])
+
     # Xtest
     print('>>> transform Xtest in batches (batchsize={})'.format(batchsize))
     for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
@@ -922,8 +1026,25 @@ if __name__ == '__main__':
         del Xtest_scaled
     del tmp
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-Transform-Xtest','end'])
+
 
     # PCA
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-fit-transform-Xtrain','start'])
+
     Xpca = []
     ipca = IncrementalPCA(n_components = n_Xpca, batch_size = 10**5)
 
@@ -939,6 +1060,9 @@ if __name__ == '__main__':
     del split
 
     # TRANSFORM
+
+
+
     # Xtrain
     Xtrain = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
     for index in iXtrain:
@@ -950,7 +1074,23 @@ if __name__ == '__main__':
         Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
     del split
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-fit-transform-Xtrain','end'])
+
     print('\nXtrain (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-transform-Xtest','start'])
 
     Xtest = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
     for index in iXtest:
@@ -962,10 +1102,26 @@ if __name__ == '__main__':
         Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
     del split
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-transform-Xtest','end'])
+
     print('\nXtest (PCA):\n\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2)))
 
 
     # RANDOM FOREST CLASSIFIER
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','RandomForest-model','start'])
 
     model = RandomForestClassifier()
     print('>>> fit RandomForestClassifier')
@@ -986,6 +1142,14 @@ if __name__ == '__main__':
     accuracyscore = accuracy_score(Ytest,predictions)
     featureimportance = model.feature_importances_
 
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','RandomForest-model','end'])
+
     # output final results
     print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
     print('\nModel-Parameters:\n{}'.format(parameters))
@@ -998,6 +1162,15 @@ if __name__ == '__main__':
     print('e  "1":',matrix[1])
     print('\n\nClassification-Report:\n\n',report)
 
+    if export:
+        print('\n>>> exporting results to folder: {}'.format(logd))
+        # list of all informations we want to save for later evaluation
+        evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix]}
+        results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
+        # save results
+        results.to_csv(resultcsv)
+        report.to_csv(reportcsv)
+
     if time:
         end = timer()
         t = epochtime.time()
@@ -1007,6 +1180,18 @@ if __name__ == '__main__':
         if export: # write timestamps to csv
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'Preprocessing.py','end'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','main','end'])
+
+    # DSTAT MONITORING
+    # get running dstat pid
+    # -q ...doesn't output pid to console, -s ...single-shot, only displays 
+    pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -sq')
+    #pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -s')
+    
+    # wait 50 seconds for dstat before terminating the process, seems like dstat writes its output to the target-file around every 45 seconds
+    epochtime.sleep(50)
+
+    # kill running dstat process
+    os.kill(pid,9)
 
     exit()
