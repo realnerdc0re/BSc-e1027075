@@ -35,6 +35,7 @@ import sys
 import csv
 import os
 import gc
+import joblib
 
 
 # FILES & PATHS
@@ -53,12 +54,20 @@ dstatcsv = logd / 'dstat.csv'
 # sampled CSVs
 fpath = wd / 'csv' / 'flow-sampled'
 ppath = wd / 'csv' / 'packet-sampled'
-# directory & files to save np arrays splits
+# directory & files to save tmp np.array splits
 npsaved = wd / 'tmp'
 Xtrainnpy = 'Xtrain_split_{}v{}.npy'
 Xtestnpy =  'Xtest_split_{}v{}.npy'
+# models
+fmodeld = fpath / 'fitted'
+pmodeld = ppath / 'fitted'
+#modelpkl = '{}_model_{}.pkl' # placeholder for file and 32/64bit
+#modelpkl = '{}_model_32bit.pkl'
+modelpkl = '{}_model_64bit.pkl'
+
 
 # COMMANDS
+# start dstat resource logging
 dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --output {} > /dev/null 2>&1 &'
 
 
@@ -68,15 +77,15 @@ import argparse
 parser = argparse.ArgumentParser(description='script for preprocessing labeled CSVs')
 # positional arguments
 parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
-parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for batchsize for StandardScaler')
+parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for StandardScaler batchsize')
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations')
 parser.add_argument('-t','--time', action='store_true', help='measure runtimes & resource usage')
 parser.add_argument('-e','--export', action='store_true', help='export timestamps & resource logs')
 parser.add_argument('-m','--model', action='store_true', help='import model')
-parser.add_argument('-s','--save', action='store_true', help='save CSV for further processing')
-parser.add_argument('-l','--load', action='store_true', help='load CSV')
+parser.add_argument('-s','--save', action='store_true', help='save model')
+parser.add_argument('-l','--load', action='store_true', help='load preprocessed CSV')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
@@ -85,7 +94,7 @@ args = parser.parse_args()
 
 
 
-# starting dstat threaded
+# starting dstat logging threaded
 def threadFunc():
     os.system(dstat.format(dstatcsv))
     #proc = subprocess.Popen(["/usr/bin/dstat","--epoch","--cpu-adv","--output /home/noooberino/control.csv"],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT,shell=True)
@@ -697,6 +706,7 @@ if __name__ == '__main__':
     time = args.time
     save = args.save
     load = args.load
+    model = args.model
     export = args.export
 
     model = args.model
@@ -704,9 +714,16 @@ if __name__ == '__main__':
     findex = args.file[0]
     batchsize = args.batch[0]
 
-    # set path to sampled CSV
-    if flowsampling: path = fpath / csvname[findex]
-    elif packetsampling: path = ppath / csvname[findex]
+    # set paths for CSV and model, based on sampling-choice
+    if flowsampling: 
+        path = fpath / csvname[findex] # sampled CSV
+        modeld = fmodeld # pickel model-file
+    elif packetsampling: 
+        path = ppath / csvname[findex]
+        modeld = pmodeld
+
+    # set filepath for pickle modelfile if necessary
+    if (model or save): modelfile = modeld / modelpkl.format(filenames[findex])
 
     if export: # remove any exisiting CSV
         for file in os.listdir(logd):
@@ -741,8 +758,9 @@ if __name__ == '__main__':
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,save,load,export,model,flowsampling,packetsampling))
     print('\n'+20*'~'+' processing '+20*'~')
     print('\nbatchsize = {}\nsplitsize = {}'.format(batchsize,splitsize))
-    print('\n'+20*'~'+' file '+20*'~')
-    print('\n{}\n\n\n'.format(path))
+    print('\n'+20*'~'+' file '+20*'~'+'\n')
+    if model or save: print('{}'.format(modelfile))
+    print('{}\n'.format(path))
     if (not time): input('\n')
 
 
@@ -965,7 +983,7 @@ if __name__ == '__main__':
         # save scaled split to disk
         npsave = npsaved / Xtrainnpy.format(index,len(iXtrain))
         #scaledsave = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
-        if verbose: print('\nsave: {}'.format(scaledsave))
+        if verbose: print('\nsave: {}'.format(npsave))
         print('\t\t<<< saving scaled Xtrain')
         np.save(npsave,Xtrain_scaled)
         if verbose: print('\nXtrain_scaled:\n\n{}\n{} {} {}MB\n'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
@@ -1134,10 +1152,19 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','RandomForest-model','start'])
 
-    model = RandomForestClassifier()
-    print('>>> fit RandomForestClassifier')
-    model = model.fit(Xtrain,Ytrain)
-    del Xtrain
+    # select already fitted modelfile or fit model
+    if model:
+        del Xtrain
+        print('>>> importing model')
+        model = joblib.load(modelfile)
+    else:
+        model = RandomForestClassifier()
+        print('>>> fit RandomForestClassifier')
+        model = model.fit(Xtrain,Ytrain)
+        del Xtrain
+        if save:
+            print('>>> saving model')
+            joblib.dump(model,modelfile)
 
     print('>>> create predictions')
     predictions = model.predict(Xtest)
