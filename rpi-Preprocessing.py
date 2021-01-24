@@ -1054,7 +1054,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-fit-transform-Xtrain','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-fit/transform-Xtrain','start'])
 
     Xpca = []
     ipca = IncrementalPCA(n_components = n_Xpca, batch_size = 10**5)
@@ -1072,21 +1072,19 @@ if __name__ == '__main__':
     del split
 
     # TRANSFORM
-
-
-
-    # Xtrain
-    Xtrain = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
-    print('>>> apply PCA transform Xtrain')
-    for index in iXtrain:
-        #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
-        npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
-        split = np.load(npload).astype(np.float32)
-        print('\t{}/{}:'.format(index,len(iXtrain)))
-        print('\t\t<<< transform Xtrain')
-        split = ipca.transform(split)
-        Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
-    del split
+    # Xtrain (necessary if you fit model on rpi)
+    if (not model):
+        Xtrain = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
+        print('>>> apply PCA transform Xtrain')
+        for index in iXtrain:
+            #npload = spath / "tmp" / (filenames[findex]+"_Xtrain_scaled_"+str(index)+".npy")
+            npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
+            split = np.load(npload).astype(np.float32)
+            print('\t{}/{}:'.format(index,len(iXtrain)))
+            print('\t\t<<< transform Xtrain')
+            split = ipca.transform(split)
+            Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
+        del split
 
     if time:
         t = epochtime.time()
@@ -1106,6 +1104,7 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-transform-Xtest','start'])
 
+    # Xtest
     Xtest = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
     print('>>> apply PCA transform Xtest')
     for index in iXtest:
