@@ -3,6 +3,7 @@
 
 ## INPROGRESS:
 
+- change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
 - change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
 

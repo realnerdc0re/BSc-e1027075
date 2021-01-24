@@ -209,10 +209,31 @@ if __name__ == '__main__':
     plt.show()
 
 
+
+    # RAM USAGE
+    plt.plot(dstat['"epoch"'],dstat['"used"'],color = '#000000',label='RAM usage')
+    #plt.plot(dstat['"epoch"'],dstat['"sys"'],color = '#566573',label='CPU sys')
+    #plt.plot(dstat['"epoch"'],dstat['"idl"'],color = '#AEB6BF',label='CPU idle')
+    # markers for starting time of different script-segments
+    plt.axvline(x=importCSVstart,ymin=0,ymax=1,label='CSV import')
+    plt.axvline(x=StandardScaler_fit_start,ymin=0,ymax=1,label='Scaler fit')
+    plt.axvline(x=Split_start,ymin=0,ymax=1,label='split')
+    plt.axvline(x=StandardScaler_Transform_Xtrain_start,ymin=0,ymax=1,label='Scaler transform Xtrain')
+    plt.axvline(x=StandardScaler_Transform_Xtest_start,ymin=0,ymax=1,label='Scaler transform Xtest')
+    plt.axvline(x=PCA_fit_transform_start,ymin=0,ymax=1,label='PCA fit/transform')
+    plt.axvline(x=PCA_transform_Xtest_start,ymin=0,ymax=1,label='PCA transform Xtest')
+    plt.axvline(x=RandomForest_start,ymin=0,ymax=1,label='RandomForest fit')
+    plt.axvline(x=Predictions_start,ymin=0,ymax=1,label='Predictions')
+    plt.legend(loc='best')
+    plt.show()
+
+
+
+
     # CPU USAGE
     plt.plot(dstat['"epoch"'],dstat['"usr"'],color = '#000000',label='CPU user')
-    plt.plot(dstat['"epoch"'],dstat['"sys"'],color = '#566573',label='CPU sys')
-    plt.plot(dstat['"epoch"'],dstat['"idl"'],color = '#AEB6BF',label='CPU idle')
+    #plt.plot(dstat['"epoch"'],dstat['"sys"'],color = '#566573',label='CPU sys')
+    #plt.plot(dstat['"epoch"'],dstat['"idl"'],color = '#AEB6BF',label='CPU idle')
     # markers for starting time of different script-segments
     plt.axvline(x=importCSVstart,ymin=0,ymax=1,label='CSV import')
     plt.axvline(x=StandardScaler_fit_start,ymin=0,ymax=1,label='Scaler fit')
