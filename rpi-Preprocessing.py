@@ -691,7 +691,7 @@ def makePredictions(model,Xtest,Ytest,export):
 if __name__ == '__main__':
 
     # to not exceed rpi RAM size, split files into 250k rows per file
-    splitsize = 2.5*10**5
+    splitsize = 25*10**4
     # read CSV line-by-line
     chunksize = 1
     # number of components for PCA
@@ -861,7 +861,7 @@ if __name__ == '__main__':
     # SPLIT FILE
     # Xtrain: split training data into smaller portions for transformation and save to disk to free up memory
     n = Xtrain.shape[0]
-    splitsize = 5*10**5
+    #splitsize = 5*10**5
     toprocess = min(splitsize, n)
     iteration = int(n/splitsize)+1
     index = 0

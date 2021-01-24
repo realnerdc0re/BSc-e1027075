@@ -222,7 +222,7 @@ if __name__ == '__main__':
     plt.axvline(x=StandardScaler_Transform_Xtest_start,ymin=0,ymax=1,label='Scaler transform Xtest')
     plt.axvline(x=PCA_fit_transform_start,ymin=0,ymax=1,label='PCA fit/transform')
     plt.axvline(x=PCA_transform_Xtest_start,ymin=0,ymax=1,label='PCA transform Xtest')
-    plt.axvline(x=RandomForest_start,ymin=0,ymax=1,label='RandomForest fit')
+    plt.axvline(x=RandomForest_start,ymin=0,ymax=1,label='RandomForest import')
     plt.axvline(x=Predictions_start,ymin=0,ymax=1,label='Predictions')
     plt.legend(loc='best')
     plt.show()
