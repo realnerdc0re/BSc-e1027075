@@ -3,7 +3,7 @@
 
 ## INPROGRESS:
 
-- add swap logging via dstat (importing/fitting model is going to use swap and it's unavoidable)
+- add swap logging via dstat (importing/fitting model is going to use swap and it's unavoidable), switch back splitsize to 500k instead of 100k, doesn't matter for model fit/import
 
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
