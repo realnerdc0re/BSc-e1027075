@@ -3,28 +3,17 @@
 
 ## INPROGRESS:
 
-- add timestamps for making predictions
 
 - change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
 
-- change filepath & filenames generated in Control.py (FlowSampling.py and PacketSampling.py) to include actual sampling mode and sampling steps (either as additional info-file or within the filenames)
 - rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi
 
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
 
 - write script for evaluation of stored results
-	- split dstat informations according to timestamps in time.csv
-	- create simple graphs for different parts of the script 
-	- transform epochtimestamps to start with 0 (time - timestampstart)
-	- transform units to readable ones (bytes to megabytes...)
-	- create spider-diagram for key values (mem, cpu, time, accuracy)
-
-- get rid of unnecessary imports to save memory
+	- use all results from different sampling methods to compare e.g. runtimes (used highest one as 100%)
 
 - try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
-
-- add information about sampling-modes, sampling-steps and used feature-vector somewhere for further evaluation of results- and logging-output
-
 
 
 
@@ -33,6 +22,7 @@
 
 #### NEXT:
 
+- get rid of unnecessary imports to save memory
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 - check sampling on rpi (flowsampling, packetsampling on original data)
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html)
@@ -64,6 +54,13 @@
 
 ## DONE:
 
+- add information about sampling-modes, sampling-steps and used feature-vector somewhere for further evaluation of results- and logging-output (done in rpi-Control.py)
+- split dstat informations according to timestamps in time.csv
+- create simple graphs for different parts of the script 
+- transform epochtimestamps to start with 0 (time - timestampstart)
+- transform units to readable ones (bytes to megabytes...)
+- create spider-diagram for key values (mem, cpu, time, accuracy)
+- add timestamps for making predictions
 - implement load/save model (-m/-s) in rpi-Preprocessing.py (already done in Classification.py)
 - add timestamp saves and dstat to rpi-Preprocessing.py
 - rpi-Preprocessing.py: use pathlib to forge filepaths to get rid of OS choice
@@ -97,6 +94,7 @@
 
 ## DISCARDED:
 
+- change filepath & filenames generated in Control.py (FlowSampling.py and PacketSampling.py) to include actual sampling mode and sampling steps (either as additional info-file or within the filenames) -> now done in Control.py/rpi-Control.py with creation of information.csv
 - implement RandomForest classifier using RandomForest(warm_start=True) for fit on chunks
 - try different approach for the merged CSV on rpi: instead of merging all sampled CSVs into one large single CSV, read_csv workdays, preprocess those (including reducing memory size float16/32, int8/16/32, cleaning,...) and merge the preprocessed data right before doing the RandomForest classification
 - change rpi distro from dietPi to piCore (http://www.tinycorelinux.net/ports.html, check http://forum.tinycorelinux.net/index.php/topic,24392.0.html to import integrated wifi firmware), reason: available piCore packages not suitable for this application

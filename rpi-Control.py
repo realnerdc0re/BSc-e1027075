@@ -142,6 +142,7 @@ if __name__ == '__main__':
             th.start() # start dstat logging
             with open(timecsv,'w') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
                 csvwriter.writerow([t,'rpi-Control.py','start'])
 
 
