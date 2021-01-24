@@ -1083,7 +1083,7 @@ if __name__ == '__main__':
             print('\t{}/{}:'.format(index,len(iXtrain)))
             print('\t\t<<< transform Xtrain')
             split = ipca.transform(split)
-            Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32)
+            Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32) # append splits to singe Xtrain np.array
         del split
 
     if time:
@@ -1139,7 +1139,7 @@ if __name__ == '__main__':
                 with open(timecsv,'a') as csvfile:
                     csvwriter = csv.writer(csvfile, delimiter=",")
                     csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','start'])
-        del Xtrain
+        #del Xtrain
         print('>>> importing model')
         model = joblib.load(modelfile)
         if time:
