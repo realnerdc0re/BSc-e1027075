@@ -5,7 +5,8 @@
 
 - add timestamps for making predictions
 
-- change filepath & filenames generated in FlowSampling.py and PacketSampling.py to include actual sampling mode and sampling steps (either as additional info-file or within the filenames)
+- change filepath & filenames generated in Control.py (FlowSampling.py and PacketSampling.py) to include actual sampling mode and sampling steps (either as additional info-file or within the filenames)
+- rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi
 
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
 
