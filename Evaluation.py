@@ -19,8 +19,8 @@ from math import pi
 wd = Path.cwd()
 
 # logs-folder
-logd = wd / 'logs'
-#logd = wd / 'logs-rpi'
+#logd = wd / 'logs'
+logd = wd / 'logs-rpi'
 
 # files
 reportcsv = logd / 'report.csv'
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     plt.polar(angles,values)
 
     # label parameters
-    stats = ['RAM\nused','RAM\ncached','CPU\nused','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+    stats = ['used RAM\n({}%)'.format(int(percentRAMused)),'cached RAM\n({}%)'.format(int(percentRAMcached)),'CPU usage\n({}%)'.format(int(maxCPU)),'Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
     plt.xticks(angles[:-1],stats) # pass angles but last (repetition of first value)
     # label value-axis position,ticks and limit
     ax.set_rlabel_position(60)

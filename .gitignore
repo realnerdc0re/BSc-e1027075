@@ -139,6 +139,7 @@ csv/flow-sampled/tmp/*
 csv/packet-sampled/tmp/*
 logs/*
 rpi-logs/*
+logs-rpi/*
 # files
 Merged.csv
 Merged_processed.csv

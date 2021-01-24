@@ -6,7 +6,7 @@
 
 - change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
 
-- rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi
+- rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi if pingable (or make error-fallback)
 
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
 
@@ -22,6 +22,7 @@
 
 #### NEXT:
 
+- create function for saving timestamps
 - get rid of unnecessary imports to save memory
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 - check sampling on rpi (flowsampling, packetsampling on original data)

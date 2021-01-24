@@ -690,8 +690,8 @@ def makePredictions(model,Xtest,Ytest,export):
 
 if __name__ == '__main__':
 
-    # to not exceed rpi RAM size, split files into 500k rows per file
-    splitsize = 5*10**5
+    # to not exceed rpi RAM size, split files into 250k rows per file
+    splitsize = 2.5*10**5
     # read CSV line-by-line
     chunksize = 1
     # number of components for PCA
