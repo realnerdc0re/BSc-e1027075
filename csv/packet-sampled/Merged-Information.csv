@@ -1,0 +1,5 @@
+,choice
+packetsampling,True
+samplingmode,every n-th packet
+samplingsteps,5
+featurevector,CAIA_packetSampling.json

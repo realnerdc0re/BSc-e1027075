@@ -11,41 +11,7 @@ from pathlib import Path, PureWindowsPath
 
 import pandas as pd
 import numpy as np
-
 import matplotlib.pyplot as plt
-
-
-# import CSV
-def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):
-
-    if time: start = timer()
-
-    # informational output
-    print('\n\n'+40*'~'+' FUNCTION: importCSV (chunksize: {}) '.format(chunksize)+40*'~')
-    print('\n>>> importing CSV: {}'.format(csvpath))
-
-    csvdata = pd.DataFrame() # initialise empty dataframe
-
-    # if no chunksize is given, read CSV in one step, otherwise read in chunks
-    if chunksize == None:
-        csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
-    # chunksize determines numbers of rows per chunk
-    else:
-        for chunk in read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize):
-            csvdata = csvdata.append(chunk)
-
-    printdata(csvdata,'imported')
-
-    if verbose:
-        print('\n{}'.format(csvdata.groupby('Label').size()))
-        print('\n{}'.format(csvdata.groupby('Attack').size()))
-        if (not time): input('\n...')
-
-    if time: 
-        end = timer()
-        print('\nimportCSV\n[TIME]: %.3f' % (end-start),'seconds')
-
-    return csvdata
 
 
 # working directory
@@ -60,6 +26,7 @@ reportcsv = logd / 'report.csv'
 resultcsv = logd / 'result.csv'
 timecsv = logd / 'time.csv'
 dstatcsv = logd / 'dstat.csv'
+infocsv = logd / 'information.csv'
 
 if __name__ == '__main__':
 
@@ -67,6 +34,13 @@ if __name__ == '__main__':
 
 
     # IMPORTS 
+    # sampling information
+    info = read_csv(infocsv,delimiter=',',encoding='utf-8')
+    print('\n\n'+20*'~'+' information.csv '+20*'~')
+    print('\n{}\n'.format(info))
+    input('...')
+
+
     # times containing following feature-labels: epochtime, scriptname, segment, status
     times = read_csv(timecsv,delimiter=',',encoding='utf-8')
     print('\n\n'+20*'~'+' times.csv '+20*'~')
@@ -105,7 +79,7 @@ if __name__ == '__main__':
     #importCSVstart = times['epochtime'][1]
     #importCSVstop = times['epochtime'][2]
     times['epochtime'] = times['epochtime'].subtract(startepoch) # modify times
-    dstat['"epoch"'] = dstat['"epoch"'].subtract(startepoch)
+    dstat['"epoch"'][1] = dstat['"epoch"'].subtract(startepoch)
 
 
    # get script-usage timestamps

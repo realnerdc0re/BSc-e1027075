@@ -5,6 +5,8 @@
 
 - add timestamps for making predictions
 
+- change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
+
 - change filepath & filenames generated in Control.py (FlowSampling.py and PacketSampling.py) to include actual sampling mode and sampling steps (either as additional info-file or within the filenames)
 - rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi
 

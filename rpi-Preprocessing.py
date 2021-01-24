@@ -62,8 +62,8 @@ Xtestnpy =  'Xtest_split_{}v{}.npy'
 fmodeld = fpath / 'fitted'
 pmodeld = ppath / 'fitted'
 #modelpkl = '{}_model_{}.pkl' # placeholder for file and 32/64bit
-#modelpkl = '{}_model_32bit.pkl'
-modelpkl = '{}_model_64bit.pkl'
+modelpkl = '{}_model_32bit.pkl'
+#modelpkl = '{}_model_64bit.pkl'
 
 
 # COMMANDS
@@ -731,25 +731,14 @@ if __name__ == '__main__':
 
     if time: 
         os.system('killall dstat') # kill any running dstat process
-        start = timer() # runtime
-        t = epochtime.time() # epochtime
-        th.start() # start dstat loggin
-        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
-
+        start = timer()
+        t = epochtime.time()
         if export: # write timestamp to csv
-            if flowsampling: description = 'flow-sampled'
-            elif packetsampling: description = 'packet-sampled'
-
-            if os.path.isfile(timecsv): # check if file already exists
-                with open(timecsv,'a') as csvfile:
-                    csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
-                    csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
-            else:
-                with open(timecsv,'w') as csvfile: # create file
-                    csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
-                    csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
+            th.start() # start dstat loggin
+            with open(timecsv,'w') as csvfile: # create file
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
+                csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
 
 
     # OUTPUT passed optional arguments & filepath
@@ -861,8 +850,6 @@ if __name__ == '__main__':
 
 
 
-    # SPLIT FILE
-
     if time:
         t = epochtime.time()
         #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
@@ -871,6 +858,7 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','Split','start'])
 
+    # SPLIT FILE
     # Xtrain: split training data into smaller portions for transformation and save to disk to free up memory
     n = Xtrain.shape[0]
     splitsize = 5*10**5
@@ -898,7 +886,6 @@ if __name__ == '__main__':
     del Xtrain
     del npXtrain
     gc.collect()
-
 
     # SPLIT FILE
     # Xtest: split test data into smaller portions for transformation and save to disk to free up memory
@@ -1242,10 +1229,17 @@ if __name__ == '__main__':
         results.to_csv(resultcsv)
         report.to_csv(reportcsv)
 
+        '''
+        # copy sampling information to log-folder
+        infof = path / filenames[file]+str(-Information.csv)
+        copycmd = 'cp {} {}'.format(infof,logd)
+        os.system(copycmd)
+        '''
+
     if time:
         end = timer()
         t = epochtime.time()
-        print('\nPreprocessing.py\n[EPOCH, end]: {}'.format(t))
+        #print('\nPreprocessing.py\n[EPOCH, end]: {}'.format(t))
         print('[RUNTIME]: %.3f' % (end-start),'seconds')
 
         if export: # write timestamps to csv
