@@ -59,7 +59,8 @@ dstatcsv = logfolder+"/dstat.csv"
 timecsv = logfolder+"/time.csv"
 # dstat command including arguments to pipe output do null and execute in background
 # logs epochtime, cpu-usage, disk-usage, memory-usage and top ps
-dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output '+dstatcsv+' > /dev/null 2>&1 &'
+#dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output '+dstatcsv+' > /dev/null 2>&1 &'
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --output '+dstatcsv+' > /dev/null 2>&1 &'
 #dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv &'
 #dstatarg = '--epoch --cpu-adv --disk --mem-adv --top-io-adv --output /home/noooberino/control.csv > /dev/null 2>&1 &'
 
@@ -123,6 +124,8 @@ if __name__ == '__main__':
     windows = args.windows
     flowsampling = args.flowsampling
     packetsampling = args.packetsampling
+
+
     # positional arguments
     # file selection (can be passed 1:1 to scripts called in main)
     findex = args.file[0]
@@ -138,7 +141,7 @@ if __name__ == '__main__':
         samplingmode =flowsmode[m]
     elif packetsampling:
         packetsampling = True
-        flowsampling = True
+        flowsampling = False
         m = args.packetsampling[0]
         samplingmode = packetsmode[m]
 
@@ -171,7 +174,7 @@ if __name__ == '__main__':
     print('\ndstat:\t{}'.format(dstat))
 
 
-    # SAMPLING ALL CAPTURE FILES & MERGE
+    # SAMPLING ALL CAPTURE FILES & MERGE TO SINGLE CSV
     if findex == 0:
         # iterate over all PCAP files
         for fcount in range(1,len(filenames)):
@@ -210,7 +213,7 @@ if __name__ == '__main__':
         os.chdir(wd)
 
 
-    # SAMPLING SPECIFIC CAPTURE FILE
+    # SAMPLING SINGLE SPECIFIC CAPTURE FILE
     else:
         # forge script execution-command out of given arguments
         if flowsampling: 

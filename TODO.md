@@ -4,16 +4,22 @@
 ## INPROGRESS:
 
 - add timestamps for making predictions
+
 - change filepath & filenames generated in FlowSampling.py and PacketSampling.py to include actual sampling mode and sampling steps (either as additional info-file or within the filenames)
+
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
+
 - write script for evaluation of stored results
 	- split dstat informations according to timestamps in time.csv
 	- create simple graphs for different parts of the script 
 	- transform epochtimestamps to start with 0 (time - timestampstart)
 	- transform units to readable ones (bytes to megabytes...)
 	- create spider-diagram for key values (mem, cpu, time, accuracy)
+
 - get rid of unnecessary imports to save memory
+
 - try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
+
 - add information about sampling-modes, sampling-steps and used feature-vector somewhere for further evaluation of results- and logging-output
 
 

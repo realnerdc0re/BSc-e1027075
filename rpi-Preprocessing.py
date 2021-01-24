@@ -1144,27 +1144,52 @@ if __name__ == '__main__':
 
     # RANDOM FOREST CLASSIFIER
 
+    # select already fitted modelfile or fit model
+    if model:
+        if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','start'])
+        del Xtrain
+        print('>>> importing model')
+        model = joblib.load(modelfile)
+        if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','end'])
+    else:
+        if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','start'])
+        model = RandomForestClassifier()
+        print('>>> fit RandomForestClassifier')
+        model = model.fit(Xtrain,Ytrain)
+        del Xtrain
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','end'])
+        if save:
+            print('>>> saving model')
+            joblib.dump(model,modelfile)
+
     if time:
         t = epochtime.time()
         #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
         if export: # write timestamp to csv
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','RandomForest-model','start'])
-
-    # select already fitted modelfile or fit model
-    if model:
-        del Xtrain
-        print('>>> importing model')
-        model = joblib.load(modelfile)
-    else:
-        model = RandomForestClassifier()
-        print('>>> fit RandomForestClassifier')
-        model = model.fit(Xtrain,Ytrain)
-        del Xtrain
-        if save:
-            print('>>> saving model')
-            joblib.dump(model,modelfile)
+                csvwriter.writerow([t,'rpi-Preprocessing.py','makePredictions','start'])
 
     print('>>> create predictions')
     predictions = model.predict(Xtest)
@@ -1179,6 +1204,14 @@ if __name__ == '__main__':
     parameters = model.get_params(deep=True)
     accuracyscore = accuracy_score(Ytest,predictions)
     featureimportance = model.feature_importances_
+
+    if time:
+        t = epochtime.time()
+        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
+        if export: # write timestamp to csv
+            with open(timecsv,'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','makePredictions','end'])
 
     if time:
         t = epochtime.time()
