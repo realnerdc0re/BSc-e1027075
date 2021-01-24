@@ -1167,7 +1167,7 @@ if __name__ == '__main__':
                 csvwriter.writerow([t,'rpi-Preprocessing.py','fitRandomForest','end'])
         if save:
             print('>>> saving model')
-            joblib.dump(model,modelfile)
+            joblib.dump(model,modelfile,compress=True)
 
     if time:
         t = epochtime.time()

@@ -25,6 +25,7 @@
 
 #### NEXT:
 
+- compress model dump (http://gael-varoquaux.info/programming/new_low-overhead_persistence_in_joblib_for_big_data.html)
 - create function for saving timestamps
 - get rid of unnecessary imports to save memory
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
@@ -58,6 +59,7 @@
 
 ## DONE:
 
+- if importing model, don't PCA transform Xtrain at all
 - add information about sampling-modes, sampling-steps and used feature-vector somewhere for further evaluation of results- and logging-output (done in rpi-Control.py)
 - split dstat informations according to timestamps in time.csv
 - create simple graphs for different parts of the script 
