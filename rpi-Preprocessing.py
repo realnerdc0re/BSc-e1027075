@@ -1157,7 +1157,7 @@ if __name__ == '__main__':
             if export: # write timestamp to csv
                 with open(timecsv,'a') as csvfile:
                     csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','start'])
+                    csvwriter.writerow([t,'rpi-Preprocessing.py','fitRandomForest','start'])
         model = RandomForestClassifier()
         print('>>> fit RandomForestClassifier')
         model = model.fit(Xtrain,Ytrain)
@@ -1165,7 +1165,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','end'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','fitRandomForest','end'])
         if save:
             print('>>> saving model')
             joblib.dump(model,modelfile)
