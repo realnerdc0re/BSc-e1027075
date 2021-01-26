@@ -21,8 +21,10 @@ import subprocess
 import pandas as pd
 import time as epochtime
 import threading
+
 from timeit import default_timer as timer
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
+from pandas import read_csv
 
 
 
@@ -32,17 +34,19 @@ flowsmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n
 # packetsampling-modes
 packetsmode = {1:'every n-th packet'}
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
-filenames = {0:'All',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
+filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 # feature vectors
 featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
-
-# directories
-flowfolder = '/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV'
-packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
 
 
 # get working directory
 wd = Path.cwd()
+rootd = PurePath(wd).root
+
+# mounted disk paths for large PCAP and sampled CSVs files
+mntd = PurePosixPath('/mnt')
+flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
+packetfolder = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
 
 # forge logfolder, timestamps & dstat logs based on wd
 logd = wd / 'logs'
@@ -51,6 +55,10 @@ reportcsv = logd / 'report.csv'
 resultcsv = logd / 'result.csv'
 timecsv = logd / 'time.csv'
 dstatcsv = logd / 'dstat.csv'
+
+
+
+'''
 # sampled CSVs
 fpath = wd / 'csv' / 'flow-sampled'
 ppath = wd / 'csv' / 'packet-sampled'
@@ -60,10 +68,11 @@ pmodeld = ppath / 'fitted'
 #modelpkl = '{}_model_{}.pkl' # placeholder for file and 32/64bit
 #modelpkl = '{}_model_32bit.pkl'
 modelpkl = '{}_model_64bit.pkl'
+'''
 
-# directories for large PCAP files
-flowfolder = '/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV'
-packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
+# directories saving large PCAP files
+#flowfolder = '/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV'
+#packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
 
 # COMMANDS
 # start dstat resource logging
@@ -129,15 +138,14 @@ if __name__ == '__main__':
     export = args.export
 
 
-    if export: # remove any exisiting CSV
+    if export: # remove any exisiting logs in log-directory
         for file in os.listdir(logd):
             Path.unlink(logd / file)
 
-    if time:
-        os.system('killall dstat') # kill literally any running dstat process
+    if time: # start dstat logging, create timestamps csv
+        os.system('killall dstat') # kill literally any already running dstat process
         start = timer()
         t = epochtime.time()
-        #print('\nControl.py\n[EPOCH, start]: {}\n'.format(t))
         if export: # write timestamp to csv
             th.start() # start dstat logging
             with open(timecsv,'w') as csvfile:
@@ -155,17 +163,26 @@ if __name__ == '__main__':
         print('>>> please enter non-zero integer value for n!')
         exit()
 
-    # set arguments for chosen sampling
+
+    # set arguments for chosen samplingmethod
     if flowsampling:
         flowsampling = True
         packetsampling = False
         m = args.flowsampling[0]
         samplingmode =flowsmode[m]
+        samplingd = flowfolder
     elif packetsampling:
         packetsampling = True
         flowsampling = False
         m = args.packetsampling[0]
         samplingmode = packetsmode[m]
+        samplingd = packetfolder
+
+    # forge filename & directories
+    foldername =  str(filenames[findex])+str('_mode')+str(m)+str('_vector')+str(j)+str('_steps')+str(n)
+    csvd = samplingd / foldername
+    csvname = str(filenames[findex])+str('.csv')
+    if not os.path.exists(csvd): os.mkdir(csvd) # create csv-directory if it doesn't exist
 
     # COMMANDS arguments to execute Flowsampling.py or Packetsampling.py within this script
     # set argument for OS choice
@@ -183,7 +200,7 @@ if __name__ == '__main__':
 
     # check passed optional arguments and commands
     print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
-    print(40*'~'+' SCRIPT: Control.py '+40*'~')
+    print(40*'~'+' SCRIPT: rpi-Control.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,osx,windows,flowsampling,packetsampling))
     print('\n{}, n = {}'.format(samplingmode,n))
@@ -191,29 +208,46 @@ if __name__ == '__main__':
     print('\nlogs:\t{}'.format(logd))
     print('dstat:\t{}'.format(dstatcsv))
     print('times:\t{}\n'.format(timecsv))
-    print('flowfolder:\t{}'.format(flowfolder))
-    print('packetfolder:\t{}'.format(packetfolder))
+    #print('flow-folder:\t{}'.format(flowfolder))
+    #print('packet-folder:\t{}'.format(packetfolder))
     print('go-flows:\t{}'.format(featurevectors[j]))
+    print('csv-folder:\t{}'.format(csvd))
+    print('csv-name:\t{}'.format(csvname))
     print('\n'+20*'~'+' commands '+20*'~')
     print('\ndstat:\t{}'.format(dstat))
+
+
+    '''
+    # TESTING FORGE PATHS WITH PATHLIB
+    #rootd = PurePath(wd).root
+    print('\nroot-directory: {}'.format(rootd))
+    print('sampling-directory: {}'.format(samplingd))
+    print('csv-directory: {}'.format(csvd))
+    print('csv-name: {}'.format(csvname))
+    if not os.path.exists(csvd): os.mkdir(csvd) # create directory if it doesn't exist
+
+    input('blub')
+    '''
+
 
 
     # SAMPLING ALL CAPTURE FILES & MERGE TO SINGLE CSV
     if findex == 0:
         # iterate over all PCAP files
         for fcount in range(1,len(filenames)):
+        #for fcount in range(1,1):
             if flowsampling: 
                 sarg = " --flowsampling "
                 #m = args.flowsampling[0]
                 samplearg = " "+str(m)+" "+str(fcount)+" "+str(n)
                 featurearg =" "+str(j)
-                samplingcmd = "python FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+                samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
             elif packetsampling: 
                 sarg = " --packetsampling "
                 #m = args.packetsampling[0]
                 samplearg = " "+str(split)+" "+str(m)+" "+str(fcount)+" "+str(n)
                 featurearg =" "+str(j)
-                samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+                samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
             
             print('\n>>> execute sampling: {}\n>>> input-file: {}'.format(samplingcmd,filenames[fcount]))
             # start sampling
@@ -222,28 +256,33 @@ if __name__ == '__main__':
         # merge all CSVs into one single file
         # change current working directory to CSV folder to get relevant files
         if flowsampling:
-            os.chdir(flowfolder)
+            os.chdir(str(flowfolder))
             mergefolder = flowfolder
+            # forge informations into info-file for further evaluation
             info = {'file':[filenames[findex]],'flowsampling':[flowsampling],'samplingmode':[flowsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
             info = pd.DataFrame.from_dict(info,orient='index')
 
         elif packetsampling:
-            os.chdir(packetfolder)
+            os.chdir(str(packetfolder))
             mergefolder = packetfolder
             info = {'file':[filenames[findex]],'packetsampling':[packetsampling],'samplingmode':[packetsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
             info = pd.DataFrame.from_dict(info,orient='index')
 
         extension = 'csv'
-        print('\n\n>>> merging sampled data into CSV...')
+        print('\n\n>>> merging sampled data into CSV')
         # save all files matching *Hours.csv into list, these are the already labeled CSV files
         matchedfiles = [i for i in glob.glob('*Hours.{}'.format(extension))]
         # concat all labeled csv-files into single csv
         singlecsv = pd.concat([pd.read_csv(f) for f in matchedfiles])
-        print('>>> saving sampled data')
-        singlecsv.to_csv(str(mergefolder)+"/Merged.csv", index = False,encoding='utf-8-sig') # save merged, sampled CSV
+        csvsave = csvd / csvname
+        print('>>> saving sampled data: {}'.format(csvsave))
+        #singlecsv.to_csv(str(mergefolder)+"/Merged.csv", index = False,encoding='utf-8-sig') # save merged, sampled CSV
+        singlecsv.to_csv(str(csvsave), index = False,encoding='utf-8-sig') # save merged, sampled CSV
+
         print('>>> saving sampling information')
         info.to_csv(str(mergefolder)+"/information.csv") # save sampling-information to CSV (to original PCAP directory)
         info.to_csv(str(logd)+"/information.csv")
+        info.to_csv(str(csvd)+"/information.csv")
         # set working directory back to actual wd for further script executions
         os.chdir(wd)
 
@@ -256,13 +295,13 @@ if __name__ == '__main__':
             #m = args.flowsampling[0]
             samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
             featurearg =" "+str(j)
-            samplingcmd = "python FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+            samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
         elif packetsampling: 
             sarg = " --packetsampling "
             #m = args.packetsampling[0]
             samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
             featurearg =" "+str(j)
-            samplingcmd = "python PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+            samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
         print('>>> execute sampling: {}'.format(samplingcmd))
         os.system(samplingcmd)
 

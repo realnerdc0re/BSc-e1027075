@@ -52,7 +52,12 @@ resultcsv = logd / 'result.csv'
 timecsv = logd / 'time.csv'
 dstatcsv = logd / 'dstat.csv'
 # sampled CSVs
+# rsync sampled files and informations into those folders from the device that does the sampling
+# cd /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/<foldername>
+# rync --progress . dietpi@10.10.45.55:~/BSc-e1027075/csv/flow-sampled/
 fpath = wd / 'csv' / 'flow-sampled'
+# cd /mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/<foldername>
+# rync --progress . dietpi@10.10.45.55:~/BSc-e1027075/csv/packet-sampled/
 ppath = wd / 'csv' / 'packet-sampled'
 # directory & files to save tmp np.array splits
 npsaved = wd / 'tmp'
@@ -65,6 +70,13 @@ pmodeld = ppath / 'fitted'
 modelpkl = '{}_model_32bit.pkl'
 #modelpkl = '{}_model_64bit.pkl'
 
+# check folders and create if necessary
+if not os.path.exists(logd): os.mkdir(logd)
+if not os.path.exists(fpath): os.mkdir(fpath)
+if not os.path.exists(ppath): os.mkdir(ppath)
+if not os.path.exists(npsaved): os.mkdir(npsaved)
+if not os.path.exists(fmodeld): os.mkdir(fmodeld)
+if not os.path.exists(pmodeld): os.mkdir(pmodeld)
 
 # COMMANDS
 # start dstat resource logging
@@ -95,11 +107,7 @@ args = parser.parse_args()
 
 
 # starting dstat logging threaded
-def threadFunc():
-    os.system(dstat.format(dstatcsv))
-    #proc = subprocess.Popen(["/usr/bin/dstat","--epoch","--cpu-adv","--output /home/noooberino/control.csv"],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT,shell=True)
-    #log = open('/home/noooberino/control.csv','a')
-    #proc = subprocess.Popen(["/usr/bin/dstat","--epoch","--cpu-adv"],stdout=log,shell=True)
+def threadFunc(): os.system(dstat.format(dstatcsv))
 th = threading.Thread(target=threadFunc)
 
 # import CSV
@@ -708,8 +716,8 @@ if __name__ == '__main__':
     load = args.load
     model = args.model
     export = args.export
-
     model = args.model
+
     # positional arguments
     findex = args.file[0]
     batchsize = args.batch[0]
@@ -748,8 +756,8 @@ if __name__ == '__main__':
     print('\n'+20*'~'+' processing '+20*'~')
     print('\nbatchsize = {}\nsplitsize = {}'.format(batchsize,splitsize))
     print('\n'+20*'~'+' file '+20*'~'+'\n')
-    if model or save: print('{}'.format(modelfile))
-    print('{}\n'.format(path))
+    print('CSV-file:\t{}'.format(path))
+    if model or save: print('model-file:\t{}\n'.format(modelfile))
     if (not time): input('\n')
 
 

@@ -3,6 +3,13 @@
 
 ## INPROGRESS:
 
+
+- try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
+
+- save sampled CSVs in folders that contain important sampling-infos within the foldername (do this in rpi-Control.py with variable mergefolder, that is used to actually save Merged.csv and information.csv, around line 270)
+
+- when saving Model also include PCA component number in filename?
+
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
 - create vertical bars automatically from time.csv
@@ -16,8 +23,6 @@
 - write script for evaluation of stored results
 	- use all results from different sampling methods to compare e.g. runtimes (used highest one as 100%)
 
-- try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
-
 
 
 
@@ -25,26 +30,30 @@
 
 #### NEXT:
 
-- compress model dump (http://gael-varoquaux.info/programming/new_low-overhead_persistence_in_joblib_for_big_data.html)
-- create function for saving timestamps
-- get rid of unnecessary imports to save memory
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
-- check sampling on rpi (flowsampling, packetsampling on original data)
+
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html)
-- minor: verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data...
-- use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)
+
 - flowStartMilliseconds: remove feature direct after labeling
-- pyplot import only on non-rpi devices?
+
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
+
 
 #### LATER:
 
+- create function for saving timestamps
+- get rid of unnecessary imports to save memory
+- use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)?
+- pyplot import only on non-rpi devices?
+- minor: verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data
+- check sampling on rpi (flowsampling, packetsampling on original data)
 - when going full in on rpi, avoid useless write/reads of dataset-files to speed up the whole process (e.g. merge Preprocessing.py and Classification.py when doing the preprocessing on rpi), pack as many functions into a single script as possible to avoid time-sconsuming write/reads!
 - write script to evaluate data logged with dstat in combination with ML scores and timestamps saved
 - think about the substitutions for NaNs & Infs in preprocessing
 - implement automatic folder generation on script execution (os.path.exists(folder) and os.makedirs(folder)), do this with a separate python script for the base-folder structure. expand this structure if necessary for multiple test-runs? (important for wd/logs, and first time creation of time.csv if no file exists or if a file already exists on scriptstart outside of Control.py create new file (due to appending time within any other scripts than Control.py...))
 - improve filename generation, including working-directory instead of hardcoded /home/<user>/<project-folder>, maybe read folder-content, based on that create dictionary with filenames without extensions, use that and wd as base to forge filepaths and filenames 
-  
+
+
 #### IMPROVEMENTS:
 
 - change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
@@ -59,6 +68,7 @@
 
 ## DONE:
 
+- compress model dump (http://gael-varoquaux.info/programming/new_low-overhead_persistence_in_joblib_for_big_data.html)
 - if importing model, don't PCA transform Xtrain at all
 - add information about sampling-modes, sampling-steps and used feature-vector somewhere for further evaluation of results- and logging-output (done in rpi-Control.py)
 - split dstat informations according to timestamps in time.csv
