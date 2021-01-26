@@ -1,7 +1,7 @@
 ,summary
 model,RandomForestClassifier()
 parameters,"{'bootstrap': True, 'ccp_alpha': 0.0, 'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'max_leaf_nodes': None, 'max_samples': None, 'min_impurity_decrease': 0.0, 'min_impurity_split': None, 'min_samples_leaf': 1, 'min_samples_split': 2, 'min_weight_fraction_leaf': 0.0, 'n_estimators': 100, 'n_jobs': None, 'oob_score': False, 'random_state': None, 'verbose': 0, 'warm_start': False}"
-accuracy-score,0.9754967097323168
-feature-importance,[0.27421917 0.25120133 0.33280067 0.14177884]
-confusion-matrix,"[[362008   3471]
- [  6579  38091]]"
+accuracy-score,0.9676657472254409
+feature-importance,[0.27102101 0.24856057 0.27134722 0.2090712 ]
+confusion-matrix,"[[260853   3521]
+ [  5939  22256]]"

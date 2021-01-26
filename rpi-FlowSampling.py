@@ -463,7 +463,7 @@ if __name__ == '__main__':
 
     # forged command to convert sampled PCAP into (per-packet) CSV for Classification
     goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(fpath)+separator+"{}".format(csvname[findex])+" source libpcap "+"{}".format(fpath)+separator+"{}".format(fname[findex])
-    labelingcmd = "python "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+labelmode
+    labelingcmd = "python3 "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+labelmode
 
 
     # check passed optional arguments, filepaths and forged commands
