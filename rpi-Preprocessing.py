@@ -45,19 +45,24 @@ filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wedn
 csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
 # working directory
 wd = Path.cwd()
+
+'''
 # logs
 logd = wd / 'logs'
 reportcsv = logd / 'report.csv'
 resultcsv = logd / 'result.csv'
 timecsv = logd / 'time.csv'
 dstatcsv = logd / 'dstat.csv'
+'''
+
+
 # sampled CSVs
 # rsync sampled files and informations into those folders from the device that does the sampling
 # cd /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/<foldername>
-# rync --progress . dietpi@10.10.45.55:~/BSc-e1027075/csv/flow-sampled/
+# rsync --progress * dietpi@10.10.45.55:~/BSc-e1027075/csv/flow-sampled/
 fpath = wd / 'csv' / 'flow-sampled'
 # cd /mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV/<foldername>
-# rync --progress . dietpi@10.10.45.55:~/BSc-e1027075/csv/packet-sampled/
+# rsync --progress * dietpi@10.10.45.55:~/BSc-e1027075/csv/packet-sampled/
 ppath = wd / 'csv' / 'packet-sampled'
 # directory & files to save tmp np.array splits
 npsaved = wd / 'tmp'
@@ -71,7 +76,6 @@ modelpkl = '{}_model_32bit.pkl'
 #modelpkl = '{}_model_64bit.pkl'
 
 # check folders and create if necessary
-if not os.path.exists(logd): os.mkdir(logd)
 if not os.path.exists(fpath): os.mkdir(fpath)
 if not os.path.exists(ppath): os.mkdir(ppath)
 if not os.path.exists(npsaved): os.mkdir(npsaved)
@@ -726,9 +730,18 @@ if __name__ == '__main__':
     if flowsampling: 
         path = fpath / csvname[findex] # sampled CSV
         modeld = fmodeld # pickel model-file
+        logd = fpath / 'logs'
     elif packetsampling: 
         path = ppath / csvname[findex]
         modeld = pmodeld
+        logd = ppath / 'logs'
+
+    # logs
+    if not os.path.exists(logd): os.mkdir(logd)
+    reportcsv = logd / 'report.csv'
+    resultcsv = logd / 'result.csv'
+    timecsv = logd / 'time.csv'
+    dstatcsv = logd / 'dstat.csv'
 
     # set filepath for pickle modelfile if necessary
     if (model or save): modelfile = modeld / modelpkl.format(filenames[findex])
