@@ -322,15 +322,17 @@ if __name__ == '__main__':
 
         plt.show() # print current spider-chart
 
-
-
-
     # SPIDER CHART COMPARISONS
-
     ax = plt.subplot(polar=True)
-    # for now, manually pick values that should be compared
-    plt.polar(angles,values[1],color = '#566573',label='n=5 (packetsampling)')
-    plt.polar(angles,values[2],color = '#AEB6BF',label='n=5 (flowsampling)')
+    #ax.set_facecolor('#525252') # sets background of the plot, still white frame though
+
+    # for now, manually pick models that should be compared
+    plt.polar(angles,values[3],color = '#FF7D16',label='n=5 (flowsampling)')
+    plt.polar(angles,values[0],color = '#FFA55F',label='n=10 (flowsampling)')
+
+    plt.polar(angles,values[1],color = '#1F4769',label='n=5 (packetsampling)')
+    plt.polar(angles,values[2],color = '#4692D4',label='n=10 (packetsampling)')
+
 
     stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
     plt.xticks(angles[:-1],stats) # pass angles but last (repetition of first value)
@@ -345,8 +347,6 @@ if __name__ == '__main__':
     plt.show() # print merged spider chart
 
 
-
-
     # SIMPLE GRAPHS
     # html color-codes from https://htmlcolorcodes.com/
 
@@ -357,7 +357,6 @@ if __name__ == '__main__':
     plt.plot(dstat['"epoch"'],dstat['"cach"'],color = '#AEB6BF',label='cached')
     plt.legend(loc='best')
     plt.show()
-
     # RAM USAGE, separate diagrams for every parameter
     dstat.plot(x='"epoch"',y='"used"',color = '#566573',label='used')
     dstat.plot(x='"epoch"',y='"cach"',color = '#AEB6BF',label='cached')
@@ -365,13 +364,12 @@ if __name__ == '__main__':
     plt.show()
     '''
 
-    # plot all RAM graphs into single diagram
+    # RAM usage
     for i in range(0,len(evaluationd)):
         title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
         plt.plot(dstats[i]['"epoch"'],dstats[i]['"total"'],color = '#000000',label='RAM total')
         plt.plot(dstats[i]['"epoch"'],dstats[i]['"used"'],color = '#566573',label='RAM used')
         plt.plot(dstats[i]['"epoch"'],dstats[i]['"cach"'],color = '#AEB6BF',label='RAM cached')
-
 
         plt.axvline(x=predictions[i],ymin=0,ymax=1,label='make Predictions',color='#52FF3A')
         plt.axvline(x=modelsimport[i],ymin=0,ymax=1,label='import Model',color='#4BE936')
@@ -382,7 +380,6 @@ if __name__ == '__main__':
         plt.axvline(x=filesplits[i],ymin=0,ymax=1,label='split files',color='#2E9121')
         plt.axvline(x=scalersfit[i],ymin=0,ymax=1,label='StandardScaler fit Xtrain',color='#287F1C')
         plt.axvline(x=csvimports[i],ymin=0,ymax=1,label='import CSV',color='#216918')
-
 
         plt.title(title)
         plt.legend(loc='best')
@@ -409,25 +406,5 @@ if __name__ == '__main__':
         plt.title(title)
         plt.legend(loc='best')
         plt.show()
-
-
-
-    #plt.plot(dstat['"epoch"'],dstat['"usr"'],color = '#000000',label='CPU user')
-    #plt.plot(dstat['"epoch"'],dstat['"sys"'],color = '#566573',label='CPU sys')
-    #plt.plot(dstat['"epoch"'],dstat['"idl"'],color = '#AEB6BF',label='CPU idle')
-    '''
-    # markers for starting time of different script-segments
-    plt.axvline(x=importCSVstart,ymin=0,ymax=1,label='CSV import')
-    plt.axvline(x=StandardScaler_fit_start,ymin=0,ymax=1,label='Scaler fit')
-    plt.axvline(x=Split_start,ymin=0,ymax=1,label='split')
-    plt.axvline(x=StandardScaler_Transform_Xtrain_start,ymin=0,ymax=1,label='Scaler transform Xtrain')
-    plt.axvline(x=StandardScaler_Transform_Xtest_start,ymin=0,ymax=1,label='Scaler transform Xtest')
-    plt.axvline(x=PCA_fit_transform_start,ymin=0,ymax=1,label='PCA fit/transform')
-    plt.axvline(x=PCA_transform_Xtest_start,ymin=0,ymax=1,label='PCA transform Xtest')
-    plt.axvline(x=RandomForest_start,ymin=0,ymax=1,label='RandomForest fit')
-    plt.axvline(x=Predictions_start,ymin=0,ymax=1,label='Predictions')
-    '''
-    #plt.legend(loc='best')
-    #plt.show()
 
     exit()

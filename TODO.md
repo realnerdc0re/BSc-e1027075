@@ -7,6 +7,7 @@
 - Virtualization: try to train RandomForest model in 32bit ARM dietpi VM (https://github.com/scikit-learn/scikit-learn/issues/2972)
 
 - when saving Model also include PCA component number in filename??
+- include swap usage in dstat
 
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
