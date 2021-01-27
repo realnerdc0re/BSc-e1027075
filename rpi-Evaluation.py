@@ -31,6 +31,10 @@ times = []
 accuracyscores = []
 matrices = []
 runtimes = []
+samplingtypes = []
+samplingmodes = []
+samplingsteps = []
+featurevectors = []
 
 for path in Path(logd).iterdir(): # get all folder-paths for evaluation
     if path.is_dir(): evaluationd.append(path)
@@ -66,11 +70,32 @@ if __name__ == '__main__':
     # sampling information
     for i in range(0,len(evaluationd)):
         infocsv = evaluationd[i] / 'information.csv'
-        info = read_csv(infocsv,delimiter=',',encoding='utf-8')
+        info = read_csv(infocsv,delimiter=',',encoding='utf-8',index_col=0)
         print('\n\n'+20*'~'+' information.csv '+20*'~')
         print('\n{}\n'.format(info))
         infos.append(info)
     input('...')
+
+    # get informations to label graphs later
+    for i in range(0,len(evaluationd)):
+        features = infos[i].index.values
+        samplingtype = features[1]
+        samplingtypes.append(samplingtype) # flow/packet-sampling
+
+        samplingmode = infos[i]['0'][2]
+        samplingmodes.append(samplingmode)
+
+        samplingstep = infos[i]['0'][3]
+        samplingsteps.append(samplingstep)
+
+        featurevector = infos[i]['0'][4]
+        featurevectors.append(featurevector)
+
+    print(samplingtypes)
+    print(samplingmodes)
+    print(samplingsteps)
+    print(featurevectors)
+    input('blub')
 
     # timestamps
     for i in range(0,len(evaluationd)):
@@ -98,7 +123,6 @@ if __name__ == '__main__':
     for i in range (2,len(timef)):
         print('\n{}:\n{}'.format(timef[i],times[0][timef[i]].unique()))
 
-
     if verbose:
         segments = times[0][timef[2]].unique() # all segments contained in time.csv
         #print('\nsegments:\n{}\n'.format(segments))
@@ -109,10 +133,17 @@ if __name__ == '__main__':
             # get row numbers to determine start/end timestamps for segments
 
 
+    csvimports = []
+    scalersfit = []
+    filesplits = []
+    scalersxtrain = []
+    scalersxtest = []
+    pcasfit = []
+    pcasxtest = []
+    modelsimport = []
+    predictions = []
 
     # PRE-PROCESS
-    #startepochs = [] # list of starting epochtime for given log-directories
-
     for i in range(0,len(evaluationd)):
         # set starting time to 0
         startepoch = times[i]['epochtime'][0]
@@ -125,23 +156,44 @@ if __name__ == '__main__':
         runtime = (mainEnd - mainStart) # to get value between 0 and 100 for spider chart
         runtimes.append(runtime)
 
-        '''
-        # timestamps for starting segments
-        importCSVstart = times['epochtime'][1]
-        StandardScaler_fit_start = times['epochtime'][3]
-        Split_start = times['epochtime'][5]
-        StandardScaler_Transform_Xtrain_start = times['epochtime'][7]
-        StandardScaler_Transform_Xtest_start = times['epochtime'][9]
-        PCA_fit_transform_start = times['epochtime'][11]
-        PCA_transform_Xtest_start = times['epochtime'][13]
-        RandomForest_start = times['epochtime'][15]
-        Predictions_start = times['epochtime'][17]
-        '''
+        csvimport = times[i].loc[(times[i].segment == 'importCSV') & (times[i].status == 'start')].epochtime.values[0]
+        csvimports.append(csvimport)
+
+        scalerfit = times[i].loc[(times[i].segment == 'Standardscaler-fit') & (times[i].status == 'start')].epochtime.values[0]
+        scalersfit.append(scalerfit)
+
+        filesplit = times[i].loc[(times[i].segment == 'Split') & (times[i].status == 'start')].epochtime.values[0]
+        filesplits.append(filesplit)
+
+        scalerxtrain = times[i].loc[(times[i].segment == 'Scaler-transform-Xtrain') & (times[i].status == 'start')].epochtime.values[0]
+        scalersxtrain.append(scalerxtrain)
+
+        scalerxtest = times[i].loc[(times[i].segment == 'Scaler-transform-Xtest') & (times[i].status == 'start')].epochtime.values[0]
+        scalersxtest.append(scalerxtest)
+
+        pcafit = times[i].loc[(times[i].segment == 'PCA-fit/transform-Xtrain') & (times[i].status == 'start')].epochtime.values[0]
+        pcasfit.append(pcafit)
+
+        pcaxtest = times[i].loc[(times[i].segment == 'PCA-transform-Xtest') & (times[i].status == 'start')].epochtime.values[0]
+        pcasxtest.append(pcaxtest)
+
+        modelimport = times[i].loc[(times[i].segment == 'importRandomForest') & (times[i].status == 'start')].epochtime.values[0]
+        modelsimport.append(modelimport)
+
+        prediction = times[i].loc[(times[i].segment == 'makePredictions') & (times[i].status == 'start')].epochtime.values[0]
+        predictions.append(prediction)
+
+
+
+
+
+        #print(predictionstart)
+        #print(type(predictionstart))
+        #input('blbajlkbaj')
+
 
         # dump all dstat values outside of script duration
         dstats[i] = dstats[i][(dstats[i]['"epoch"'] >= mainStart) & (dstats[i]['"epoch"'] <= mainEnd)]
-
-
 
     # get list of dstat features from dstat.csv
     dstatf = list(dstats[0])
@@ -151,20 +203,14 @@ if __name__ == '__main__':
     maxruntime = max(runtimes)
     percentageruntimes = [100 * x / maxruntime for x in runtimes]
 
-    #print(percentageruntimes[1])
-    #input('blabl')
-
-    # example to isolate dstat values from specific segments
-    #importCSVdstat = dstat[(dstat['"epoch"'] >= importCSVstart) & (dstat['"epoch"'] <= StandardScaler_fit_start)]
-    #if verbose: print('\nimportCSV:\n{}'.format(importCSVdstat))
-
-    # convert bytes to megabytes for better readability if shown at some point
+    # convert RAM sizes, bytes to MB
+    cfeatures = ['"used"','"total"','"cach"','"free"'] # features to convert
     for i in range(0,len(evaluationd)):
-        dstats[i]['"used"'].divide(1024**2)
-        dstats[i]['"total"'].divide(1024**2)
-        dstats[i]['"cach"'].divide(1024**2)
-        dstats[i]['"free"'].divide(1024**2)
-
+        rows = dstats[i].shape[0] # get number of rows for given df
+        for feature in cfeatures: # cycle through list of features
+            for row in range(0,rows):
+                tmp = dstats[i][feature][row]/1024**2
+                dstats[i].at[row,feature] = tmp
 
 
     # IMPORT CLASSIFICATION REPORT & RESULTS
@@ -211,6 +257,7 @@ if __name__ == '__main__':
     # get stats between 0 and 100 for all values we want to show in our spider-chart
     # for the thesis we want to e.g. take the longest runtime as 100% and show all other runtimes dependent on that value
 
+    # initialise empty lists for spider-charts generation
     maxRAMs = []
     maxCPUs = []
     percentRAMsused = []
@@ -222,10 +269,10 @@ if __name__ == '__main__':
     precisions1 = []
     values = []
 
-    # SINGLE SPIDER CHART PLOTS
-    # save stats in list for spider-chart usage
+    # SPIDER CHART PLOTS
     for i in range(0,len(evaluationd)):
 
+        # get values from given data
         maxRAM = dstats[i]['"used"'].max()
         maxRAMs.append(maxRAM)
 
@@ -253,6 +300,8 @@ if __name__ == '__main__':
         precision1 = reports[i]['precision'][1]*100
         precisions1.append(precision1)
 
+        # forge chart-label
+        title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
 
         # forge polar-compatible values and angles
         value = [percentRAMsused[i],percentRAMscached[i],maxCPUs[i],percentaccuracies[i],recalls0[i],precisions0[i],recalls1[i],precisions1[i],percentageruntimes[i]]
@@ -272,6 +321,7 @@ if __name__ == '__main__':
         ax.set_rlabel_position(60)
         plt.yticks([0,25,50,75,100], color='grey', size=10)
         plt.ylim(0,100)
+        plt.title(title)
 
         plt.show() # print current spider-chart
 
@@ -282,8 +332,8 @@ if __name__ == '__main__':
 
     ax = plt.subplot(polar=True)
     # for now, manually pick values that should be compared
-    plt.polar(angles,values[0],color = '#566573',label='n=10, load model')
-    plt.polar(angles,values[1],color = '#AEB6BF',label='n=10, fit model')
+    plt.polar(angles,values[1],color = '#566573',label='n=5 (packetsampling)')
+    plt.polar(angles,values[2],color = '#AEB6BF',label='n=5 (flowsampling)')
 
     stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
     plt.xticks(angles[:-1],stats) # pass angles but last (repetition of first value)
@@ -292,7 +342,7 @@ if __name__ == '__main__':
     plt.yticks([0,25,50,75,100], color='grey', size=10)
     plt.ylim(0,100)
 
-    plt.title('packet-sampling\nevery n-th packet\nCAIA feature vector', size='medium')
+    plt.title('every n-th packet\nload model', size='medium')
     plt.legend() # print legend specified as label in plt.polar(...)
 
     plt.show() # print merged spider chart
@@ -303,6 +353,7 @@ if __name__ == '__main__':
     # SIMPLE GRAPHS
     # html color-codes from https://htmlcolorcodes.com/
 
+    '''
     # RAM USAGE in MB, all parameters in one single diagram
     plt.plot(dstat['"epoch"'],dstat['"total"'],color = '#000000',label='total')
     plt.plot(dstat['"epoch"'],dstat['"used"'],color = '#566573',label='used')
@@ -315,30 +366,30 @@ if __name__ == '__main__':
     dstat.plot(x='"epoch"',y='"cach"',color = '#AEB6BF',label='cached')
     dstat.plot(x='"epoch"',y='"free"',color = '#D5D8DC',label='free')
     plt.show()
-
-
-
-    # RAM USAGE
-    plt.plot(dstat['"epoch"'],dstat['"used"'],color = '#000000',label='RAM usage')
-    #plt.plot(dstat['"epoch"'],dstat['"sys"'],color = '#566573',label='CPU sys')
-    #plt.plot(dstat['"epoch"'],dstat['"idl"'],color = '#AEB6BF',label='CPU idle')
-    
     '''
-    # markers for starting time of different script-segments
-    plt.axvline(x=importCSVstart,ymin=0,ymax=1,label='CSV import')
-    plt.axvline(x=StandardScaler_fit_start,ymin=0,ymax=1,label='Scaler fit')
-    plt.axvline(x=Split_start,ymin=0,ymax=1,label='split')
-    plt.axvline(x=StandardScaler_Transform_Xtrain_start,ymin=0,ymax=1,label='Scaler transform Xtrain')
-    plt.axvline(x=StandardScaler_Transform_Xtest_start,ymin=0,ymax=1,label='Scaler transform Xtest')
-    plt.axvline(x=PCA_fit_transform_start,ymin=0,ymax=1,label='PCA fit/transform')
-    plt.axvline(x=PCA_transform_Xtest_start,ymin=0,ymax=1,label='PCA transform Xtest')
-    plt.axvline(x=RandomForest_start,ymin=0,ymax=1,label='RandomForest import')
-    plt.axvline(x=Predictions_start,ymin=0,ymax=1,label='Predictions')
-    '''
-    plt.legend(loc='best')
-    plt.show()
+
+    # plot all RAM graphs into single diagram
+    for i in range(0,len(evaluationd)):
+        title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
+        plt.plot(dstats[i]['"epoch"'],dstats[i]['"total"'],color = '#000000',label='RAM total')
+        plt.plot(dstats[i]['"epoch"'],dstats[i]['"used"'],color = '#566573',label='RAM used')
+        plt.plot(dstats[i]['"epoch"'],dstats[i]['"cach"'],color = '#AEB6BF',label='RAM cached')
 
 
+        plt.axvline(x=predictions[i],ymin=0,ymax=1,label='make Predictions',color='#52FF3A')
+        plt.axvline(x=modelsimport[i],ymin=0,ymax=1,label='import Model',color='#4BE936')
+        plt.axvline(x=pcasxtest[i],ymin=0,ymax=1,label='PCA transform Xtest',color='#44D331')
+        plt.axvline(x=pcasfit[i],ymin=0,ymax=1,label='PCA fit/transform Xtrain',color='#3FC52D')
+        plt.axvline(x=scalersxtest[i],ymin=0,ymax=1,label='StandardScaler transform Xtest',color='#39B329')
+        plt.axvline(x=scalersxtrain[i],ymin=0,ymax=1,label='StandardScaler transform Xtrain',color='#33A225')
+        plt.axvline(x=filesplits[i],ymin=0,ymax=1,label='split files',color='#2E9121')
+        plt.axvline(x=scalersfit[i],ymin=0,ymax=1,label='StandardScaler fit Xtrain',color='#287F1C')
+        plt.axvline(x=csvimports[i],ymin=0,ymax=1,label='import CSV',color='#216918')
+
+
+        plt.title(title)
+        plt.legend(loc='best')
+        plt.show()
 
 
     # CPU USAGE

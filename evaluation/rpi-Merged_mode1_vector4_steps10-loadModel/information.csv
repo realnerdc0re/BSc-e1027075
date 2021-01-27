@@ -1,6 +1,6 @@
 ,0
 file,Merged
-packetsampling,True
+flowsampling,True
 samplingmode,every n-th packet
 samplingsteps,10
-featurevector,CAIA_packetSampling.json
+featurevector,CAIA_flowSampling.json

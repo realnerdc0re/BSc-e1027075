@@ -4,11 +4,9 @@
 ## INPROGRESS:
 
 
-- try to save RandomForest model in 32bit (https://github.com/scikit-learn/scikit-learn/issues/2972)
+- Virtualization: try to train RandomForest model in 32bit ARM dietpi VM (https://github.com/scikit-learn/scikit-learn/issues/2972)
 
-- save sampled CSVs in folders that contain important sampling-infos within the foldername (do this in rpi-Control.py with variable mergefolder, that is used to actually save Merged.csv and information.csv, around line 270)
-
-- when saving Model also include PCA component number in filename?
+- when saving Model also include PCA component number in filename??
 
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
@@ -20,8 +18,7 @@
 
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
 
-- write script for evaluation of stored results
-	- use all results from different sampling methods to compare e.g. runtimes (used highest one as 100%)
+
 
 
 
@@ -68,6 +65,8 @@
 
 ## DONE:
 
+- write script for evaluation of stored results: use results from different sampling methods to compare e.g. runtimes (used highest one as 100%)
+- save sampled CSVs in folders that contain important sampling-infos within the foldername (do this in rpi-Control.py with variable mergefolder, that is used to actually save Merged.csv and information.csv, around line 270)
 - compress model dump (http://gael-varoquaux.info/programming/new_low-overhead_persistence_in_joblib_for_big_data.html)
 - if importing model, don't PCA transform Xtrain at all
 - add information about sampling-modes, sampling-steps and used feature-vector somewhere for further evaluation of results- and logging-output (done in rpi-Control.py)
