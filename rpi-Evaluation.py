@@ -390,7 +390,29 @@ if __name__ == '__main__':
 
 
     # CPU USAGE
-    plt.plot(dstat['"epoch"'],dstat['"usr"'],color = '#000000',label='CPU user')
+    for i in range(0,len(evaluationd)):
+        title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
+        plt.plot(dstats[i]['"epoch"'],dstats[i]['"usr"'],color = '#000000',label='CPU python')
+        #plt.plot(dstats[i]['"epoch"'],dstats[i]['"sys"'],color = '#566573',label='CPU system')
+        #plt.plot(dstats[i]['"epoch"'],dstats[i]['"idl"'],color = '#AEB6BF',label='CPU idle')
+
+        plt.axvline(x=predictions[i],ymin=0,ymax=1,label='make Predictions',color='#52FF3A')
+        plt.axvline(x=modelsimport[i],ymin=0,ymax=1,label='import Model',color='#4BE936')
+        plt.axvline(x=pcasxtest[i],ymin=0,ymax=1,label='PCA transform Xtest',color='#44D331')
+        plt.axvline(x=pcasfit[i],ymin=0,ymax=1,label='PCA fit/transform Xtrain',color='#3FC52D')
+        plt.axvline(x=scalersxtest[i],ymin=0,ymax=1,label='StandardScaler transform Xtest',color='#39B329')
+        plt.axvline(x=scalersxtrain[i],ymin=0,ymax=1,label='StandardScaler transform Xtrain',color='#33A225')
+        plt.axvline(x=filesplits[i],ymin=0,ymax=1,label='split files',color='#2E9121')
+        plt.axvline(x=scalersfit[i],ymin=0,ymax=1,label='StandardScaler fit Xtrain',color='#287F1C')
+        plt.axvline(x=csvimports[i],ymin=0,ymax=1,label='import CSV',color='#216918')
+
+        plt.title(title)
+        plt.legend(loc='best')
+        plt.show()
+
+
+
+    #plt.plot(dstat['"epoch"'],dstat['"usr"'],color = '#000000',label='CPU user')
     #plt.plot(dstat['"epoch"'],dstat['"sys"'],color = '#566573',label='CPU sys')
     #plt.plot(dstat['"epoch"'],dstat['"idl"'],color = '#AEB6BF',label='CPU idle')
     '''
@@ -405,7 +427,7 @@ if __name__ == '__main__':
     plt.axvline(x=RandomForest_start,ymin=0,ymax=1,label='RandomForest fit')
     plt.axvline(x=Predictions_start,ymin=0,ymax=1,label='Predictions')
     '''
-    plt.legend(loc='best')
-    plt.show()
+    #plt.legend(loc='best')
+    #plt.show()
 
     exit()
