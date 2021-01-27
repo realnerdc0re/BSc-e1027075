@@ -39,8 +39,10 @@ featurevectors = []
 for path in Path(logd).iterdir(): # get all folder-paths for evaluation
     if path.is_dir(): evaluationd.append(path)
 
+print('\n>>> evaluation-data:')
+for i in range(0,len(evaluationd)):
+    print('\t[{}]: {}'.format(i,evaluationd[i]))
 
-print('\n{}'.format(evaluationd))
 input('...')
 
 
@@ -91,11 +93,6 @@ if __name__ == '__main__':
         featurevector = infos[i]['0'][4]
         featurevectors.append(featurevector)
 
-    print(samplingtypes)
-    print(samplingmodes)
-    print(samplingsteps)
-    print(featurevectors)
-    input('blub')
 
     # timestamps
     for i in range(0,len(evaluationd)):
@@ -104,7 +101,7 @@ if __name__ == '__main__':
         print('\n\n'+20*'~'+' time.csv '+20*'~')
         print('\n{}\n'.format(time))
         timef = list(time) # features from time.csv
-        print('\n{}\n'.format(timef))
+        #print('\n{}\n'.format(timef))
         times.append(time)
     input('...')
 
