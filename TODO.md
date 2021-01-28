@@ -3,6 +3,16 @@
 
 ## INPROGRESS:
 
+- improve names for flow-/packetsampling in results to be better distinguishable (e.g. per-flow sampling, per-packet sampling?)
+
+- change labels in time.csv: dump logging stop-timestamps, improve segment-names to be ore precise
+
+- maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
+	- output nodes/leaves depth/sizes in results.csv
+
+- try QEMU on Linux to virtualize dietpi ARM 32bit (https://raspberrytips.com/run-raspberry-in-virtual-machine/)
+	- https://wiki.ubuntu.com/Kernel/Dev/QemuARMVexpress
+	- https://gist.github.com/luk6xff/9f8d2520530a823944355e59343eadc1
 
 - Virtualization: try to train RandomForest model in 32bit ARM dietpi VM (https://github.com/scikit-learn/scikit-learn/issues/2972)
 
@@ -19,6 +29,7 @@
 
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
 
+- 
 
 
 
@@ -110,6 +121,7 @@
 
 ## DISCARDED:
 
+- re-install Proxmox VE latest version on my home-server to try ARM virtualization (added ARM support? https://forum.proxmox.com/threads/arm-support.72766/). FAILED, no ARM support
 - change filepath & filenames generated in Control.py (FlowSampling.py and PacketSampling.py) to include actual sampling mode and sampling steps (either as additional info-file or within the filenames) -> now done in Control.py/rpi-Control.py with creation of information.csv
 - implement RandomForest classifier using RandomForest(warm_start=True) for fit on chunks
 - try different approach for the merged CSV on rpi: instead of merging all sampled CSVs into one large single CSV, read_csv workdays, preprocess those (including reducing memory size float16/32, int8/16/32, cleaning,...) and merge the preprocessed data right before doing the RandomForest classification
