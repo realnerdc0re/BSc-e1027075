@@ -3,6 +3,10 @@
 
 ## INPROGRESS:
 
+- create PGP key and send Mail to Dr. Fabini to get access to SVN
+- check TUWEL group for LateX
+- check Zotera
+
 - improve names for flow-/packetsampling in results to be better distinguishable (e.g. per-flow sampling, per-packet sampling?)
 
 - change labels in time.csv: dump logging stop-timestamps, improve segment-names to be ore precise
