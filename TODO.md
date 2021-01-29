@@ -7,9 +7,7 @@
 - develop meaningful parameter involving accuracy, resource usages and maybe runtime to express tradeoff between accuracy and used resources for different kind of sampling-methods
 
 - create PGP key and send Mail to Dr. Fabini to get access to SVN
-- check TUWEL group for LateX
-- check Zotera
-
+- Zotera send accountname to Fares for grouping
 - improve names for flow-/packetsampling in results to be better distinguishable (e.g. per-flow sampling, per-packet sampling?)
 
 - change labels in time.csv: dump logging stop-timestamps, improve segment-names to be ore precise
@@ -81,6 +79,8 @@
 
 ## DONE:
 
+- check TUWEL group for LateX
+- Zotera create account
 - write script for evaluation of stored results: use results from different sampling methods to compare e.g. runtimes (used highest one as 100%)
 - save sampled CSVs in folders that contain important sampling-infos within the foldername (do this in rpi-Control.py with variable mergefolder, that is used to actually save Merged.csv and information.csv, around line 270)
 - compress model dump (http://gael-varoquaux.info/programming/new_low-overhead_persistence_in_joblib_for_big_data.html)
