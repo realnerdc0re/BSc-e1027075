@@ -3,6 +3,9 @@
 
 ## INPROGRESS:
 
+- remove /log from .gitignore to be able to sync evaluation-data via github
+- develop meaningful parameter involving accuracy, resource usages and maybe runtime to express tradeoff between accuracy and used resources for different kind of sampling-methods
+
 - create PGP key and send Mail to Dr. Fabini to get access to SVN
 - check TUWEL group for LateX
 - check Zotera
@@ -33,15 +36,12 @@
 
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
 
-- 
-
-
-
-
 
 ## TODO:
 
 #### NEXT:
+
+- check LaTeX basics
 
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 
