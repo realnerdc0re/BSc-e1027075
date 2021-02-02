@@ -3,9 +3,9 @@
 
 ## INPROGRESS:
 
-- create PGP key and send Mail to Dr. Fabini to get access to SVN
-- check TUWEL group for LateX
-- check Zotera
+- Zotera: add IEEE papers and send account information to Fares once that is done
+
+- setup environment for LaTeX usage and check basics to add text-blocks to template
 
 - improve names for flow-/packetsampling in results to be better distinguishable (e.g. per-flow sampling, per-packet sampling?)
 
@@ -17,6 +17,7 @@
 - try QEMU on Linux to virtualize dietpi ARM 32bit (https://raspberrytips.com/run-raspberry-in-virtual-machine/)
 	- https://wiki.ubuntu.com/Kernel/Dev/QemuARMVexpress
 	- https://gist.github.com/luk6xff/9f8d2520530a823944355e59343eadc1
+	- if above fails, just virtualize Linux with hardware similar to rpi (500MB RAM, one core CPU...)
 
 - Virtualization: try to train RandomForest model in 32bit ARM dietpi VM (https://github.com/scikit-learn/scikit-learn/issues/2972)
 
@@ -32,10 +33,6 @@
 - rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi if pingable (or make error-fallback)
 
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
-
-- 
-
-
 
 
 
@@ -81,6 +78,9 @@
 
 ## DONE:
 
+- create PGP key and send Mail to Dr. Fabini to get access to SVN
+- check TUWEL group for LateX
+- create Zotera account
 - write script for evaluation of stored results: use results from different sampling methods to compare e.g. runtimes (used highest one as 100%)
 - save sampled CSVs in folders that contain important sampling-infos within the foldername (do this in rpi-Control.py with variable mergefolder, that is used to actually save Merged.csv and information.csv, around line 270)
 - compress model dump (http://gael-varoquaux.info/programming/new_low-overhead_persistence_in_joblib_for_big_data.html)
