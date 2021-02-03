@@ -381,7 +381,7 @@ if __name__ == '__main__':
         angles += angles[:1] # close angle "circle" for spider-chart
 
         ax = plt.subplot(polar=True)
-        plt.polar(angles,values[i])
+        plt.polar(angles,values[i], linewidth=2, color='#566573')
 
         # label parameters
         stats = ['used RAM\n({}%)'.format(int(percentRAMsused[i])),'cached RAM\n({}%)'.format(int(percentRAMscached[i])),'CPU usage\n({}%)'.format(int(maxCPUs[i])),'Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
@@ -400,11 +400,12 @@ if __name__ == '__main__':
     ax = plt.subplot(polar=True)
 
     # for now, manually pick models that should be compared
-    plt.polar(angles,values[3],color = '#FF7D16',label='n=5 (per-flow sampling)')
-    plt.polar(angles,values[0],color = '#FFA55F',label='n=10 (per-flow sampling)')
+    width = 2
+    plt.polar(angles,values[3],linewidth=width,color = '#566573',label='n=5 (per-flow sampling)')
+    plt.polar(angles,values[1],linewidth=width,linestyle='dotted',color = '#566573',label='n=5 (packet sampling)')
 
-    plt.polar(angles,values[1],color = '#1F4769',label='n=5 (packet sampling)')
-    plt.polar(angles,values[2],color = '#4692D4',label='n=10 (packet sampling)')
+    plt.polar(angles,values[0],linewidth=width,color = '#AEB6BF',label='n=10 (per-flow sampling)')
+    plt.polar(angles,values[2],linewidth=width,linestyle='dotted',color = '#AEB6BF',label='n=10 (packet sampling)')
 
 
     stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
