@@ -5,6 +5,8 @@
 
 - dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
 
+- create names and folderpath for plots to save when running rpi-Evaluation.py (plt.savefig('filepath/filename.png'))
+
 - Zotera: add IEEE papers and send account information to Fares once that is done
 
 - setup environment for LaTeX usage and check basics to add text-blocks to template

@@ -315,7 +315,7 @@ if __name__ == '__main__':
         plt.title(title) # set title
         plt.legend(loc='best')
         plt.tight_layout() # increase space below x-axis for proper labeling
-        plt.savefig('test.png')
+        #plt.savefig('test.png') # save plot to disk
         plt.show()
 
 
