@@ -3,7 +3,7 @@
 
 ## INPROGRESS:
 
-- include swap usage in dstat (--swap), swap- and memory-usage will have similar labels ("used", "free"): take care of duplicates for processing in rpi-Evaluation.py
+- dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
 
 - Zotera: add IEEE papers and send account information to Fares once that is done
 
@@ -74,6 +74,7 @@
 
 ## DONE:
 
+- include swap usage in dstat (--swap)
 - change labels in time.csv: improve segment-names to be more precise to distinguish between fit and import model
 - create timestamps for segements automatically from time.csv
 	- use those timestamps for xticks in graphs, and label those for better graph readability
