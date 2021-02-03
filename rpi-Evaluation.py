@@ -339,6 +339,8 @@ if __name__ == '__main__':
     # SPIDER CHART PLOTS
     for i in range(0,len(evaluationd)):
 
+        plt.figure(figsize=(10.0,10.0)) # set base canvas size in inch to get large *.png files
+
         # get values from given data
         maxRAM = dstats[i]['"used"'].max()
         maxRAMs.append(maxRAM)
@@ -392,9 +394,10 @@ if __name__ == '__main__':
 
         plt.show() # print current spider-chart
 
-    # SPIDER CHART COMPARISONS
+    # SPIDER CHART COMPARISON PLOT
+
+    plt.figure(figsize=(10.0,10.0)) # set base canvas size in inch to get large *.png files
     ax = plt.subplot(polar=True)
-    #ax.set_facecolor('#525252') # sets background of the plot, still white frame though
 
     # for now, manually pick models that should be compared
     plt.polar(angles,values[3],color = '#FF7D16',label='n=5 (per-flow sampling)')
@@ -432,29 +435,6 @@ if __name__ == '__main__':
     dstat.plot(x='"epoch"',y='"cach"',color = '#AEB6BF',label='cached')
     dstat.plot(x='"epoch"',y='"free"',color = '#D5D8DC',label='free')
     plt.show()
-    '''
-
-    '''
-    # RAM usage
-    for i in range(0,len(evaluationd)):
-        title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
-        plt.plot(dstats[i]['"epoch"'],dstats[i]['"total"'],color = '#000000',label='RAM total')
-        plt.plot(dstats[i]['"epoch"'],dstats[i]['"used"'],color = '#566573',label='RAM used')
-        plt.plot(dstats[i]['"epoch"'],dstats[i]['"cach"'],color = '#AEB6BF',label='RAM cached')
-
-        plt.axvline(x=predictions[i],ymin=0,ymax=1,label='make Predictions',color='#52FF3A')
-        plt.axvline(x=modelsimport[i],ymin=0,ymax=1,label='import Model',color='#4BE936')
-        plt.axvline(x=pcasxtest[i],ymin=0,ymax=1,label='PCA transform Xtest',color='#44D331')
-        plt.axvline(x=pcasfit[i],ymin=0,ymax=1,label='PCA fit/transform Xtrain',color='#3FC52D')
-        plt.axvline(x=scalersxtest[i],ymin=0,ymax=1,label='StandardScaler transform Xtest',color='#39B329')
-        plt.axvline(x=scalersxtrain[i],ymin=0,ymax=1,label='StandardScaler transform Xtrain',color='#33A225')
-        plt.axvline(x=filesplits[i],ymin=0,ymax=1,label='split files',color='#2E9121')
-        plt.axvline(x=scalersfit[i],ymin=0,ymax=1,label='StandardScaler fit Xtrain',color='#287F1C')
-        plt.axvline(x=csvimports[i],ymin=0,ymax=1,label='import CSV',color='#216918')
-
-        plt.title(title)
-        plt.legend(loc='best')
-        plt.show()
     '''
 
 
