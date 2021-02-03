@@ -259,13 +259,13 @@ if __name__ == '__main__':
             os.chdir(str(flowfolder))
             mergefolder = flowfolder
             # forge informations into info-file for further evaluation
-            info = {'file':[filenames[findex]],'flowsampling':[flowsampling],'samplingmode':[flowsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
+            info = {'file':[filenames[findex]],'per-flow sampling':[flowsampling],'samplingmode':[flowsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
             info = pd.DataFrame.from_dict(info,orient='index')
 
         elif packetsampling:
             os.chdir(str(packetfolder))
             mergefolder = packetfolder
-            info = {'file':[filenames[findex]],'packetsampling':[packetsampling],'samplingmode':[packetsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
+            info = {'file':[filenames[findex]],'packet sampling':[packetsampling],'samplingmode':[packetsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
             info = pd.DataFrame.from_dict(info,orient='index')
 
         extension = 'csv'
@@ -306,7 +306,7 @@ if __name__ == '__main__':
         os.system(samplingcmd)
 
 
-
+    '''
     if time:
         end = timer()
         t = epochtime.time()
@@ -324,20 +324,13 @@ if __name__ == '__main__':
     os.kill(pid,9) # kill running dstat process
 
     exit() # temporary exit, just to create merged sampled files
-
-
-
-
-
-
-
-
+    '''
 
 
 
     # PRE-PROCESSING
     #preparg = " "+str(findex)
-    prepcmd = "python Preprocessing.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
+    prepcmd = "python3 Preprocessing.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
     print('>>> pre-processing:\n\t{}'.format(prepcmd))
     os.system(prepcmd)
 
@@ -345,7 +338,7 @@ if __name__ == '__main__':
     # CLASSIFICATION
     # forge executable command + arguments
     #classificationarg = " "+str(findex)
-    classificationcmd = "python Classification.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
+    classificationcmd = "python3 Classification.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
     print('>>> classification:\n\t{}'.format(classificationcmd))
     os.system(classificationcmd)
 

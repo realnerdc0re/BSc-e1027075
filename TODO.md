@@ -3,42 +3,31 @@
 
 ## INPROGRESS:
 
+- include swap usage in dstat (--swap), swap- and memory-usage will have similar labels ("used", "free"): take care of duplicates for processing in rpi-Evaluation.py
+
 - Zotera: add IEEE papers and send account information to Fares once that is done
 
 - setup environment for LaTeX usage and check basics to add text-blocks to template
 
-- improve names for flow-/packetsampling in results to be better distinguishable (e.g. per-flow sampling, per-packet sampling?)
+- develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
 
-- change labels in time.csv: dump logging stop-timestamps, improve segment-names to be ore precise
-
-- maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
-	- output nodes/leaves depth/sizes in results.csv
-
-- try QEMU on Linux to virtualize dietpi ARM 32bit (https://raspberrytips.com/run-raspberry-in-virtual-machine/)
-	- https://wiki.ubuntu.com/Kernel/Dev/QemuARMVexpress
-	- https://gist.github.com/luk6xff/9f8d2520530a823944355e59343eadc1
-	- if above fails, just virtualize Linux with hardware similar to rpi (500MB RAM, one core CPU...)
-
-- Virtualization: try to train RandomForest model in 32bit ARM dietpi VM (https://github.com/scikit-learn/scikit-learn/issues/2972)
-
-- when saving Model also include PCA component number in filename??
-- include swap usage in dstat
+- create detailed flow-charts for the scripts in addition to the overview flow-chart
 
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
-- create vertical bars automatically from time.csv
-
 - change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
 
-- rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi if pingable (or make error-fallback)
 
-- take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
+
+
 
 
 
 ## TODO:
 
 #### NEXT:
+
+- check LaTeX basics
 
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 
@@ -51,6 +40,13 @@
 
 #### LATER:
 
+- maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
+	- output nodes/leaves depth/sizes in results.csv
+- rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi if pingable (or make error-fallback)
+- try QEMU on Linux to virtualize dietpi ARM 32bit (https://raspberrytips.com/run-raspberry-in-virtual-machine/)
+	- https://wiki.ubuntu.com/Kernel/Dev/QemuARMVexpress
+	- https://gist.github.com/luk6xff/9f8d2520530a823944355e59343eadc1
+	- if above fails, just virtualize Linux with hardware similar to rpi (500MB RAM, one core CPU...)
 - create function for saving timestamps
 - get rid of unnecessary imports to save memory
 - use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)?
@@ -78,6 +74,12 @@
 
 ## DONE:
 
+- change labels in time.csv: improve segment-names to be more precise to distinguish between fit and import model
+- create timestamps for segements automatically from time.csv
+	- use those timestamps for xticks in graphs, and label those for better graph readability
+- when saving model also include PCA component number in result.csv
+- improve names for flow-/packetsampling in results to be better distinguishable (e.g. per-flow sampling, packet sampling), has to be changed in rpi-Evaluation (merged spiderchart), rpi-Control (info used to generate informations.csv), rpi-Preprocessing (logged informations) and in the overview flowchart
+- take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
 - create PGP key and send Mail to Dr. Fabini to get access to SVN
 - check TUWEL group for LateX
 - create Zotera account
@@ -125,6 +127,7 @@
 
 ## DISCARDED:
 
+- Virtualization: try to train RandomForest model in 32bit ARM dietpi VM (https://github.com/scikit-learn/scikit-learn/issues/2972)
 - re-install Proxmox VE latest version on my home-server to try ARM virtualization (added ARM support? https://forum.proxmox.com/threads/arm-support.72766/). FAILED, no ARM support
 - change filepath & filenames generated in Control.py (FlowSampling.py and PacketSampling.py) to include actual sampling mode and sampling steps (either as additional info-file or within the filenames) -> now done in Control.py/rpi-Control.py with creation of information.csv
 - implement RandomForest classifier using RandomForest(warm_start=True) for fit on chunks

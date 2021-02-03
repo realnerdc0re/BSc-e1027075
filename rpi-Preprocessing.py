@@ -84,7 +84,7 @@ if not os.path.exists(pmodeld): os.mkdir(pmodeld)
 
 # COMMANDS
 # start dstat resource logging
-dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --output {} > /dev/null 2>&1 &'
+dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --swap --output {} > /dev/null 2>&1 &'
 
 
 # ARGUMENT PARSING
@@ -104,8 +104,8 @@ parser.add_argument('-s','--save', action='store_true', help='save model')
 parser.add_argument('-l','--load', action='store_true', help='load preprocessed CSV')
 # force sampling choice
 samplegroup = parser.add_mutually_exclusive_group(required=True)
-samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
-samplegroup.add_argument('-p','--packetsampling', action='store_true', help='use per-packet sampled CSV files')
+samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use per-flow sampled CSV files')
+samplegroup.add_argument('-p','--packetsampling', action='store_true', help='use packet sampled CSV files')
 args = parser.parse_args()
 
 
@@ -1243,7 +1243,7 @@ if __name__ == '__main__':
     if export:
         print('\n>>> exporting results to folder: {}'.format(logd))
         # list of all informations we want to save for later evaluation
-        evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix]}
+        evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix],'PCA-components':[n_Xpca]}
         results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
         # save results
         results.to_csv(resultcsv)

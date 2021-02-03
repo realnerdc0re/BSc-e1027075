@@ -141,6 +141,7 @@ if __name__ == '__main__':
     predictions = []
 
     # PRE-PROCESS
+    # get timestamps for script-segments
     for i in range(0,len(evaluationd)):
         # set starting time to 0
         startepoch = times[i]['epochtime'][0]
@@ -250,6 +251,75 @@ if __name__ == '__main__':
     '''
 
 
+    # RAM usage
+    for i in range(0,len(evaluationd)):
+
+        # initialise empty list to create x-axis labels
+        ticks = []
+        labels = []
+        plt.figure(figsize=(21.0,9.0)) # set base canvas size in inch to get large *.png files
+
+        # timestamps and labels have to be in the same list-position for correct tuple creation
+        # timestamps
+        ticks.append(csvimports[i])
+        ticks.append(scalersfit[i])
+        ticks.append(filesplits[i])
+        ticks.append(scalersxtrain[i])
+        ticks.append(scalersxtest[i])
+        ticks.append(pcasfit[i])
+        ticks.append(pcasxtest[i])
+        ticks.append(modelsimport[i])
+        ticks.append(predictions[i])
+        # matching labels
+        labels.append('import CSV')
+        labels.append('fit scaler')
+        labels.append('split files')
+        labels.append('scale Xtrain')
+        labels.append('scale Xtest')
+        labels.append('fit PCA')
+        labels.append('PCA Xtest')
+        labels.append('import model')
+        labels.append('predictions')
+
+        # create a tuple combining ticks and labels
+        ticktuple = list(zip(ticks,labels))
+        # just in case for further additions, sort tuple by its timestamp (not necessary for creating xticks)
+        ticktuple.sort(key = lambda x: float(x[0]),reverse=False)
+
+        # create list of timestamps and labels
+        timestamps = [time[0] for time in ticktuple]
+        timelabels = [time[1] for time in ticktuple]
+        # create graph title
+        title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
+
+        # plot graphs
+        plt.plot(dstats[i]['"epoch"'],dstats[i]['"total"'],color = '#000000',label='RAM total',linewidth=3)
+        plt.plot(dstats[i]['"epoch"'],dstats[i]['"used"'],color = '#566573',label='RAM used', linewidth=2)
+        plt.plot(dstats[i]['"epoch"'],dstats[i]['"cach"'],color = '#AEB6BF',label='RAM cached', linewidth=2)
+
+        style = 'dotted' # vertical lines style
+        color = '#000000' # vertical lines color
+        plt.axvline(x=predictions[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=modelsimport[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=pcasxtest[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=pcasfit[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=scalersxtest[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=scalersxtrain[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=filesplits[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=scalersfit[i],ymin=0,ymax=1,linestyle=style,color=color)
+        plt.axvline(x=csvimports[i],ymin=0,ymax=1,linestyle=style,color=color)
+
+        plt.xticks(timestamps,timelabels,rotation='vertical') # create x-axis ticks
+        plt.xlabel('segments') # label x-axis
+        plt.ylabel('memory-usage (MB)') # label y-axis
+        plt.title(title) # set title
+        plt.legend(loc='best')
+        plt.tight_layout() # increase space below x-axis for proper labeling
+        plt.savefig('test.png')
+        plt.show()
+
+
+
     # SPIDER CHART
     # get stats between 0 and 100 for all values we want to show in our spider-chart
     # for the thesis we want to e.g. take the longest runtime as 100% and show all other runtimes dependent on that value
@@ -327,11 +397,11 @@ if __name__ == '__main__':
     #ax.set_facecolor('#525252') # sets background of the plot, still white frame though
 
     # for now, manually pick models that should be compared
-    plt.polar(angles,values[3],color = '#FF7D16',label='n=5 (flowsampling)')
-    plt.polar(angles,values[0],color = '#FFA55F',label='n=10 (flowsampling)')
+    plt.polar(angles,values[3],color = '#FF7D16',label='n=5 (per-flow sampling)')
+    plt.polar(angles,values[0],color = '#FFA55F',label='n=10 (per-flow sampling)')
 
-    plt.polar(angles,values[1],color = '#1F4769',label='n=5 (packetsampling)')
-    plt.polar(angles,values[2],color = '#4692D4',label='n=10 (packetsampling)')
+    plt.polar(angles,values[1],color = '#1F4769',label='n=5 (packet sampling)')
+    plt.polar(angles,values[2],color = '#4692D4',label='n=10 (packet sampling)')
 
 
     stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
@@ -364,6 +434,7 @@ if __name__ == '__main__':
     plt.show()
     '''
 
+    '''
     # RAM usage
     for i in range(0,len(evaluationd)):
         title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
@@ -384,6 +455,7 @@ if __name__ == '__main__':
         plt.title(title)
         plt.legend(loc='best')
         plt.show()
+    '''
 
 
     # CPU USAGE
