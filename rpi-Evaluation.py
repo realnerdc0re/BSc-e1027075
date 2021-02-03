@@ -82,7 +82,7 @@ if __name__ == '__main__':
     for i in range(0,len(evaluationd)):
         features = infos[i].index.values
         samplingtype = features[1]
-        samplingtypes.append(samplingtype) # flow/packet-sampling
+        samplingtypes.append(samplingtype) # per-flow/packet-sampling?
 
         samplingmode = infos[i]['0'][2]
         samplingmodes.append(samplingmode)
@@ -289,9 +289,10 @@ if __name__ == '__main__':
         # create list of timestamps and labels
         timestamps = [time[0] for time in ticktuple]
         timelabels = [time[1] for time in ticktuple]
-        # create graph title
-        title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
-
+        # create graph title and subtitle
+        #title = '{}\n({}, n={})\n{}'.format(samplingtypes[i],samplingmodes[i],samplingsteps[i],featurevectors[i])
+        title = '{}\n'.format(samplingtypes[i])
+        subtitle = '({}, n={})\n{}'.format(samplingmodes[i],samplingsteps[i],featurevectors[i])
         # plot graphs
         plt.plot(dstats[i]['"epoch"'],dstats[i]['"total"'],color = '#000000',label='RAM total',linewidth=3)
         plt.plot(dstats[i]['"epoch"'],dstats[i]['"used"'],color = '#566573',label='RAM used', linewidth=2)
@@ -310,9 +311,10 @@ if __name__ == '__main__':
         plt.axvline(x=csvimports[i],ymin=0,ymax=1,linestyle=style,color=color)
 
         plt.xticks(timestamps,timelabels,rotation='vertical') # create x-axis ticks
-        plt.xlabel('segments') # label x-axis
-        plt.ylabel('memory-usage (MB)') # label y-axis
-        plt.title(title) # set title
+        plt.xlabel('segments',fontsize=14) # label x-axis
+        plt.ylabel('memory-usage (MB)',fontsize=14) # label y-axis
+        plt.title(title,ha='center',fontsize=18) # set title
+        plt.suptitle(subtitle,x=0.515,y=0.905,ha='center',fontsize=10) # suptitle position between 0 and 1
         plt.legend(loc='best')
         plt.tight_layout() # increase space below x-axis for proper labeling
         #plt.savefig('test.png') # save plot to disk
