@@ -1,19 +1,16 @@
-
-
-
 ## INPROGRESS:
+
+- check LaTeX basics
 
 - dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
 
-- install svn and maybe check svn client for linux (SmartSVN, rabbitVCS...)
+- maybe check svn client for linux (SmartSVN, rabbitVCS...)
 
-- improve title & suptitle for spidercharts
+- improve title & suptitle for spidercharts similar to graphs
 
 - create names and folderpath for plots to save when running rpi-Evaluation.py (plt.savefig('filepath/filename.png'))
 
-- Zotera: add IEEE papers and send account information to Fares once that is done
-
-- setup environment for LaTeX usage and check basics to add text-blocks to template
+- setup environment for LaTeX usage and check basics to add text-blocks to template on OSX
 
 - develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
 
@@ -25,15 +22,9 @@
 
 
 
-
-
-
-
 ## TODO:
 
 #### NEXT:
-
-- check LaTeX basics
 
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 
@@ -74,12 +65,11 @@
 - improve FlowSampling method (function convertToList), now using actual lists instead of np array for iteration, etc..
 
 
-
-
-
-
 ## DONE:
 
+- install svn on ubuntu
+- setup environment for LaTeX usage and check basics to add text-blocks to template on ubuntu
+- Zotera: add IEEE papers and send account information to Fares once that is done
 - include swap usage in dstat (--swap)
 - change labels in time.csv: improve segment-names to be more precise to distinguish between fit and import model
 - create timestamps for segements automatically from time.csv
