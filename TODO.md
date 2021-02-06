@@ -1,14 +1,32 @@
 ## INPROGRESS:
 
-- check LaTeX basics
+### CODE:
+
+- improve output rpi-FlowSampling.py
+
+- change rpi-PacketSampling.py to use pathlib paths and commands, get rid of OS choice, change rpi-Control.py accordingly
+
+- rpi-Control.py: change script for packetsampling mode to use pathlib file/folderpaths
+
+- change rpi-Control.py called scripts: Preprocessing.py and Classification.py part to use folders that determine sampling-mode, -steps & feature-vector (e.g. /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/Merged_mode1_vector2_steps5/) instead of old folder /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/
 
 - dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
 
-- maybe check svn client for linux (SmartSVN, rabbitVCS...)
-
 - improve title & suptitle for spidercharts similar to graphs
 
+- change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
+
 - create names and folderpath for plots to save when running rpi-Evaluation.py (plt.savefig('filepath/filename.png'))
+
+- change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
+
+
+
+### THESIS:
+
+- check LaTeX basics
+
+- maybe check svn client for linux/osx (SmartSVN, rabbitVCS...)
 
 - setup environment for LaTeX usage and check basics to add text-blocks to template on OSX
 
@@ -16,9 +34,10 @@
 
 - create detailed flow-charts for the scripts in addition to the overview flow-chart
 
-- change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
+- create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 
-- change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
+
+
 
 
 
@@ -26,17 +45,15 @@
 
 #### NEXT:
 
-- create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 
-- use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html)
-
-- flowStartMilliseconds: remove feature direct after labeling
 
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
 
 
 #### LATER:
 
+- get rid of superverbose?
+- use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html) for all filepaths (FlowSampling.py, PacketSampling.py)
 - maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
 	- output nodes/leaves depth/sizes in results.csv
 - rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi if pingable (or make error-fallback)
@@ -67,6 +84,9 @@
 
 ## DONE:
 
+- change rpi-FlowSampling.py to use pathlib paths and commands, get rid of OS choice, change rpi-Control.py accordingly
+- rpi-Control.py: change script for flowsampling mode to use pathlib file/folderpaths
+- flowStartMilliseconds: remove feature directly at the end of Labeling.py
 - install svn on ubuntu
 - setup environment for LaTeX usage and check basics to add text-blocks to template on ubuntu
 - Zotera: add IEEE papers and send account information to Fares once that is done
