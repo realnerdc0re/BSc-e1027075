@@ -27,7 +27,6 @@ from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
 from pandas import read_csv
 
 
-
 # choices for argument-parsing
 # flowsampling-modes
 flowsmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
@@ -44,7 +43,7 @@ wd = Path.cwd()
 rootd = PurePath(wd).root
 
 # mounted disk paths for large PCAP and sampled CSVs files
-mntd = PurePosixPath('/mnt')
+mntd = Path('/mnt')
 flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
 packetfolder = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
 
@@ -57,28 +56,10 @@ timecsv = logd / 'time.csv'
 dstatcsv = logd / 'dstat.csv'
 
 
-
-'''
-# sampled CSVs
-fpath = wd / 'csv' / 'flow-sampled'
-ppath = wd / 'csv' / 'packet-sampled'
-# models
-fmodeld = fpath / 'fitted'
-pmodeld = ppath / 'fitted'
-#modelpkl = '{}_model_{}.pkl' # placeholder for file and 32/64bit
-#modelpkl = '{}_model_32bit.pkl'
-modelpkl = '{}_model_64bit.pkl'
-'''
-
-# directories saving large PCAP files
-#flowfolder = '/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV'
-#packetfolder = '/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV'
-
 # COMMANDS
 # start dstat resource logging
 #dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --output '+dstatcsv+' > /dev/null 2>&1 &'
 dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --output {} > /dev/null 2>&1 &'
-
 
 
 # ARGUMENT PARSING
@@ -91,14 +72,15 @@ parser.add_argument('j', metavar='j', type=int,nargs=1,help='select feature-vect
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output verbose information')
 parser.add_argument('--superverbose', action='store_true', help='output additional verbose informations, including loop-iteration output')
-parser.add_argument('-t','--time', action='store_true', help='measure runtimes, save timestamps')
-parser.add_argument('-e','--export', action='store_true', help='export timestamps & resource logs')
+# measure runtimes or measure & export timestamps and dstat-logs
+timegroup = parser.add_mutually_exclusive_group(required=False)
+timegroup.add_argument('-t','--time', action='store_true', help='measure runtimes')
+timegroup.add_argument('-e','--export', action='store_true', help='export timestamps & resource logs')
 # force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
 osgroup = parser.add_mutually_exclusive_group(required=True)
 osgroup.add_argument('--linux', action='store_true', help = 'use Linux paths & commands' )
 osgroup.add_argument('--osx', action='store_true', help='use MacOS paths & commands')
 osgroup.add_argument('--windows', action='store_true', help='use Windows paths & commands')
-
 # force sampling method & mode
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', metavar='m', type=int, nargs=1, choices=flowsmode, help='select sampling-mode: {}'.format(flowsmode))
@@ -116,72 +98,81 @@ th = threading.Thread(target=threadFunc)
 # CONTROL SCRIPT
 # executes Sampling, Labeling & Classification scripts and shoule also run the performance monitoring
 if __name__ == '__main__':
-    
-    global verbose 
+
+    global verbose
     global time
     global check
 
-    time = args.time
-    # set split to 5000 packets per split-file (editcaps)
-    split = 5000
-    # positional arguments
+
+    split = 5000 # set split to 5000 packets per split-file (editcaps)
+
     j = args.j[0]
-    # optional arguments
+
+    time = args.time
     verbose = args.verbose
     superverbose = args.superverbose
     if superverbose: verbose = True
+    flowsampling = args.flowsampling
+    packetsampling = args.packetsampling
+
     linux = args.linux
     osx = args.osx
     windows = args.windows
-    flowsampling = args.flowsampling
-    packetsampling = args.packetsampling
+
     export = args.export
-
-
-    if export: # remove any exisiting logs in log-directory
-        for file in os.listdir(logd):
+    if export:
+        time = True
+        print('>>> clear log-directory')
+        for file in os.listdir(logd): # remove any exisiting logs in log-directory
             Path.unlink(logd / file)
 
-    if time: # start dstat logging, create timestamps csv
-        os.system('killall dstat') # kill literally any already running dstat process
+    if time: # start timers
         start = timer()
         t = epochtime.time()
-        if export: # write timestamp to csv
+        if export: # save timestamps & logs
+            os.system('killall dstat') # kill literally any already running dstat process
             th.start() # start dstat logging
             with open(timecsv,'w') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
-                csvwriter.writerow([t,'rpi-Control.py','start'])
-
+                csvwriter.writerow(['epochtime','scriptname','segment','status']) # set labels
+                csvwriter.writerow([t,'rpi-Control.py','','start'])
 
     # positional arguments
-    # file selection (can be passed 1:1 to scripts called in main)
     findex = args.file[0]
-    # sampling steps
     n = abs(args.n[0])
     if n == 0:
         print('>>> please enter non-zero integer value for n!')
         exit()
 
-
-    # set arguments for chosen samplingmethod
+    # set arguments for chosen samplingmethod, set directory, forge info for information.csv
     if flowsampling:
         flowsampling = True
         packetsampling = False
         m = args.flowsampling[0]
         samplingmode =flowsmode[m]
         samplingd = flowfolder
+        info = {'file':[filenames[findex]],'per-flow sampling':[flowsampling],'samplingmode':[flowsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
+        info = pd.DataFrame.from_dict(info,orient='index')
     elif packetsampling:
         packetsampling = True
         flowsampling = False
         m = args.packetsampling[0]
         samplingmode = packetsmode[m]
         samplingd = packetfolder
+        info = {'file':[filenames[findex]],'packet sampling':[packetsampling],'samplingmode':[packetsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
+        info = pd.DataFrame.from_dict(info,orient='index')
 
     # forge filename & directories
     foldername =  str(filenames[findex])+str('_mode')+str(m)+str('_vector')+str(j)+str('_steps')+str(n)
     csvd = samplingd / foldername
-    csvname = str(filenames[findex])+str('.csv')
+    csvname = filenames[findex]+str('.csv')
+    csvsave = csvd / csvname
+    csvinfo = csvd / 'information.csv'
+    goflowsconf = wd / 'go-flows-configurations' / featurevectors[j]
+
+    scsv = samplingd / csvname
+    movecmd = str('mv ')+str(scsv) +str(' ')+str(csvsave)
+
     if not os.path.exists(csvd): os.mkdir(csvd) # create csv-directory if it doesn't exist
 
     # COMMANDS arguments to execute Flowsampling.py or Packetsampling.py within this script
@@ -199,134 +190,114 @@ if __name__ == '__main__':
 
 
     # check passed optional arguments and commands
-    print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
+    print('\n'+40*' '+' FILE: {}'.format(filenames[findex]))
     print(40*'~'+' SCRIPT: rpi-Control.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,osx,windows,flowsampling,packetsampling))
+    #print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,osx,windows,flowsampling,packetsampling))
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--export\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,export,flowsampling,packetsampling))
     print('\n{}, n = {}'.format(samplingmode,n))
     print('\n'+20*'~'+' paths & files '+20*'~')
+    print('\nJSON:\t{}'.format(goflowsconf))
+    print('CSV:\t{}\n\t{}'.format(csvsave,csvinfo))
     print('\nlogs:\t{}'.format(logd))
     print('dstat:\t{}'.format(dstatcsv))
-    print('times:\t{}\n'.format(timecsv))
-    #print('flow-folder:\t{}'.format(flowfolder))
-    #print('packet-folder:\t{}'.format(packetfolder))
-    print('go-flows:\t{}'.format(featurevectors[j]))
-    print('csv-folder:\t{}'.format(csvd))
-    print('csv-name:\t{}'.format(csvname))
+    print('times:\t{}'.format(timecsv))
     print('\n'+20*'~'+' commands '+20*'~')
     print('\ndstat:\t{}'.format(dstat))
 
 
-    '''
-    # TESTING FORGE PATHS WITH PATHLIB
-    #rootd = PurePath(wd).root
-    print('\nroot-directory: {}'.format(rootd))
-    print('sampling-directory: {}'.format(samplingd))
-    print('csv-directory: {}'.format(csvd))
-    print('csv-name: {}'.format(csvname))
-    if not os.path.exists(csvd): os.mkdir(csvd) # create directory if it doesn't exist
-
-    input('blub')
-    '''
-
-
-
-    # SAMPLING ALL CAPTURE FILES & MERGE TO SINGLE CSV
+    # SAMPLE ALL CAPTURE FILES & MERGE
     if findex == 0:
         # iterate over all PCAP files
         for fcount in range(1,len(filenames)):
         #for fcount in range(1,1):
             if flowsampling: 
                 sarg = " --flowsampling "
-                #m = args.flowsampling[0]
                 samplearg = " "+str(m)+" "+str(fcount)+" "+str(n)
                 featurearg =" "+str(j)
-                samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+                #samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+                samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+
             elif packetsampling: 
                 sarg = " --packetsampling "
-                #m = args.packetsampling[0]
                 samplearg = " "+str(split)+" "+str(m)+" "+str(fcount)+" "+str(n)
                 featurearg =" "+str(j)
                 samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
-            
+
             print('\n>>> execute sampling: {}\n>>> input-file: {}'.format(samplingcmd,filenames[fcount]))
-            # start sampling
-            os.system(samplingcmd)
+            os.system(samplingcmd) # start sampling
 
-        # merge all CSVs into one single file
-        # change current working directory to CSV folder to get relevant files
-        if flowsampling:
-            os.chdir(str(flowfolder))
-            mergefolder = flowfolder
-            # forge informations into info-file for further evaluation
-            info = {'file':[filenames[findex]],'per-flow sampling':[flowsampling],'samplingmode':[flowsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
-            info = pd.DataFrame.from_dict(info,orient='index')
-
-        elif packetsampling:
-            os.chdir(str(packetfolder))
-            mergefolder = packetfolder
-            info = {'file':[filenames[findex]],'packet sampling':[packetsampling],'samplingmode':[packetsmode[m]],'samplingsteps':[n],'featurevector':[featurevectors[j]]}
-            info = pd.DataFrame.from_dict(info,orient='index')
-
+        print('\n>>> merging sampled data')
+        os.chdir(samplingd) # change directory for glob usage
         extension = 'csv'
-        print('\n\n>>> merging sampled data into CSV')
-        # save all files matching *Hours.csv into list, these are the already labeled CSV files
-        matchedfiles = [i for i in glob.glob('*Hours.{}'.format(extension))]
-        # concat all labeled csv-files into single csv
-        singlecsv = pd.concat([pd.read_csv(f) for f in matchedfiles])
-        csvsave = csvd / csvname
-        print('>>> saving sampled data: {}'.format(csvsave))
-        #singlecsv.to_csv(str(mergefolder)+"/Merged.csv", index = False,encoding='utf-8-sig') # save merged, sampled CSV
-        singlecsv.to_csv(str(csvsave), index = False,encoding='utf-8-sig') # save merged, sampled CSV
+        matchedfiles = [i for i in glob.glob('*Hours.{}'.format(extension))] # save all files matching *Hours.csv into list (labeled files)
+        singlecsv = pd.concat([pd.read_csv(f) for f in matchedfiles]) # concat all labeled csv-files into single csv
 
-        print('>>> saving sampling information')
-        info.to_csv(str(mergefolder)+"/information.csv") # save sampling-information to CSV (to original PCAP directory)
-        info.to_csv(str(logd)+"/information.csv")
-        info.to_csv(str(csvd)+"/information.csv")
-        # set working directory back to actual wd for further script executions
-        os.chdir(wd)
+        print('>>> saving merged data')
+        singlecsv.to_csv(csvsave, index = False,encoding='utf-8-sig')
+
+        print('>>> saving information')
+        info.to_csv(csvinfo)
 
 
-    # SAMPLING SINGLE SPECIFIC CAPTURE FILE
+    # SAMPLE SINGLE CAPTURE FILE
     else:
         # forge script execution-command out of given arguments
         if flowsampling: 
             sarg = " --flowsampling "
-            #m = args.flowsampling[0]
             samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
             featurearg =" "+str(j)
-            samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+            #samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+
+            samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
         elif packetsampling: 
             sarg = " --packetsampling "
-            #m = args.packetsampling[0]
             samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
             featurearg =" "+str(j)
             samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(osarg)+str(samplearg)+str(featurearg)
+
         print('>>> execute sampling: {}'.format(samplingcmd))
         os.system(samplingcmd)
 
+        print('>>> saving information')
+        info.to_csv(csvinfo)
 
-    '''
+        print('>>> move to folder')
+        os.system(movecmd)
+
+
+    # CLEANUP
+    print('>>> cleanup')
+    for file in Path(samplingd).glob('*.csv'): # remove csv-files from sampling directory
+        #print('delete: {}'.format(file))
+        Path.unlink(samplingd / file)
+
+
     if time:
         end = timer()
         t = epochtime.time()
-        print('\nControl.py\n[EPOCH, end]: {}'.format(t))
-        print('[RUNTIME]: %.3f' % (end-start),'seconds')
+        print('\n(rpi-Control.py, runtime: %.3f' % (end-start),'seconds)')
         if export: # write timestamp to csv
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'rpi-Control.py','end'])
+                csvwriter.writerow([t,'rpi-Control.py','','end'])
 
-
-    # MONITORING
-    pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -sq') # get running dstat pid (-q doesn't output pid to console, -s single-shot)
-    epochtime.sleep(50) # wait 50 seconds for dstat before terminating the process, seems like dstat writes its output to the target-file around every 45 seconds
-    os.kill(pid,9) # kill running dstat process
+    # STOP MONITORING
+    if export:
+        pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -sq') # get running dstat pid (-q doesn't output pid to console, -s single-shot)
+        epochtime.sleep(50) # wait 50 seconds for dstat before terminating the process, seems like dstat writes its output to the target-file around every 45 seconds
+        os.kill(pid,9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
 
     exit() # temporary exit, just to create merged sampled files
-    '''
 
 
+
+
+
+
+
+
+    ### SCRIPTS BELOW HAVE TO BE TWEAKED TO ACCESS DATA FROM FORGED PATH csvsave
 
     # PRE-PROCESSING
     #preparg = " "+str(findex)
@@ -345,13 +316,11 @@ if __name__ == '__main__':
     if time:
         end = timer()
         t = epochtime.time()
-        print('\nControl.py\n[EPOCH, end]: {}'.format(t))
-        print('[RUNTIME]: %.3f' % (end-start),'seconds')
+        print('\nrpi-Control.py\n\t<<< runtime: %.3f' % (end-start),'seconds')
         if export: # write timestamp to csv
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'rpi-Control.py','end'])
-
 
     # MONITORING
     # get running dstat pid
