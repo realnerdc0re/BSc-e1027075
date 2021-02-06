@@ -55,12 +55,6 @@ parser.add_argument('j', metavar='j', type=int,nargs=1,help='choose feature-vect
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
 parser.add_argument('-t','--time', action='store_true', help='measure runtimes')
-#parser.add_argument('-c','--check', action='store_true', help='check packet-count')
-# force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
-#osgroup = parser.add_mutually_exclusive_group(required=True)
-#osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
-#osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
-#osgroup.add_argument('--windows', action='store_true', help='use windows paths')
 args = parser.parse_args()
 
 
@@ -324,12 +318,6 @@ if __name__ == '__main__':
     n = args.n[0] # sampling steps
     j = args.j[0] # feature-vector
 
-
-    #windows = args.windows
-    #osx = args.osx
-    #linux = args.linux
-    #check = args.check
-
     csvd = flowfolder # csv directory
     lcsv = str(filenames[findex])+str('.csv') # labeled CSV
     ucsv = str(filenames[findex])+str('_unlabeled.csv') # unlabeled CSV
@@ -351,123 +339,6 @@ if __name__ == '__main__':
     # TODO: use argument parsing to select sampling-mode from command line
     # TODO: save flow-based sampled CSV into folder csvpath for further classification
 
-    # IMPORT capture file
-    '''
-    if osx:
-        # necessary separator to forge file-paths
-        separator = "/"
-        # paths to pcap & CSV files
-        pcap = "/Users/drone/shared/Patrick/BSc/sample.pcap"
-        # path to sample pcap file for editcap (copy of original pcap file, created in function packetSampling)
-        epcap = "/Users/drone/shared/Patrick/BSc/editsample.pcap"
-        # path to JSON configuration file
-        json = "/Users/drone/shared/Patrick/BSc/go-flows/examples/custom_accumulate.json"
-        # path to extracted flows CSV creatd with go-flows
-        path = "/Users/drone/shared/Patrick/BSc/output_accumulate.csv"
-        # path to extracted flows CSV creatd with go-flows
-        epath = "/Users/drone/shared/Patrick/BSc/eoutput_accumulate.csv"
-        # commands to execute go-flows, capinfos and editcap
-        # capinfo command to obtain total packet count
-        capinfos = "capinfos -M -c editsample.pcap | grep packets | awk '{print $4}'"
-        # editcap command
-        editcap = "editcap editsample.pcap tmp.pcap "
-        # path to go-flows with arguments to run go-flows within the python script
-        goflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv output_accumulate.csv source libpcap sample.pcap"
-        # path to go flows with argument to run for packet-sampled pcap
-        egoflows = "/Users/drone/shared/Patrick/BSc/go-flows/go-flows run features /Users/drone/shared/Patrick/BsC/go-flows/examples/custom_accumulate.json export csv eoutput_accumulate.csv source libpcap editsample.pcap"
-
-    if windows:
-        # PATH TO FOLDERS
-        # https://www.unb.ca/cic/datasets/ids-2017.html
-        # necessary separator to forge file-paths
-        separator = "\\"
-        # folder containing unedited capture files of used dataset
-        fpath = r"D:\CIC-IDS2017\PCAP"
-        # list of PCAP files in above folder:
-        fname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
-        # list of PCAP files after dropping payload
-        snapname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
-        # folder containing split capture files
-        splitpath = r"D:\CIC-IDS2017\PCAP\splitPCAP"
-        # folder containing PCAPS with dropped payload
-        snappath = r"D:\CIC-IDS2017\PCAP\snapPCAP"
-        # folder containtin splits
-        splitpath = r"D:\CIC-IDS2017\PCAP\splitPCAP"
-        # folder containting sampled pcaps
-        samplepath = r"D:\CIC-IDS2017\PCAP\sampledPCAP"
-        # folder containing unlabeled CSV
-        csvpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-        # name for splitted files
-        splitname = ["Monday-WorkingHours_split.pcap","Tuesday-WorkingHours_split.pcap","Wednesday-WorkingHours_split.pcap","Thursday-WorkingHours_split.pcap","Friday-WorkingHours_split.pcap"]
-        # name for sampled files
-        samplename = ["Monday-WorkingHours_sampled.pcap","Tuesday-WorkingHours_sampled.pcap","Wednesday-WorkingHours_sampled.pcap","Thursday-WorkingHours_sampled.pcap","Friday-WorkingHours_sampled.pcap"]
-        # name for sampled, unlabeled CSVs
-        csvname = ["Monday-WorkingHours_unlabeled.csv","Tuesday-WorkingHours_unlabeled.csv","Wednesday-WorkingHours_unlabeled.csv","Thursday-WorkingHours_unlabeled.csv","Friday-WorkingHours_unlabeled.csv"]
-        # filename used for labeling.py
-        labelingname = ["Monday-WorkingHours","Tuesday-WorkingHours","Wednesday-WorkingHours","Thursday-WorkingHours","Friday-WorkingHours"]
-        # capinfos path
-        capinfospath = r'"C:\Program Files\Wireshark\capinfos.exe"'
-        # editcap command
-        editcappath = r'"C:\Program Files\Wireshark\editcap.exe"'
-        # mergecap
-        mergecappath = r'"C:\Program Files\Wireshark\mergecap.exe"'
-        # goflows
-        goflowspath = r"D:\go-flows-master\go-flows.exe"
-        # go flow JSON configuration file
-        # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
-        goflowsconf = "{}".format(wd)+separator+"go-flows-configurations"+separator+"CAIA_flowSampling.json"
-        # labeling.py script
-        labelingpath = r"labeling.py"
-
-    if linux:
-        # TODO: mount disks within script
-        # https://packagecontrol.io/packages/TodoReview
-        # PATH TO FOLDERS
-        # https://www.unb.ca/cic/datasets/ids-2017.html
-        # necessary separator to forge file-paths
-        separator="/"
-        # folder containing unedited capture files of used dataset
-        #fpath = r"/mnt/data/CIC-IDS2017/PCAP"
-        # list of PCAP files in above folder:
-        fname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
-        # list of PCAP files after dropping payload
-        snapname = ["Monday-WorkingHours.pcap","Tuesday-WorkingHours.pcap","Wednesday-WorkingHours.pcap","Thursday-WorkingHours.pcap","Friday-WorkingHours.pcap"]
-        # folder containing split capture files
-        splitpath = r"/mnt/data/CIC-IDS2017/PCAP/splitPCAP"
-        # folder containing PCAPS with dropped payload
-        snappath = r"/mnt/data/CIC-IDS2017/PCAP/snapPCAP"
-        # folder containtin splits
-        splitpath = r"/mnt/data/CIC-IDS2017/PCAP/splitPCAP"
-        # folder containting sampled pcaps
-        samplepath = r"/mnt/data/CIC-IDS2017/PCAP/sampledPCAP"
-        # folder containing unlabeled CSV
-        csvpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
-        # name for splitted files
-        splitname = ["Monday-WorkingHours_split.pcap","Tuesday-WorkingHours_split.pcap","Wednesday-WorkingHours_split.pcap","Thursday-WorkingHours_split.pcap","Friday-WorkingHours_split.pcap"]
-        # name for sampled files
-        samplename = ["Monday-WorkingHours_sampled.pcap","Tuesday-WorkingHours_sampled.pcap","Wednesday-WorkingHours_sampled.pcap","Thursday-WorkingHours_sampled.pcap","Friday-WorkingHours_sampled.pcap"]
-        # name for sampled, unlabeled CSVs
-        #csvname = ["Monday-WorkingHours_unlabeled.csv","Tuesday-WorkingHours_unlabeled.csv","Wednesday-WorkingHours_unlabeled.csv","Thursday-WorkingHours_unlabeled.csv","Friday-WorkingHours_unlabeled.csv"]
-        # filename used for labeling.py
-        labelingname = ["Monday-WorkingHours","Tuesday-WorkingHours","Wednesday-WorkingHours","Thursday-WorkingHours","Friday-WorkingHours"]
-        # capinfos path
-        capinfospath = "capinfos"
-        # editcap command
-        editcappath = "exitcap"
-        # mergecap
-        mergecappath = "mergecap"
-        # goflows
-        #goflowspath = "/home/noooberino/Git/go-flows/go-flows"
-        # go flow JSON configuration file
-        # https://github.com/CN-TU/Datasets-preprocessing/blob/master/CIC-IDS-2017/flow_specifications/CAIA.json
-        #goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/CAIA_flowSampling.json"
-        #goflowsconf = "{}".format(wd)+separator+"go-flows-configurations/"+"{}".format(featurevectors[j])
-        # labeling script
-        #labelingpath = r"/mnt/data/BSc-e1027075/Labeling.py"
-    '''
-
-
-
     # set mode for labeling
     if j<4:
         labelmode = ' AGM'
@@ -483,17 +354,6 @@ if __name__ == '__main__':
     goflowsconf = wd / 'go-flows-configurations' / featurevectors[j]
     goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(fpath/unlabeledcsv)+" source libpcap "+"{}".format(pcap)
     labelingcmd = "python3 "+"{}".format(labelingpath)+" "+"{}".format(csvd/filenames[findex])+labelmode
-
-
-
-    # forged file-paths
-    #pcap = fpath+separator+fname[findex]
-    #unlabeledcsv = fpath+separator+csvname[findex]
-    #sampledcsv = "{}".format(csvpath)+separator+csvname[findex]
-    #labeledcsv = "{}".format(csvpath)+separator+labelingname[findex]+".csv"
-    # forged command to convert sampled PCAP into (per-packet) CSV for Classification
-    #goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(fpath)+separator+"{}".format(csvname[findex])+" source libpcap "+"{}".format(fpath)+separator+"{}".format(fname[findex])
-    #labelingcmd = "python3 "+"{}".format(labelingpath)+" "+"{}".format(csvpath)+separator+labelingname[findex]+labelmode
 
 
     # check passed optional arguments, filepaths and forged commands
@@ -516,8 +376,6 @@ if __name__ == '__main__':
     print("labeling: {}".format(labelingcmd))
     if (not time): input('\n...') 
 
-
-    #input('blub')
 
     # FLOW-CREATION & LABELING
     # execute go-flows to process passed PCAP file
@@ -579,4 +437,3 @@ if __name__ == '__main__':
 
     if (not time): input('\n...')  
     exit()
-    #sys.stdout.close()
