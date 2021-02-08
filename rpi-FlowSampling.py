@@ -82,6 +82,7 @@ def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     return csvdata
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
+
     print('\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading) +40*'~'+'\n')
     print('< Columns:\n{}\n'.format(dataset.columns))
     print('< Dataset:\n{}\n'.format(dataset))
@@ -93,20 +94,13 @@ def printdata(dataset,heading,verbose=False):
 def perpacketFeatures(dataset,keyword,verbose=False,time=False):
 
     features = dataset.columns
-    tmp = [] # list of features matching given keyword
+    tmp = []
 
-    if verbose:
-        print('\n'+40*'~'+' FUNCTION: perpacketFeatures '+40*'~')
-        print('\n'+20*'~'+' features '+20*'~'+'\n')
-        print('{}'.format(features))
-
-    print('\n'+20*'~'+' comparison '+20*'~'+'\n')
     for feature in features:
         if feature[0:len(keyword)] == keyword:
-            print('== {}'.format(feature))
             tmp.append(feature)
-        else: print('!= {}'.format(feature))
-    print('\n'+52*'~'+'\n')
+            print('\t+ {}'.format(feature))
+        else: print('\t- {}'.format(feature))
 
     return tmp
 
@@ -402,43 +396,39 @@ if __name__ == '__main__':
 
 
     # FLOW-CREATION
-    print('\n\n>>> Create flows with go-flows')
+    print('\n\n>>> Create flows with go-flows from {}'.format(pcap))
     os.system(goflowscmd) # execute go-flows to process passed PCAP file
     dataset = importCSV(unlabeledcsv,None,verbose) # import flow-sampled CSV created with go-flows
     if verbose: printdata(dataset,'go-flows CSV',verbose)
 
 
     # PER-PACKET SAMPLING (flow-based)
-    print('>>> identify sampled features')
-    keyword = 'apply(accumulate'
-    features = dataset.columns # get list of all features contained in dataset
+    print('>>> Identifying accumulated features')
+    keyword = 'apply(accumulate' # all per_packet features from go-flows begin with this string
     features = perpacketFeatures(dataset,keyword,verbose,time) # get list of accumulated perpacket-features that have to be sampled
-
-    if verbose: print('< Original:\n{}\n'.format(dataset[features].head(n=20)))
+    if verbose: print('\n< Original:\n{}\n'.format(dataset[features].head(n=20)))
 
     print('>>> Converting accumulated values')
     convertToArray(dataset,features,verbose,time)
-
     if verbose: print('\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
-    print('>>> Sampling per-packet features')
+    print('>>> Applying per-flow sampling')
     #flowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
     lambdaflowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
-
     if verbose: print('\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
     # CALCULATIONS (calculate mean values for per-packet features)
     # TODO: could do more than this, e.g. min, max, stdev...
-    print('>>> Calculate mean')
+    print('>>> Calculating mean values')
     for feature in features: # iterate over per-packet features
         print('\t> {}'.format(feature))
 
         #dataset[feature] = dataset[feature].apply(lambda x: sum(x)/len(x) if type(x) == np.ndarray else float('NaN'))
         dataset[feature] = dataset[feature].apply(lambda x: sum(x)/len(x))
 
-    if verbose: print('\n< Calculated:\n{}\n'.format(dataset[features].head(n=20))), input('...\n')
-
-    if verbose: printdata(dataset,'sampled',verbose)
+    if verbose:
+        print('\n< Calculated:\n{}\n'.format(dataset[features].head(n=20))), input('...\n')
+        printdata(dataset,'per-flow sampled',verbose)
 
     # save dataframe as CSV for further preprocessing & classification
     print('>>> Saving {}'.format(sampledcsv))
