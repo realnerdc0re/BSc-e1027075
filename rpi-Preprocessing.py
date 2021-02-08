@@ -774,9 +774,10 @@ if __name__ == '__main__':
     if (not time): input('\n')
 
 
-    # DO THIS AFTER LABELING, JUST TEMPORARY FIX HERE
-    dropfeature = []
-    dropfeature.append('flowStartMilliseconds')
+    # DO THIS AFTER LABELING, JUST TEMPORARY FIX HERE or keep it here in case?
+    #dropfeature = []
+    #dropfeature.append('flowStartMilliseconds')
+    # is done within Labeling.py now
 
 
 
