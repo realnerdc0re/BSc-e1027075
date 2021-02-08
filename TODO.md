@@ -2,7 +2,7 @@
 
 ### CODE:
 
-- improve output rpi-FlowSampling.py
+- rpi-FlowSampling.py: samplingmode 2 & 4 - try to use lambda functions instead of iterations for cell replacement
 
 - change rpi-PacketSampling.py to use pathlib paths and commands, get rid of OS choice, change rpi-Control.py accordingly
 
@@ -84,6 +84,8 @@
 
 ## DONE:
 
+- changed cell conversion using lambda functions, changed sampling and cell replacements using lambda functions in rpi-FlowSampling.py (massive runtime improvements!)
+- improve output rpi-FlowSampling.py
 - change rpi-FlowSampling.py to use pathlib paths and commands, get rid of OS choice, change rpi-Control.py accordingly
 - rpi-Control.py: change script for flowsampling mode to use pathlib file/folderpaths
 - flowStartMilliseconds: remove feature directly at the end of Labeling.py
