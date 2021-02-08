@@ -67,10 +67,12 @@ def poptions():
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_rows', None)
     pd.set_option('display.precision',3)
+    return
 def resetpoptions():
     pd.reset_option('display.max_columns', 15)
     pd.reset_option('display.max_rows', 15)
     pd.reset_option('display.precision', 6)
+    return
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     # informational output
@@ -78,24 +80,12 @@ def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     print('\n>>> Importing {}'.format(csvpath))
     csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
     return csvdata
-
-# OUTPUT functions
-# outputs additional informations only shown in verbose mode
-def verboseprint(dataset):
-    print('\nDataset, Shape:\n',dataset.shape)
-    print('\nDataset, Columns:\n',dataset.columns)
-    print('\n\nDataFrame, Info:')
-    dataset.info(max_cols=10)
-    return
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
-    print('\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: printdata,',heading,'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    #print('\nDataset:\n',dataset.head(10))
-    print('\nDataset:\n',dataset)
-    print(dataset.describe())
-    if verbose:
-        verboseprint(dataset)
-    #input('press ENTER to continue...\n')
+    print('\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading) +40*'~'+'\n')
+    print('< Columns:\n{}\n'.format(dataset.columns))
+    print('< Dataset:\n{}\n'.format(dataset))
+    print('{}\n'.format(dataset.describe()))
     return
 
 # FLOW-PROCESSING functions
@@ -120,7 +110,7 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
 
     return tmp
 
-# convert accumulated per-packet features into np.array
+# converts accumulated per-packet features into np.array
 def convertToArray(dataset,features,verbose=False,time=False):
 
     for feature in features: # iterate over given features
@@ -131,7 +121,7 @@ def convertToArray(dataset,features,verbose=False,time=False):
 
     return
 
-# doing per-flow sampling using iterations
+# per-flow sampling using iterations
 def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     
     #samplingmode = {0: 'every {}-th packet'.format(n), 1: 'sample & skip {} packets'.format(n), 2: 'sample first {} packets of a flow'.format(n), 3: 'sample n, skip n-1, sample n-2 ... (n={})'.format(n)}
@@ -247,7 +237,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
 
     return
 
-# doing per-flow sampling using lambda functions
+# per-flow sampling using lambda functions
 def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
 
     superverbose = False
@@ -258,8 +248,7 @@ def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
 
     for feature in features: # iterate over features containing accumulated values
 
-        if verbose: print('pre-sampling:\n{}\n'.format(dataset[feature]))
-        else: print('\t> {}'.format(feature))
+        print('\t> {}'.format(feature))
 
         if mode == 1: dataset[feature] = dataset[feature].apply(lambda x: x[::n]) # sample every n-th packet
 
@@ -322,8 +311,6 @@ def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                         print(psample)
 
                 dataset.at[i,feature] = psample # replace current cell with sampled values
-
-        if verbose: print('sampled:\n{}\n'.format(dataset[feature])), input('...')
 
     return
 
@@ -427,22 +414,18 @@ if __name__ == '__main__':
     features = dataset.columns # get list of all features contained in dataset
     features = perpacketFeatures(dataset,keyword,verbose,time) # get list of accumulated perpacket-features that have to be sampled
 
-    #print('before conversion:\n{}'.format(dataset['apply(accumulate(_interPacketTimeSeconds),forward)'].head(n=20)))
-    #input('blub')
+    if verbose: print('< Original:\n{}\n'.format(dataset[features].head(n=20)))
 
     print('>>> Converting accumulated values')
-    #convertToList(dataset,features,verbose,time) # convert content of perpacket-features into an actual list for further processing
     convertToArray(dataset,features,verbose,time)
 
-    #print('after conversion:\n{}'.format(dataset['apply(accumulate(_interPacketTimeSeconds),forward)'].head(n=20)))
-    #input('blub')
+    if verbose: print('\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
     print('>>> Sampling per-packet features')
     #flowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
     lambdaflowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
 
-    #print('after sampling:\n{}'.format(dataset['apply(accumulate(_interPacketTimeSeconds),forward)'].head(n=20)))
-    #input('blub')
+    if verbose: print('\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
     # CALCULATIONS (calculate mean values for per-packet features)
     # TODO: could do more than this, e.g. min, max, stdev...
@@ -453,17 +436,7 @@ if __name__ == '__main__':
         #dataset[feature] = dataset[feature].apply(lambda x: sum(x)/len(x) if type(x) == np.ndarray else float('NaN'))
         dataset[feature] = dataset[feature].apply(lambda x: sum(x)/len(x))
 
-
-        '''
-        for i in range(0,len(dataset.index)):
-            #if type(dataset[feature][i]) == np.ndarray: dataset.at[i,feature] = sum(dataset[feature][i])/len(dataset[feature][i]) # calculate mean of sampled per-packet values
-            #dataset.at[i,feature] = sum(dataset[feature][i])/len(dataset[feature][i]) # calculate mean of sampled per-packet values
-            dataset[feature][i].mean() # calculate mean of sampled per-packet values
-        '''
-
-        if verbose:
-            print(20*'~'+' summary '+20*'~')
-            print('\n{}\n'.format(dataset[feature]))
+    if verbose: print('\n< Calculated:\n{}\n'.format(dataset[features].head(n=20))), input('...\n')
 
     if verbose: printdata(dataset,'sampled',verbose)
 
