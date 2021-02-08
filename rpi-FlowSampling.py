@@ -99,7 +99,7 @@ def printdata(dataset,heading,verbose=False):
     return
 
 # FLOW-PROCESSING functions
-# returns list of features that contains multiple packet-values based on feature-keyword
+# returns list of accumulated per-packet features
 def perpacketFeatures(dataset,keyword,verbose=False,time=False):
 
     features = dataset.columns
@@ -119,49 +119,8 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
     print('\n'+52*'~'+'\n')
 
     return tmp
-# TODO: improve speed? pretty slow
-# convert single string or single integer (given with go-flows accumulate function or after NaN cleaning) into list of integers
-# necessary to get the values as list of integers for sampling and calculations
-def convertToList(dataset,features,verbose=False,time=False):
 
-    convertstart = timer()
-
-    for feature in features:
-        if verbose and not superverbose:
-            print('\n\n'+40*'~'+' FUNCTION: convertToList: {} '.format(feature)+40*'~')
-            print('>>> processing...')
-
-        for i in range(0,len(dataset.index)):
-            if superverbose:
-                print('\n'+20*'~'+' FUNCTION: convertToList: {}, row: {}/{} '.format(feature,(i+1),len(dataset.index))+20*'~')
-                print('original:\n', dataset[feature][i])
-                print('type:\n', type(dataset[feature][i]))
-
-            # remove first and last character of the string (basically the brackets)
-            if type(dataset[feature][i])==str: 
-                dataset.at[i,feature] = dataset[feature][i][1:len(dataset[feature][i])-1]
-                # convert strings to integers, use whitespace as separator, saves as list
-                dataset.at[i,feature] = [int(s) for s in dataset[feature][i].split(' ')]
-            # consider single integers (like replacements for NaNs)
-            elif type(dataset[feature][i]==int):
-                # store value as list-element
-                dataset.at[i,feature] = [dataset[feature][i]]
-            # output warning for other cases
-            else:
-                print('\n[WARNING] feature {} has wrong data-type!'.format(feature))
-                if (not time): input('\n...')
-
-            if superverbose:
-                print('transformed:\n', dataset[feature][i])
-                print('type:\n', type(dataset[feature][i]))
-
-    convertstop = timer()
-    print('(runtime: {} seconds)'.format(convertstop-convertstart))
-
-    if verbose and (not time): input('\n...')
-
-    return
-
+# convert accumulated per-packet features into np.array
 def convertToArray(dataset,features,verbose=False,time=False):
 
     for feature in features: # iterate over given features
@@ -172,7 +131,7 @@ def convertToArray(dataset,features,verbose=False,time=False):
 
     return
 
-# sample first and every n-th package afterwards from given list of features
+# doing per-flow sampling using iterations
 def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     
     #samplingmode = {0: 'every {}-th packet'.format(n), 1: 'sample & skip {} packets'.format(n), 2: 'sample first {} packets of a flow'.format(n), 3: 'sample n, skip n-1, sample n-2 ... (n={})'.format(n)}
@@ -288,6 +247,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
 
     return
 
+# doing per-flow sampling using lambda functions
 def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
 
     superverbose = False
