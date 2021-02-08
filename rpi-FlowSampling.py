@@ -18,6 +18,7 @@ import subprocess
 import os
 import re
 import sys
+import math
 
 # DICTIONARIES
 # available sampling-modes, used for informational outputs
@@ -25,10 +26,11 @@ samplingmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample firs
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 # feature vectors
+# https://pkg.go.dev/github.com/CN-TU/go-flows
 featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
 
 
-# PATHS & COMMANDS
+# PATHS
 wd = Path.cwd() # working directory
 hd = Path.home() # home directory
 rootd = PurePath(wd).root # root directory
@@ -37,7 +39,8 @@ flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
 fpath = mntd / 'data' / 'CIC-IDS2017' / 'PCAP'
 logd = wd / 'logs'
 timecsv = logd / 'time.csv'
-# commands
+
+# COMMANDS
 goflowspath = hd / 'Git' / 'go-flows' / 'go-flows'
 labelingpath = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
 
@@ -58,6 +61,7 @@ parser.add_argument('-t','--time', action='store_true', help='measure runtimes')
 args = parser.parse_args()
 
 
+# FUNCTIONS
 # set/reset options for maximum columns to display and floating point output precision
 def poptions():
     pd.set_option('display.max_columns', None)
@@ -70,8 +74,8 @@ def resetpoptions():
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
-    print('\n>>> importing CSV...')
+    if verbose: print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
+    print('\n>>> Importing {}'.format(csvpath))
     csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
     return csvdata
 
@@ -85,7 +89,7 @@ def verboseprint(dataset):
     return
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
-    print('\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: printdata,',heading,'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    print('\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTION: printdata,',heading,'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     #print('\nDataset:\n',dataset.head(10))
     print('\nDataset:\n',dataset)
     print(dataset.describe())
@@ -97,48 +101,42 @@ def printdata(dataset,heading,verbose=False):
 # FLOW-PROCESSING functions
 # returns list of features that contains multiple packet-values based on feature-keyword
 def perpacketFeatures(dataset,keyword,verbose=False,time=False):
-    
-    # get all features from given dataset
+
     features = dataset.columns
-    # temporary list of features that match given keyword
-    tmp = []
-    
+    tmp = [] # list of features matching given keyword
+
     if verbose:
-        print('\n'+40*'~'+' FUNCTION: perpacketFeatures, all features '+40*'~')
-        print('\n',features)
-    
-    print('\n'+40*'~'+' FUNCTION: perpacketFeatures, comparison '+40*'~')
+        print('\n'+40*'~'+' FUNCTION: perpacketFeatures '+40*'~')
+        print('\n'+20*'~'+' features '+20*'~'+'\n')
+        print('{}'.format(features))
+
+    print('\n'+20*'~'+' comparison '+20*'~'+'\n')
     for feature in features:
-        print(feature)
         if feature[0:len(keyword)] == keyword:
-            print('...added\n')
+            print('== {}'.format(feature))
             tmp.append(feature)
-        else:
-            print('...discarded\n')
-    
-    if verbose:
-        print('\n'+40*'~'+' FUNCTION: perpacketFeatures, summary '+40*'~')
-        print('\n\t{}'.format(tmp))
-        if (not time): input('\n...')
-            
+        else: print('!= {}'.format(feature))
+    print('\n'+52*'~'+'\n')
+
     return tmp
 # TODO: improve speed? pretty slow
 # convert single string or single integer (given with go-flows accumulate function or after NaN cleaning) into list of integers
 # necessary to get the values as list of integers for sampling and calculations
 def convertToList(dataset,features,verbose=False,time=False):
-    
+
+    convertstart = timer()
+
     for feature in features:
-        
         if verbose and not superverbose:
             print('\n\n'+40*'~'+' FUNCTION: convertToList: {} '.format(feature)+40*'~')
             print('>>> processing...')
-        
+
         for i in range(0,len(dataset.index)):
             if superverbose:
                 print('\n'+20*'~'+' FUNCTION: convertToList: {}, row: {}/{} '.format(feature,(i+1),len(dataset.index))+20*'~')
                 print('original:\n', dataset[feature][i])
                 print('type:\n', type(dataset[feature][i]))
-            
+
             # remove first and last character of the string (basically the brackets)
             if type(dataset[feature][i])==str: 
                 dataset.at[i,feature] = dataset[feature][i][1:len(dataset[feature][i])-1]
@@ -152,15 +150,28 @@ def convertToList(dataset,features,verbose=False,time=False):
             else:
                 print('\n[WARNING] feature {} has wrong data-type!'.format(feature))
                 if (not time): input('\n...')
-            
+
             if superverbose:
                 print('transformed:\n', dataset[feature][i])
                 print('type:\n', type(dataset[feature][i]))
-        
-    
+
+    convertstop = timer()
+    print('(runtime: {} seconds)'.format(convertstop-convertstart))
+
     if verbose and (not time): input('\n...')
-            
+
     return
+
+def convertToArray(dataset,features,verbose=False,time=False):
+
+    for feature in features: # iterate over given features
+        print('\t> {}'.format(feature))
+
+        # converting given strings from go-flows perpacket features or NaNs into np.arrays
+        dataset[feature] = dataset[feature].apply(lambda x: np.fromstring(x[1:len(x)-1],dtype=int, sep=" ") if type(x) == str else (np.array([float('nan')]) if pd.isna(x) else x))
+
+    return
+
 # sample first and every n-th package afterwards from given list of features
 def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     
@@ -168,15 +179,16 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     
     # temporary list for sampling
     tmp = [] 
-    
+
+    if verbose and not superverbose:
+        print(40*' '+' SAMPLING: {} (n={})'.format(samplingmode[mode],n))
+        print(40*'~'+' FUNCTION: flowSampling '+40*'~')
+
     # iterate over list of given features
     for feature in features:
-        
-        if verbose and not superverbose:
-            print('\n'+40*' '+' SAMPLING: {} (n={})'.format(samplingmode[mode],n))  
-            print(40*'~'+' FUNCTION: flowSampling: {} '.format(feature)+40*'~')
-            print('>>> processing...')
-        
+
+        print('\t> {}'.format(feature))
+
         # iterate over every single row of the feature
         for i in range(0,len(dataset.index)):
             # list to collect packets to sample, has to be reset for every row iteration
@@ -264,20 +276,97 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                         
                         # pauses after every single row iteration
                         #input('\n{SUPERVERBOSE} press ENTER to continue.')
- 
+
             else:
                 print('\n[ERROR] invalid sampling-mode selected!')
                 exit()
-            
+
             #if superverbose and not mode == 1 and not mode == 3: 
             #       input('\n{VERBOSE} press ENTER to continue.')
         if superverbose:
             input('\n...')
-    
-    if verbose and (not superverbose) and (not time):
-        input('\n...')
-    
+
     return
+
+def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
+
+    superverbose = False
+
+    if verbose and not superverbose:
+        print(40*' '+' SAMPLING: {} (n={})'.format(samplingmode[mode],n))
+        print(40*'~'+' FUNCTION: flowSampling '+40*'~'+'\n')
+
+    for feature in features: # iterate over features containing accumulated values
+
+        if verbose: print('pre-sampling:\n{}\n'.format(dataset[feature]))
+        else: print('\t> {}'.format(feature))
+
+        if mode == 1: dataset[feature] = dataset[feature].apply(lambda x: x[::n]) # sample every n-th packet
+
+        # CHANGE MODE == 2 and MODE == 4 TO SOMETHING ALONG THE LINES OF:
+        # dataset[feature] = dataset[feature].apply(lambda x: samplecell(x))
+        # where samplecell(x) is a function sampling a single cell
+        # DO SIMILAR WITH SAMPLING METHOD 4
+        elif mode == 2: # sample n, skip n packets
+            superverbose = False
+            tmp = []
+
+            for i in range(0,len(dataset.index)):
+                psample = []
+                tmp = dataset[feature][i].copy() # copy current cells content for sampling
+                iterations = int(len(tmp)/(2*n))+1
+
+                for j in range (0,iterations):
+                    psample.extend(tmp[0:n]) # extend list with first n packets of cells content
+                    tmp = tmp[2*n:] # remove sampled packets & packets to skip
+
+                    if superverbose:
+                        print('\n\n'+10*'~'+' sampling, iteration: {}/{} '.format((j+1),iterations)+10*'~')
+                        print('Sampled:')
+                        print(len(psample))
+                        print(psample)
+
+                dataset.at[i,feature] = psample # replace current cell with sampled values
+
+        elif mode == 3: dataset[feature] = dataset[feature].apply(lambda x: x[:n]) # sample first n packets
+
+        elif mode == 4: # sample n, skip n-1, sample n-2 ...
+            superverbose = False
+            tmp = []
+
+            for i in range(0,len(dataset.index)):
+                psample = []
+                tmp = dataset[feature][i].copy()
+
+                # counters for sampling
+                m = n
+                k = n
+
+                if superverbose: print('[{}/{}]:\n{}\n{}'.format(i,len(dataset.index),tmp,type(tmp)))
+
+                while (tmp.size > 0 and m > 0): # iterate as long as list is not empty and there are still values to sample
+                    psample.extend(tmp[0:m]) # sample m values
+                    k = m-1 # number of packets to skip
+                    tmp = tmp[m+k:] # remove sampled plus skipped packets
+                    m = k-1 # set value to sample for next iteration
+
+                    if superverbose:
+                        print('\n\n'+10*'~'+' sampling '+10*'~')
+                        # only output non-empty list
+                        if tmp.size > 0:
+                            print('\nSliced:')
+                            print(len(tmp))
+                            print(tmp)
+                        print('\nSampled:')
+                        print(len(psample))
+                        print(psample)
+
+                dataset.at[i,feature] = psample # replace current cell with sampled values
+
+        if verbose: print('sampled:\n{}\n'.format(dataset[feature])), input('...')
+
+    return
+
 # returns formatted list for increased visibility in verbose output
 def packetOutput(plist,n,verbose):
     
@@ -326,7 +415,6 @@ if __name__ == '__main__':
 
     if not os.path.exists(csvd): os.mkdir(csvd)
 
-
     if time: 
         start = timer()
         t = epochtime.time()
@@ -334,19 +422,11 @@ if __name__ == '__main__':
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'rpi-FlowSampling.py',filenames[findex],'start'])
 
+    # set mode argument for later Labeling.py execution
+    if j<4: labelmode = ' AGM'
+    elif j >= 4: labelmode = ' 5tuple'
 
-    # TODO: make list for all necessary PCAP files from dataset
-    # TODO: use argument parsing to select sampling-mode from command line
-    # TODO: save flow-based sampled CSV into folder csvpath for further classification
-
-    # set mode for labeling
-    if j<4:
-        labelmode = ' AGM'
-    elif j >= 4:
-        labelmode = ' 5tuple'
-
-    # PATHS & COMMANDS
-    # based on given arguments
+    # PATHS & COMMANDS based on given arguments
     pcap = fpath / pcapfile
     sampledcsv = fpath / 'flow-sampledCSV' / ucsv
     labeledcsv = fpath / 'flow-sampledCSV' / lcsv
@@ -356,78 +436,85 @@ if __name__ == '__main__':
     labelingcmd = "python3 "+"{}".format(labelingpath)+" "+"{}".format(csvd/filenames[findex])+labelmode
 
 
+    # INFORMATIONAL OUTPUT
     # check passed optional arguments, filepaths and forged commands
     print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
     print(40*'~'+' SCRIPT: rpi-FlowSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    #print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--osx\n{}\t--windows".format(verbose,superverbose,time,osx,windows))
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time".format(verbose,superverbose,time))
     print('\n{}, n = {}'.format(samplingmode[mode],n))
     print('\n'+20*'~'+' paths & files'+20*'~')
     print('\nJSON:\t{}'.format(goflowsconf))
     print('PCAP:\t{}'.format(pcap))
     print('CSVs:\t{}\n\t{}\n\t{}'.format(unlabeledcsv,sampledcsv,labeledcsv))
-    #print('sampled:\t{}'.format(sampledcsv))
-    #print('labeled:\t{}'.format(labeledcsv))
     print('\nlogs:\t{}'.format(logd))
     print('times:\t{}'.format(timecsv))
     print('\n'+20*'~'+' commands '+20*'~')
     print("\ngo-flows: {}".format(goflowscmd))
     print("labeling: {}".format(labelingcmd))
-    if (not time): input('\n...') 
 
 
-    # FLOW-CREATION & LABELING
-    # execute go-flows to process passed PCAP file
-    print("\n\n>>> create flow-CSV from PCAP with go-flows")
-    os.system(goflowscmd)
-    # import output CSV from go-flows
-    #poptions()
-    dataset = importCSV(unlabeledcsv,None,verbose)
-    if verbose:
-        printdata(dataset,'go-flows CSV',verbose)
-        if (not time): input('\n...') 
+    # FLOW-CREATION
+    print('\n\n>>> Create flows with go-flows')
+    os.system(goflowscmd) # execute go-flows to process passed PCAP file
+    dataset = importCSV(unlabeledcsv,None,verbose) # import flow-sampled CSV created with go-flows
+    if verbose: printdata(dataset,'go-flows CSV',verbose)
 
 
-    # SAMPLING (flow-based)
-    # get list of all features contained in dataset
-    features = dataset.columns
-    # get list of accumulated perpacket-features that have to be sampled
-    features = perpacketFeatures(dataset,'apply(accumulate',verbose,time)
-    # convert content of perpacket-features into an actual list for further processing
-    print('\n\n>>> convert sampled values into list')
-    convertToList(dataset,features,verbose,time)
-    # sample perpacket-features
-    flowSampling(dataset,n,features,mode,verbose,time)
+    # PER-PACKET SAMPLING (flow-based)
+    print('>>> identify sampled features')
+    keyword = 'apply(accumulate'
+    features = dataset.columns # get list of all features contained in dataset
+    features = perpacketFeatures(dataset,keyword,verbose,time) # get list of accumulated perpacket-features that have to be sampled
+
+    #print('before conversion:\n{}'.format(dataset['apply(accumulate(_interPacketTimeSeconds),forward)'].head(n=20)))
+    #input('blub')
+
+    print('>>> Converting accumulated values')
+    #convertToList(dataset,features,verbose,time) # convert content of perpacket-features into an actual list for further processing
+    convertToArray(dataset,features,verbose,time)
+
+    #print('after conversion:\n{}'.format(dataset['apply(accumulate(_interPacketTimeSeconds),forward)'].head(n=20)))
+    #input('blub')
+
+    print('>>> Sampling per-packet features')
+    #flowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
+    lambdaflowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
+
+    #print('after sampling:\n{}'.format(dataset['apply(accumulate(_interPacketTimeSeconds),forward)'].head(n=20)))
+    #input('blub')
+
+    # CALCULATIONS (calculate mean values for per-packet features)
+    # TODO: could do more than this, e.g. min, max, stdev...
+    print('>>> Calculate mean')
+    for feature in features: # iterate over per-packet features
+        print('\t> {}'.format(feature))
+
+        #dataset[feature] = dataset[feature].apply(lambda x: sum(x)/len(x) if type(x) == np.ndarray else float('NaN'))
+        dataset[feature] = dataset[feature].apply(lambda x: sum(x)/len(x))
 
 
-    # CALCULATIONS
-    # TODO: should do more than this, e.g. min, max, stdev...
-    # calculate mean of remaining packet values after sampling
-    for feature in features:
-        print('\n\n>>> processing sampled packets: {}'.format(feature))
+        '''
         for i in range(0,len(dataset.index)):
-            dataset.at[i,feature] = sum(dataset[feature][i])/len(dataset[feature][i])
+            #if type(dataset[feature][i]) == np.ndarray: dataset.at[i,feature] = sum(dataset[feature][i])/len(dataset[feature][i]) # calculate mean of sampled per-packet values
+            #dataset.at[i,feature] = sum(dataset[feature][i])/len(dataset[feature][i]) # calculate mean of sampled per-packet values
+            dataset[feature][i].mean() # calculate mean of sampled per-packet values
+        '''
 
         if verbose:
-            print('\n\n'+20*'~'+' Calculation, mean '+20*'~')
-            print('\n{}'.format(dataset[feature]))
-            if (not time): input('\n...') 
+            print(20*'~'+' summary '+20*'~')
+            print('\n{}\n'.format(dataset[feature]))
 
-    if verbose:
-        printdata(dataset,'sampled',verbose)
-        if not time: input('\n...')
+    if verbose: printdata(dataset,'sampled',verbose)
 
     # save dataframe as CSV for further preprocessing & classification
-    print("\n>>> save data to CSV")
+    print('>>> Saving {}'.format(sampledcsv))
     dataset.to_csv(sampledcsv, index=False)
-    #dataset.to_csv(csvsave, index=False)
-    # label flow-based sampled CSV as last step of preparation for further classification
-    print("\n>>> label CSV for further classification")
-    print(">>> {}".format(labelingcmd))
-    os.system(labelingcmd)
+    if verbose: print('>>> Labeling: {}\n'.format(labelingcmd))
 
-    if time: 
+    os.system(labelingcmd) # label benign & attack traffic as last step of preparation
+
+    if time:
         end = timer()
         t = epochtime.time()
         print('\n(rpi-Flowsampling.py, runtime: %.3f' % (end-start),'seconds)\n')
@@ -435,5 +522,4 @@ if __name__ == '__main__':
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow([t,'rpi-FlowSampling.py',filenames[findex],'end'])
 
-    if (not time): input('\n...')  
     exit()
