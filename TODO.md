@@ -2,11 +2,9 @@
 
 ### CODE:
 
-- rpi-FlowSampling.py: samplingmode 2 & 4 - try to use lambda functions instead of iterations for cell replacement
+- change rpi-PacketSampling.py to use pathlib paths and commands, get rid of OS choice
 
-- change rpi-PacketSampling.py to use pathlib paths and commands, get rid of OS choice, change rpi-Control.py accordingly
-
-- rpi-Control.py: change script for packetsampling mode to use pathlib file/folderpaths
+- rpi-Control.py: change script for packetsampling mode to use pathlib file/folderpaths, get rid of osarg for execution-command
 
 - change rpi-Control.py called scripts: Preprocessing.py and Classification.py part to use folders that determine sampling-mode, -steps & feature-vector (e.g. /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/Merged_mode1_vector2_steps5/) instead of old folder /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/
 
@@ -45,9 +43,9 @@
 
 #### NEXT:
 
-
-
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
+
+- rpi-FlowSampling.py: samplingmode 2 & 4 - improvements?
 
 
 #### LATER:
@@ -84,6 +82,7 @@
 
 ## DONE:
 
+- rpi-PacketSampling.py: sort list of splitfiles created via os.listdir() - not necessary sorted alphabetically, depending on OS
 - changed cell conversion using lambda functions, changed sampling and cell replacements using lambda functions in rpi-FlowSampling.py (massive runtime improvements!)
 - improve output rpi-FlowSampling.py
 - change rpi-FlowSampling.py to use pathlib paths and commands, get rid of OS choice, change rpi-Control.py accordingly
