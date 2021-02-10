@@ -1,12 +1,33 @@
-## INPROGRESS:
+## INPROGRESS
 
-### CODE:
+### CODE
 
-- change rpi-PacketSampling.py to use pathlib paths and commands, get rid of OS choice
+#### SAMPLING, PREPROCESSING, CLASSIFICATION
 
-- rpi-Control.py: change script for packetsampling mode to use pathlib file/folderpaths, get rid of osarg for execution-command
+- remove unnecessary if time executions in rpi-Preprocessing.py (all the start timestamps)
 
-- change rpi-Control.py called scripts: Preprocessing.py and Classification.py part to use folders that determine sampling-mode, -steps & feature-vector (e.g. /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/Merged_mode1_vector2_steps5/) instead of old folder /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/
+- set softlink on rpi so no script paths have to be changed in rpi-Preprocessing.py:
+	- save data to process on rpi/vm into a folder 'data' in the homefolder (e.g. /home/dietpi/data), retaining original folderstructure from desktop machine (e.g. ) when syncing sampled data from desktop to rpi
+	- set softlink via: sudo ln -s /home/dietpi/data/ /mnt/
+
+
+- implement --rpi on rpi-Preprocessing.py to choose folder paths (or just set softlink on rpi?), to call rpi-Control.py on the rpi with correct folder path?
+
+- automatisation via passed argument in rpi-Control.py (--rpi? --auto?):
+	-write script (bash or in python? probably bash) to:
+		- check if rpi/vm is online
+		- SSH to rpi/vm
+			- clean folder
+			- copy data to process from desktop to rpi via/vm via rsync into /home/dietpi/data for further processing and classification via rpi-Preprocessing.py
+			- syncing results back from rpi/vm to desktop machine after processing and classification is done
+	- implement this script to do above mentioned steps directly at the end of rpi-Control.py execution (doing the sampling)
+	- write "configuration script" containing all the necessary information on experiments we want to work on, bascically automating the whole process of sampling, modeling on the desktop machine, and preprocessing, importing model and doing the classification on the rpi/vm
+
+
+
+#### EVALUATION
+
+- change script to read data from new folder-structure, containing logs-rpi* subfolders for fit/import model...
 
 - dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
 
@@ -20,7 +41,7 @@
 
 
 
-### THESIS:
+### THESIS
 
 - check LaTeX basics
 
@@ -39,16 +60,16 @@
 
 
 
-## TODO:
+## TODO
 
-#### NEXT:
+#### NEXT
 
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
 
 - rpi-FlowSampling.py: samplingmode 2 & 4 - improvements?
 
 
-#### LATER:
+#### LATER
 
 - get rid of superverbose?
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html) for all filepaths (FlowSampling.py, PacketSampling.py)
@@ -72,7 +93,7 @@
 - improve filename generation, including working-directory instead of hardcoded /home/<user>/<project-folder>, maybe read folder-content, based on that create dictionary with filenames without extensions, use that and wd as base to forge filepaths and filenames 
 
 
-#### IMPROVEMENTS:
+#### IMPROVEMENTS
 
 - change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
 - create config file to import, containing all necessary file- and folderpaths, paths to executable tools... and import this file instead of making definitions inside every script
@@ -80,8 +101,16 @@
 - improve FlowSampling method (function convertToList), now using actual lists instead of np array for iteration, etc..
 
 
-## DONE:
+## DONE
 
+- change paths in rpi-Preprocessing.py to use /mnt/... whatever for desktop machine, copy accordingly on rpi as mentioned in task below
+	- needs all informations about sampling methods in arguments to choose correct data
+- rpi-Preprocessing.py: use folders that determine sampling-mode, -steps & feature-vector (e.g. /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/Merged_mode1_vector2_steps5/) instead of old folder /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/
+- rpi-Control.py: move logs into proper folder after sampling is done or after whole process is done
+- add perflow/packetsampled at the end of foldername for easier differentiation later on
+- rp-Control.py, rpi-Preprocessing.py: fix dstat process stop, right now getting return code instead of pid when using os.system, which is just the behaviour to expect.
+- rpi-Control.py: change script for packetsampling mode to use pathlib file/folderpaths, get rid of osarg for execution-command
+- change rpi-PacketSampling.py to use pathlib paths and commands, get rid of OS choice
 - rpi-PacketSampling.py: sort list of splitfiles created via os.listdir() - not necessary sorted alphabetically, depending on OS
 - changed cell conversion using lambda functions, changed sampling and cell replacements using lambda functions in rpi-FlowSampling.py (massive runtime improvements!)
 - improve output rpi-FlowSampling.py
