@@ -4,12 +4,9 @@
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 
-- remove unnecessary if time executions in rpi-Preprocessing.py (all the start timestamps)
-
 - set softlink on rpi so no script paths have to be changed in rpi-Preprocessing.py:
 	- save data to process on rpi/vm into a folder 'data' in the homefolder (e.g. /home/dietpi/data), retaining original folderstructure from desktop machine (e.g. ) when syncing sampled data from desktop to rpi
 	- set softlink via: sudo ln -s /home/dietpi/data/ /mnt/
-
 
 - implement --rpi on rpi-Preprocessing.py to choose folder paths (or just set softlink on rpi?), to call rpi-Control.py on the rpi with correct folder path?
 
@@ -103,6 +100,7 @@
 
 ## DONE
 
+- remove unnecessary if time executions in rpi-Preprocessing.py (all the stop timestamps)
 - change paths in rpi-Preprocessing.py to use /mnt/... whatever for desktop machine, copy accordingly on rpi as mentioned in task below
 	- needs all informations about sampling methods in arguments to choose correct data
 - rpi-Preprocessing.py: use folders that determine sampling-mode, -steps & feature-vector (e.g. /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/Merged_mode1_vector2_steps5/) instead of old folder /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/
