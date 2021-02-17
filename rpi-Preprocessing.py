@@ -637,8 +637,8 @@ if __name__ == '__main__':
             Path.unlink(logd / file)
 
     if time: 
-        if rpi: os.system('killall python2') # kill any running dstat process
-        else: os.system('killall dstat') # kill any running dstat process
+        if rpi: os.system('killall python2')
+        else: os.system('killall dstat')
         start = timer()
         t = epochtime.time()
         if export: # write timestamp to csv
@@ -671,48 +671,6 @@ if __name__ == '__main__':
             with open(timecsv,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','importCSV','start'])
-
-
-
-
-
-
-    # STOP MONITORING
-    if export:
-        wait = 50 # seconds to wait before killing dstat
-        if rpi:
-            pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
-            pids = [int(s) for s in pids.split(' ')] # convert strings to list
-
-        else:
-            pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
-            pids = [int(s) for s in pids.split(' ')] # convert strings to list
-            mypid = os.getpid() # pid of running script
-            pids.remove(mypid)
-        
-        print('PIDs: {}'.format(pids))
-        #pids = [int(s) for s in pids.split(' ')] # convert strings to list
-        #mypid = os.getpid() # pid of running script
-        #print('myPID: {}'.format(mypid))
-        #if not rpi: pids.remove(mypid)
-
-        for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
-            epochtime.sleep(1)
-
-        print('>>> Killing dstat')
-        os.kill(pids[0],9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
-
-        print('>>> Saving logs {}'.format(rpilogs))
-        os.system(cplogs)
-        print(20*'#')
-
-
-
-
-
-
-
-
 
     print('>>> Importing CSV line-by-line, splitting into Xtrain & Xtest')
     # initialise empty dataframes
@@ -1052,12 +1010,6 @@ if __name__ == '__main__':
             pids = [int(s) for s in pids.split(' ')] # convert strings to list
             mypid = os.getpid() # pid of running script
             pids.remove(mypid)
-        
-        print('PIDs: {}'.format(pids))
-        #pids = [int(s) for s in pids.split(' ')] # convert strings to list
-        #mypid = os.getpid() # pid of running script
-        #print('myPID: {}'.format(mypid))
-        #if not rpi: pids.remove(mypid)
 
         for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
             epochtime.sleep(1)
