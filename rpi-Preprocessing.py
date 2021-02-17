@@ -1000,7 +1000,8 @@ if __name__ == '__main__':
     # STOP MONITORING
     if export:
         wait = 50 # seconds to wait before killing dstat
-        pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+        #pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+        pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
         print('PIDs: {}'.format(pids))
         pids = [int(s) for s in pids.split(' ')] # convert strings to list
         mypid = os.getpid() # pid of running script
