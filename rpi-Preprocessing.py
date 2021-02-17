@@ -910,7 +910,7 @@ if __name__ == '__main__':
     if verbose: print('\n< Xtest (PCA):\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2)))
     del split
 
-
+    '''
     # RANDOM FOREST CLASSIFIER
 
     # select already fitted modelfile or fit model
@@ -975,7 +975,7 @@ if __name__ == '__main__':
     print('u  "0":',matrix[0])
     print('e  "1":',matrix[1])
     print('\n\nClassification-Report:\n\n',report)
-
+    
 
     if export:
         print('\n>>> Exporting results to folder: {}'.format(logd))
@@ -985,7 +985,7 @@ if __name__ == '__main__':
         # save results
         results.to_csv(resultcsv)
         report.to_csv(reportcsv)
-
+    '''
 
     if time:
         end = timer()
@@ -1001,8 +1001,10 @@ if __name__ == '__main__':
     if export:
         wait = 50 # seconds to wait before killing dstat
         pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+        print('PIDs: {}'.format(pids))
         pids = [int(s) for s in pids.split(' ')] # convert strings to list
         mypid = os.getpid() # pid of running script
+        print('myPID: {}'.format(mypid))
         pids.remove(mypid)
 
         for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
