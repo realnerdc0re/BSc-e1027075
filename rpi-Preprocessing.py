@@ -674,16 +674,27 @@ if __name__ == '__main__':
 
 
 
+
+
+
     # STOP MONITORING
     if export:
         wait = 50 # seconds to wait before killing dstat
-        if rpi: pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
-        else: pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+        if rpi:
+            pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+            pids = [int(s) for s in pids.split(' ')] # convert strings to list
+
+        else:
+            pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+            pids = [int(s) for s in pids.split(' ')] # convert strings to list
+            mypid = os.getpid() # pid of running script
+            pids.remove(mypid)
+        
         print('PIDs: {}'.format(pids))
-        pids = [int(s) for s in pids.split(' ')] # convert strings to list
-        mypid = os.getpid() # pid of running script
-        print('myPID: {}'.format(mypid))
-        if not rpi: pids.remove(mypid)
+        #pids = [int(s) for s in pids.split(' ')] # convert strings to list
+        #mypid = os.getpid() # pid of running script
+        #print('myPID: {}'.format(mypid))
+        #if not rpi: pids.remove(mypid)
 
         for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
             epochtime.sleep(1)
@@ -694,6 +705,11 @@ if __name__ == '__main__':
         print('>>> Saving logs {}'.format(rpilogs))
         os.system(cplogs)
         print(20*'#')
+
+
+
+
+
 
 
 
@@ -1027,13 +1043,21 @@ if __name__ == '__main__':
     # STOP MONITORING
     if export:
         wait = 50 # seconds to wait before killing dstat
-        if rpi: pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
-        else: pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+        if rpi:
+            pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+            pids = [int(s) for s in pids.split(' ')] # convert strings to list
+
+        else:
+            pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+            pids = [int(s) for s in pids.split(' ')] # convert strings to list
+            mypid = os.getpid() # pid of running script
+            pids.remove(mypid)
+        
         print('PIDs: {}'.format(pids))
-        pids = [int(s) for s in pids.split(' ')] # convert strings to list
-        mypid = os.getpid() # pid of running script
-        print('myPID: {}'.format(mypid))
-        if not rpi: pids.remove(mypid)
+        #pids = [int(s) for s in pids.split(' ')] # convert strings to list
+        #mypid = os.getpid() # pid of running script
+        #print('myPID: {}'.format(mypid))
+        #if not rpi: pids.remove(mypid)
 
         for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
             epochtime.sleep(1)
