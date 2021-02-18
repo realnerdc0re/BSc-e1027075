@@ -30,7 +30,7 @@ from pandas import read_csv
 # DICTIONARIES
 # available sampling-modes, used for informational outputs
 flowsmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
-packetsmode = {1:'every n-th packet',2:'time-based'}
+packetsmode = {5:'every n-th packet',6:'time-based'}
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 # feature vectors, https://pkg.go.dev/github.com/CN-TU/go-flows
@@ -44,7 +44,7 @@ mntd = Path('/mnt')
 flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV' # folder containing per-flow sampled csv
 packetfolder = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV' # folder containing packet-sampled csv
 logd = wd / 'logs'
-logfolder = 'logs-rpi-Control'
+logfolder = 'logs-rpi-Sampling'
 reportcsv = logd / 'report.csv'
 resultcsv = logd / 'result.csv'
 timecsv = logd / 'time.csv'
@@ -179,7 +179,8 @@ if __name__ == '__main__':
     rpilogs = csvd / logfolder
     scsv = samplingd / csvname
     movecmd = str('mv ')+str(scsv) +str(' ')+str(csvsave)
-    cplogs = 'cp -R {} {}'.format(logd,rpilogs)
+    cplogs = 'cp -r {} {}/'
+    #cplogs = 'cp -R {} {}'.format(logd,rpilogs)
 
 
     if not os.path.exists(csvd): os.mkdir(csvd) # create csv-directory if it doesn't exist
@@ -196,7 +197,7 @@ if __name__ == '__main__':
 
     # check passed optional arguments and commands
     print('\n'+40*' '+' FILE: {}'.format(filenames[findex]))
-    print(40*'~'+' SCRIPT: rpi-Control.py '+40*'~')
+    print(40*'~'+' SCRIPT: rpi-Sampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--export\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,export,flowsampling,packetsampling))
     print('\n{}, n = {}'.format(samplingmode,n))
@@ -290,17 +291,30 @@ if __name__ == '__main__':
         mypid = os.getpid() # pid of running script
         pids.remove(mypid)
 
-        for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
-            epochtime.sleep(1)
+        #for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
+        #    epochtime.sleep(1)
 
         print('>>> Killing dstat')
         os.kill(pids[0],9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
 
-        print('>>> Saving logs {}'.format(rpilogs))
-        os.system(cplogs)
+        print('>>> Saving logs to folder {}'.format(rpilogs))
+
+        if not os.path.exists(rpilogs): os.mkdir(rpilogs) # create logfolder if necessary
+
+        for root, dirs, files in os.walk(logd):
+            for filename in files: # iterate over filenames found within the wd logfolder
+                log = logd / filename # full path for current logfile
+
+                print('\t> Saving {}'.format(filename))
+                os.system(cplogs.format(log,rpilogs))
         print(20*'#')
 
-    exit() # temporary exit, just to create merged sampled files
+    exit()
+
+
+
+
+
 
 
 
@@ -347,5 +361,5 @@ if __name__ == '__main__':
 
     # kill running dstat process
     os.kill(pid,9)
-    sys.exit()
+    exit() # NOT THE ACTUAL EXIT, its just old code used in the script I dont want to delete for now! SCROLL UP!
 
