@@ -618,8 +618,6 @@ if __name__ == '__main__':
 
     # create log & model folders if necessary
     if not os.path.exists(logd): os.mkdir(logd)
-    #testfolder = packetfolder / foldername
-    #if not os.path.exists(testfolder): os.mkdir(testfolder)
     if not os.path.exists(modeld): os.mkdir(modeld)
 
     # logs
@@ -628,7 +626,6 @@ if __name__ == '__main__':
     timecsv = logd / 'time.csv'
     dstatcsv = logd / 'dstat.csv'
     cplogs = 'cp -r {} {}/'
-    #cplogs = 'cp -r {} {}'.format(logd,rpilogs) # copy logs from working directory to correct folder if exported
 
     if (model or save): # set correct model for import/save, based on device (32/64bit)
         if rpi: modelname = filenames[findex]+str('_rpi')
@@ -983,12 +980,10 @@ if __name__ == '__main__':
 
     if export:
         print('\n>>> Exporting results to folder: {}'.format(logd))
-        # list of all informations we want to save for later evaluation
         evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix],'PCA-components':[n_Xpca]}
         results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
-        # save results
-        results.to_csv(resultcsv)
-        report.to_csv(reportcsv)
+        results.to_csv(resultcsv) # save results
+        report.to_csv(reportcsv) # save classification-report
 
     if time:
         end = timer()
