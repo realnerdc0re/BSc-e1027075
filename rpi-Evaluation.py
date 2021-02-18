@@ -254,7 +254,7 @@ if __name__ == '__main__':
     # RAM usage
     for i in range(0,len(evaluationd)):
 
-        # initialise empty list to create x-axis labels
+        # initialise empty list to create x-axis labels 
         ticks = []
         labels = []
         plt.figure(figsize=(21.0,9.0)) # set base canvas size in inch to get large *.png files
