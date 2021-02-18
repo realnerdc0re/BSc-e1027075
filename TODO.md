@@ -2,23 +2,12 @@
 
 ### CODE
 
+- use basefolderpaths from config.py also in rpi-Preprocessing, rpi-Sampling, rpi-FlowSampling, rpi-Packetsampling for more convenient customization of paths and way better maintenance possibilities
+- create logfolder names to distinguish betweenn local and remote machine
+- improve creation of samplearg, featurearg and samplingcmd in rpi-Sampling.py
+
+
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
-
-- set softlink on rpi so no script paths have to be changed in rpi-Preprocessing.py:
-	- save data to process on rpi/vm into a folder 'data' in the homefolder (e.g. /home/dietpi/data), retaining original folderstructure from desktop machine (e.g. ) when syncing sampled data from desktop to rpi
-	- set softlink via: sudo ln -s /home/dietpi/data/ /mnt/
-
-- implement --rpi on rpi-Preprocessing.py to choose folder paths (or just set softlink on rpi?), to call rpi-Control.py on the rpi with correct folder path?
-
-- automatisation via passed argument in rpi-Control.py (--rpi? --auto?):
-	-write script (bash or in python? probably bash) to:
-		- check if rpi/vm is online
-		- SSH to rpi/vm
-			- clean folder
-			- copy data to process from desktop to rpi via/vm via rsync into /home/dietpi/data for further processing and classification via rpi-Preprocessing.py
-			- syncing results back from rpi/vm to desktop machine after processing and classification is done
-	- implement this script to do above mentioned steps directly at the end of rpi-Control.py execution (doing the sampling)
-	- write "configuration script" containing all the necessary information on experiments we want to work on, bascically automating the whole process of sampling, modeling on the desktop machine, and preprocessing, importing model and doing the classification on the rpi/vm
 
 
 
@@ -100,6 +89,23 @@
 
 ## DONE
 
+- write script for automated experiment execution (Master.py):
+	- implement configuration file (config.py) containing all necessary information to execute all experiments
+	- does following steps subsequently:
+		- check online status of remote machine (VM/rpi)
+		- rpi-Sampling.py on local machine to create sampled CSV
+		- rpi-Preprocessing.py on local machine to create model
+		- create directory for necessary data on remote machine (VM/rpi), containing:
+			- sampled CSV
+			- fitted pickle-model
+		- sync above mentioned files to remote machine via rsync
+		- execute rpi-Preprocessing.py on remote machine, importing the synced model, saving results on remote machine
+		- sync back results to the local machine for further evaluation
+- improved saving log-files at the end of rpi-Preprocessing.py
+- implement --rpi on rpi-Preprocessing.py to properly kill dstat, since this has to be done in different ways on Linux and dietpi
+- set softlink on rpi so no script paths have to be changed in rpi-Preprocessing.py:
+	- save data to process on rpi/vm into a folder 'data' in the homefolder (e.g. /home/dietpi/data), retaining original folderstructure from desktop machine (e.g. ) when syncing sampled data from desktop to rpi
+	- set softlink via: sudo ln -s /home/dietpi/data/ /mnt/
 - remove unnecessary if time executions in rpi-Preprocessing.py (all the stop timestamps)
 - change paths in rpi-Preprocessing.py to use /mnt/... whatever for desktop machine, copy accordingly on rpi as mentioned in task below
 	- needs all informations about sampling methods in arguments to choose correct data
