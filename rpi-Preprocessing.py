@@ -618,6 +618,8 @@ if __name__ == '__main__':
 
     # create log & model folders if necessary
     if not os.path.exists(logd): os.mkdir(logd)
+    #testfolder = packetfolder / foldername
+    #if not os.path.exists(testfolder): os.mkdir(testfolder)
     if not os.path.exists(modeld): os.mkdir(modeld)
 
     # logs
@@ -625,7 +627,8 @@ if __name__ == '__main__':
     resultcsv = logd / 'result.csv'
     timecsv = logd / 'time.csv'
     dstatcsv = logd / 'dstat.csv'
-    cplogs = 'cp -R {} {}'.format(logd,rpilogs) # copy logs from working directory to correct folder if exported
+    cplogs = 'cp -r {} {}/'
+    #cplogs = 'cp -r {} {}'.format(logd,rpilogs) # copy logs from working directory to correct folder if exported
 
     if (model or save): # set correct model for import/save, based on device (32/64bit)
         if rpi: modelname = filenames[findex]+str('_rpi')
@@ -1009,14 +1012,22 @@ if __name__ == '__main__':
             mypid = os.getpid() # pid of running script
             pids.remove(mypid)
 
-        for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
-            epochtime.sleep(1)
+        #for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
+        #    epochtime.sleep(1)
 
         print('>>> Killing dstat')
         os.kill(pids[0],9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
 
-        print('>>> Saving logs {}'.format(rpilogs))
-        os.system(cplogs)
+        print('>>> Saving logs to folder {}'.format(rpilogs))
+
+        if not os.path.exists(rpilogs): os.mkdir(rpilogs) # create logfolder if necessary
+
+        for root, dirs, files in os.walk(logd):
+            for filename in files: # iterate over filenames found within the wd logfolder
+                log = logd / filename # full path for current logfile
+
+                print('\t> Saving {}'.format(filename))
+                os.system(cplogs.format(log,rpilogs))
         print(20*'#')
 
     exit()
