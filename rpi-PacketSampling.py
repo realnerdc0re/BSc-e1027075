@@ -21,7 +21,9 @@ import sys
 
 # DICTIONARIES
 # available sampling-modes, used for informational outputs
-samplingmode = {1:'every n-th packet',2:'time-based'}
+#samplingmode = {1:'every n-th packet',2:'time-based'}
+samplingmode = {5:'every n-th packet',6:'time-based'}
+
 # capture files, https://www.unb.ca/cic/datasets/ids-2017.html
 filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
 # feature vectors, https://pkg.go.dev/github.com/CN-TU/go-flows
@@ -261,7 +263,9 @@ if __name__ == '__main__':
         plistindex = np.arange(0,pcount,1) # same array, containing packet-indices
 
 
-        if smode == 1: # every n-th packet, including first packet of the pcap
+        #if smode == 1: # every n-th packet, including first packet of the pcap
+        if smode == 5: # every n-th packet, including first packet of the pcap
+
             modulo = samplepcount % n
 
             if modulo != 0:
