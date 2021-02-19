@@ -21,33 +21,12 @@ import sys
 import math
 
 
-# DICTIONARIES
-# available sampling-modes, used for informational outputs
-samplingmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
-# capture files, https://www.unb.ca/cic/datasets/ids-2017.html
-filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
-# feature vectors, https://pkg.go.dev/github.com/CN-TU/go-flows
-featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
+import config as cfg # necessary configurations from config.py
 
-
-# PATHS
-wd = Path.cwd() # working directory
-hd = Path.home() # home directory
-rootd = PurePath(wd).root # root directory
-mntd = PurePosixPath('/mnt') # mount directory
-flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
-fpath = mntd / 'data' / 'CIC-IDS2017' / 'PCAP'
-logd = wd / 'logs'
-timecsv = logd / 'time.csv'
-
-# COMMANDS
-goflowspath = hd / 'Git' / 'go-flows' / 'go-flows'
-labelingpath = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
-
-# create folders if necessary
-if not os.path.exists(logd): os.mkdir(logd)
-if not os.path.exists(fpath): os.mkdir(fpath)
-if not os.path.exists(flowfolder): os.mkdir(flowfolder)
+# create base-folders if necessary
+if not os.path.exists(cfg.logd): os.mkdir(cfg.logd)
+if not os.path.exists(cfg.fpath): os.mkdir(cfg.fpath)
+if not os.path.exists(cfg.flowfolder): os.mkdir(cfg.flowfolder)
 
 
 # ARGUMENT PARSING
@@ -55,10 +34,10 @@ if not os.path.exists(flowfolder): os.mkdir(flowfolder)
 import argparse
 parser = argparse.ArgumentParser(description='script for sampling PCAP files via go-flows (flow-based sampling), output is CSV')
 # positional arguments
-parser.add_argument('mode', metavar = 'mode', type=int,nargs=1,help='select sampling mode: {}'.format(samplingmode))
-parser.add_argument('file', metavar = 'file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
+parser.add_argument('mode', metavar = 'mode', type=int,nargs=1,help='select sampling mode: {}'.format(cfg.fsamplingmode))
+parser.add_argument('file', metavar = 'file', type=int,nargs=1,help='select file to process: {}'.format(cfg.filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
-parser.add_argument('j', metavar='j', type=int,nargs=1,help='choose feature-vector: {}'.format(featurevectors))
+parser.add_argument('j', metavar='j', type=int,nargs=1,help='choose feature-vector: {}'.format(cfg.vectors))
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
@@ -119,13 +98,13 @@ def convertToArray(dataset,features,verbose=False,time=False):
 # per-flow sampling using iterations
 def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     
-    #samplingmode = {0: 'every {}-th packet'.format(n), 1: 'sample & skip {} packets'.format(n), 2: 'sample first {} packets of a flow'.format(n), 3: 'sample n, skip n-1, sample n-2 ... (n={})'.format(n)}
+    #cfg.fsamplingmode = {0: 'every {}-th packet'.format(n), 1: 'sample & skip {} packets'.format(n), 2: 'sample first {} packets of a flow'.format(n), 3: 'sample n, skip n-1, sample n-2 ... (n={})'.format(n)}
     
     # temporary list for sampling
     tmp = [] 
 
     if verbose and not superverbose:
-        print(40*' '+' SAMPLING: {} (n={})'.format(samplingmode[mode],n))
+        print(40*' '+' SAMPLING: {} (n={})'.format(cfg.fsamplingmode[mode],n))
         print(40*'~'+' FUNCTION: flowSampling '+40*'~')
 
     # iterate over list of given features
@@ -139,7 +118,7 @@ def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
             psample = []
             
             if superverbose:
-                print('\n\n'+40*' '+' SAMPLING: {} '.format(samplingmode[mode])+' (n={}).format(n)')
+                print('\n\n'+40*' '+' SAMPLING: {} '.format(cfg.fsamplingmode[mode])+' (n={}).format(n)')
                 print(40*'~'+' FUNCTION: flowSampling: {}, row: {}/{} '.format(feature,(i+1),len(dataset.index))+40*'~')
                 print('\nOriginal:')
                 print(len(dataset[feature][i]))
@@ -237,7 +216,7 @@ def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
     superverbose = False
 
     if verbose and not superverbose:
-        print(40*' '+' SAMPLING: {} (n={})'.format(samplingmode[mode],n))
+        print(40*' '+' SAMPLING: {} (n={})'.format(cfg.fsamplingmode[mode],n))
         print(40*'~'+' FUNCTION: flowSampling '+40*'~'+'\n')
 
     for feature in features: # iterate over features containing accumulated values
@@ -332,57 +311,60 @@ if __name__ == '__main__':
     global check
 
     # set boolean variables based on argument passing
-    verbose = args.verbose
-    superverbose = args.superverbose
+    verbose         = args.verbose
+    superverbose    = args.superverbose
+    time            = args.time
     if superverbose: verbose = True
-    time = args.time
 
-    mode = args.mode[0] # sampling-mode
-    findex = args.file[0] # fileindex
-    n = args.n[0] # sampling steps
-    j = args.j[0] # feature-vector
-
-    csvd = flowfolder # csv directory
-    lcsv = str(filenames[findex])+str('.csv') # labeled csv
-    ucsv = str(filenames[findex])+str('_unlabeled.csv') # unlabeled csv
-    csvsave = csvd / lcsv
-    pcapfile = filenames[findex]+str('.pcap')
+    mode    = args.mode[0] # sampling-mode
+    findex  = args.file[0] # file-index
+    n       = args.n[0] # sampling steps
+    j       = args.j[0] # feature-vector
 
     if time: 
         start = timer()
         t = epochtime.time()
-        with open(timecsv,'a') as csvfile:
+        with open(cfg.time,'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
-            csvwriter.writerow([t,'rpi-FlowSampling.py',filenames[findex],'start'])
+            csvwriter.writerow([t,'rpi-FlowSampling.py',cfg.filenames[findex],'start'])
 
-    # set mode argument for later Labeling.py execution
-    if j<4: labelmode = ' AGM'
-    elif j >= 4: labelmode = ' 5tuple'
+    # set mode for labeling.py
+    if j<cfg.flowlimit: labelmode = 'AGM'
+    elif j >= cfg.flowlimit: labelmode = '5tuple'
 
 
-    # PATHS & COMMANDS based on given arguments
-    pcap = fpath / pcapfile
-    sampledcsv = fpath / 'flow-sampledCSV' / ucsv
-    labeledcsv = fpath / 'flow-sampledCSV' / lcsv
-    unlabeledcsv = fpath / ucsv
-    goflowsconf = wd / 'go-flows-configurations' / featurevectors[j]
-    goflowscmd = "{}".format(goflowspath)+" run features "+"{}".format(goflowsconf)+" export csv "+"{}".format(fpath/unlabeledcsv)+" source libpcap "+"{}".format(pcap)
-    labelingcmd = "python3 "+"{}".format(labelingpath)+" "+"{}".format(csvd/filenames[findex])+labelmode
+    # FILES, PATHS & COMMANDS based on given arguments
+    wd = Path.cwd() # working directory
 
+    # filenames
+    pcap                = '{}.pcap'.format(cfg.filenames[findex]) # PCAP file to process
+    csv_labeled         = '{}.csv'.format(cfg.filenames[findex]) # labeled, sampled CSV
+    csv_sampled         = '{}_unlabeled.csv'.format(cfg.filenames[findex]) # sampled CSV
+
+    # full paths to files
+    pcap                = cfg.fpath / pcap
+    csv_import          = cfg.fpath / csv_sampled
+    csv_sampled_export  = cfg.flowfolder / csv_sampled
+    csv_labeled_export  = cfg.flowfolder / csv_labeled
+
+    # commands
+    goflowsconf = wd / cfg.vectorfolder / cfg.vectors[j]
+    goflowscmd  = '{} run features {} export csv {} source libpcap {}'.format(cfg.goflowspath,goflowsconf,csv_import,pcap)
+    labelingcmd = 'python3 {} {} {}'.format(cfg.labelingpath,cfg.flowfolder/cfg.filenames[findex],labelmode)
 
     # INFORMATIONAL OUTPUT
     # check passed optional arguments, filepaths and forged commands
-    print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
+    print('\n\n'+40*' '+' FILE: {}'.format(cfg.filenames[findex]))
     print(40*'~'+' SCRIPT: rpi-FlowSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time".format(verbose,superverbose,time))
-    print('\n{}, n = {}'.format(samplingmode[mode],n))
+    print('\n{}, n = {}'.format(cfg.fsamplingmode[mode],n))
     print('\n'+20*'~'+' paths & files'+20*'~')
     print('\nJSON:\t{}'.format(goflowsconf))
     print('PCAP:\t{}'.format(pcap))
-    print('CSVs:\t{}\n\t{}\n\t{}'.format(unlabeledcsv,sampledcsv,labeledcsv))
-    print('\nlogs:\t{}'.format(logd))
-    print('times:\t{}'.format(timecsv))
+    print('CSVs:\t{}\n\t{}\n\t{}'.format(csv_import,csv_sampled_export,csv_labeled_export))
+    print('\nlogs:\t{}'.format(cfg.logd))
+    print('times:\t{}'.format(cfg.time))
     print('\n'+20*'~'+' commands '+20*'~')
     print("\ngo-flows: {}".format(goflowscmd))
     print("labeling: {}".format(labelingcmd))
@@ -391,11 +373,11 @@ if __name__ == '__main__':
     # FLOW-CREATION
     print('\n\n>>> Create flows with go-flows from {}'.format(pcap))
     os.system(goflowscmd) # execute go-flows to process passed PCAP file
-    dataset = importCSV(unlabeledcsv,None,verbose) # import flow-sampled CSV created with go-flows
+    dataset = importCSV(csv_import,None,verbose) # import flow-sampled CSV created with go-flows
     if verbose: printdata(dataset,'go-flows CSV',verbose)
 
 
-    # PER-PACKET SAMPLING (flow-based)
+    # PER-FLOW SAMPLING
     print('>>> Identifying accumulated features')
     keyword = 'apply(accumulate' # all per_packet features from go-flows begin with this string
     features = perpacketFeatures(dataset,keyword,verbose,time) # get list of accumulated perpacket-features that have to be sampled
@@ -422,8 +404,8 @@ if __name__ == '__main__':
         printdata(dataset,'per-flow sampled',verbose)
 
     # save dataframe as CSV for further preprocessing & classification
-    print('>>> Saving {}'.format(sampledcsv))
-    dataset.to_csv(sampledcsv, index=False)
+    print('>>> Saving {}'.format(csv_sampled_export))
+    dataset.to_csv(csv_sampled_export, index=False)
 
 
     # LABELING
@@ -434,8 +416,8 @@ if __name__ == '__main__':
         end = timer()
         t = epochtime.time()
         print('\n(rpi-Flowsampling.py, runtime: %.3f' % (end-start),'seconds)\n')
-        with open(timecsv,'a') as csvfile: # write timestamp to csv
+        with open(cfg.time,'a') as csvfile: # write timestamp to csv
             csvwriter = csv.writer(csvfile, delimiter=",")
-            csvwriter.writerow([t,'rpi-FlowSampling.py',filenames[findex],'end'])
+            csvwriter.writerow([t,'rpi-FlowSampling.py',cfg.filenames[findex],'end'])
 
     exit()
