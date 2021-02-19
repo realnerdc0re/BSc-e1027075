@@ -21,6 +21,7 @@ from timeit import default_timer as timer
 import argparse
 parser = argparse.ArgumentParser(description='Script to automate experiments based on a given configuration via config.py. The Script does the sampling and model-creation on the local machine and syncs all necessary files from the local machine to a remote machine afterwards. Subsequently it creates predictions on the remote machine, saves the results and syncs back to the local machine.')
 parser.add_argument('-v','--verbose', action='store_true', help='output verbose information')
+parser.add_argument('-l','--local', action='store_true',help='just do sampling and classification on local machine')
 args = parser.parse_args()
 
 
