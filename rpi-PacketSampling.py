@@ -19,45 +19,12 @@ import os
 import sys
 
 
-# DICTIONARIES
-# available sampling-modes, used for informational outputs
-#samplingmode = {1:'every n-th packet',2:'time-based'}
-samplingmode = {5:'every n-th packet',6:'time-based'}
+import config as cfg # necessary configurations from config.py
 
-# capture files, https://www.unb.ca/cic/datasets/ids-2017.html
-filenames = {1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
-# feature vectors, https://pkg.go.dev/github.com/CN-TU/go-flows
-featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
-
-
-# PATHS
-wd = Path.cwd()
-hd = Path.home()
-rootd = PurePath(wd).root
-mntd = PurePosixPath('/mnt')
-fpath = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' # path to orignal dataset PCAPs
-splitpath = fpath / 'splitPCAP' # PCAPs splitted with editcap
-snappath = fpath / 'snapPCAP' # PCAPs with dropped payload
-samplepath = fpath / 'sampledPCAP' # sampled PCAPs
-packetfolder = fpath / 'packet-sampledCSV' # sampled CSVs
-logd = wd / 'logs'
-timecsv = logd / 'time.csv'
-
-# COMMANDS
-goflowspath = hd / 'Git' / 'go-flows' / 'go-flows'
-capinfospath = 'capinfos'
-editcappath = 'editcap'
-mergecappath = 'mergecap'
-labelingpath = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
-cleansplitPCAP = 'rm {}/*'.format(splitpath)
-
-# create folders if necessary
-if not os.path.exists(logd): os.mkdir(logd)
-if not os.path.exists(fpath): os.mkdir(fpath)
-if not os.path.exists(splitpath): os.mkdir(splitpath)
-if not os.path.exists(snappath): os.mkdir(snappath)
-if not os.path.exists(samplepath): os.mkdir(samplepath)
-if not os.path.exists(packetfolder): os.mkdir(packetfolder)
+# create base-folders if necessary
+if not os.path.exists(cfg.logd): os.mkdir(cfg.logd)
+if not os.path.exists(cfg.fpath): os.mkdir(cfg.fpath)
+if not os.path.exists(cfg.packetfolder): os.mkdir(cfg.packetfolder)
 
 
 # ARGUMENT PARSING
@@ -66,10 +33,10 @@ import argparse
 parser = argparse.ArgumentParser(description='script for sampling PCAP files via editcaps (packetsampling), output is CSV')
 # positional arguments
 parser.add_argument('split', metavar='split', type=int,nargs=1,help='integer used to determine the split-size for PCAP files')
-parser.add_argument('mode', metavar='mode', type=int, nargs=1, help='choose samplign mode: {}'.format(samplingmode))
-parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
+parser.add_argument('mode', metavar='mode', type=int, nargs=1, help='choose samplign mode: {}'.format(cfg.psamplingmode))
+parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(cfg.filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='integer used to determine sampling steps')
-parser.add_argument('j', metavar='j', type=int,nargs=1,help='choose feature-vector: {}'.format(featurevectors))
+parser.add_argument('j', metavar='j', type=int,nargs=1,help='choose feature-vector: {}'.format(cfg.vectors))
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
 parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
@@ -129,70 +96,83 @@ def packetOutput(plist,n,verbose):
 
 if __name__ == '__main__':
 
-    global verbose 
+    global verbose
     global time
     global check
 
     # set boolean variables based on argument passing
-    verbose = args.verbose
-    superverbose = args.superverbose
+    verbose         = args.verbose
+    superverbose    = args.superverbose
+    time            = args.time
+    check           = args.check
     if superverbose: verbose = True
-    time = args.time
-    check = args.check
 
-    split = args.split[0] # split size for editcap splits
-    findex = args.file[0] # fileindex
-    smode = args.mode[0] # sampling-mode
-    n = args.n[0] # sampling steps
-    j = args.j[0] # feature-vector
-
-    pcapname = filenames[findex]+str('.pcap')
-    snapname = pcapname
-    splitname = filenames[findex]+str('_split.pcap') # split-files
-    samplename = filenames[findex]+str('_sampled.pcap') # sampled capture file
-    csvname = filenames[findex]+str('_unlabeled.csv') # unlabeled csv
-    labelingname = filenames[findex]
+    split   = args.split[0] # split size for editcap splits
+    findex  = args.file[0] # file-index
+    mode    = args.mode[0] # sampling-mode
+    n       = args.n[0] # sampling steps
+    j       = args.j[0] # feature-vector
 
     if time:
         start = timer()
         t = epochtime.time()
-        with open(timecsv,'a') as csvfile:
+        with open(cfg.time,'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
-            csvwriter.writerow([t,'rpi-PacketSampling.py',filenames[findex],'start'])
+            csvwriter.writerow([t,'rpi-PacketSampling.py',cfg.filenames[findex],'start'])
 
-    # set mode argument for later Labeling.py execution
-    if j<4: labelmode = 'AGM'
-    elif j >= 4: labelmode = '5tuple'
+    # set mode for later labeling.py
+    if j<cfg.packetlimit: labelmode = 'AGM'
+    elif j >= cfg.packetlimit: labelmode = '5tuple'
 
 
-    # PATHS & COMMANDS based on given arguments
-    pcapfile = fpath / pcapname
-    snapfile = snappath / snapname
-    splitfile = splitpath / splitname
-    samplefile = samplepath / samplename
-    sampledcsv = packetfolder / csvname
-    labelfile = packetfolder / labelingname
+    # FILES, PATHS & COMMANDS
+    wd = Path.cwd() # working directory
 
-    goflowsconf = wd / 'go-flows-configurations' / '{}'.format(featurevectors[j])
-    editsplitcmd = '{} -c {} {} {}'.format(editcappath,split,snapfile,splitfile)
-    capinfoscmd = r'{} -M -c {} | grep packets'.format(capinfospath,pcapfile)
-    labelingcmd = 'python3 {} {} {}'.format(labelingpath,labelfile,labelmode)
-    editsnapcmd = '{} -s 127 {} {}'.format(editcappath,pcapfile,snapfile)
-    mergecapcmd = '{} -F pcap {}/* -w {}'.format(mergecappath,splitpath,samplefile)
-    goflowscmd = '{} run features {} export csv {} source libpcap {}'.format(goflowspath,goflowsconf,sampledcsv,samplefile)
+    # filenames
+    pcap            = '{}.pcap'.format(cfg.filenames[findex]) # PCAP file to process
+    pcap_snap       = '{}.pcap'.format(cfg.filenames[findex])
+    pcap_split      = '{}_split.pcap'.format(cfg.filenames[findex])
+    pcap_sampled    = '{}_sampled.pcap'.format(cfg.filenames[findex]) # sampled PCAP
+    csv_sampled     = '{}_unlabeled.csv'.format(cfg.filenames[findex]) # sampled CSV
+
+    # directories
+    snap_folder         = cfg.fpath / 'snapPCAP'
+    split_folder        = cfg.fpath / 'splitPCAP'
+    sample_folder       = cfg.fpath / 'sampledPCAP'
+    if not os.path.exists(snap_folder):      os.mkdir(snap_folder)
+    if not os.path.exists(split_folder):     os.mkdir(split_folder)
+    if not os.path.exists(sample_folder):   os.mkdir(sample_folder)
+
+    # full paths to files
+    pcap                = cfg.fpath / pcap
+    pcap_snap           = snap_folder / pcap_snap
+    pcap_split          = split_folder / pcap_split
+    pcap_sampled        = sample_folder / pcap_sampled
+    csv_sampled_export  = cfg.packetfolder / csv_sampled
+
+    # commands
+    goflowsconf     = wd / cfg.vectorfolder / cfg.vectors[j]
+    goflowscmd      = '{} run features {} export csv {} source libpcap {}'.format(cfg.goflowspath,goflowsconf,csv_sampled_export,pcap_sampled)
+    labelingcmd     = 'python3 {} {} {}'.format(cfg.labelingpath,cfg.packetfolder/cfg.filenames[findex],labelmode)
+
+    cleansplitPCAP  = 'rm {}/*'.format(cfg.fpath/'splitPCAP')
+    editsplitcmd    = 'editcap -c {} {} {}'.format(split,pcap_snap,pcap_split)
+    capinfoscmd     = r'capinfos -M -c {} | grep packets'.format(pcap)
+    editsnapcmd     = 'editcap -s 127 {} {}'.format(pcap,pcap_snap)
+    mergecapcmd     = 'mergecap -F pcap {}/* -w {}'.format(split_folder,pcap_sampled)
 
 
     # INFORMATIONAL OUTPUT
     # check passed optional arguments, filepaths and forged commands
-    print('\n\n'+40*' '+' FILE: {}'.format(filenames[findex]))
+    print('\n\n'+40*' '+' FILE: {}'.format(cfg.filenames[findex]))
     print(40*'~'+' SCRIPT: rpi-PacketSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--check".format(verbose,superverbose,time,check))
-    print('\n{}, n = {}, split = {}'.format(samplingmode[smode],n,split))
+    print('\n{}, n = {}, split = {}'.format(cfg.psamplingmode[mode],n,split))
     print('\n'+20*'~'+' paths '+20*'~')
     print('\nJSON:\t{}'.format(goflowsconf))
-    print('PCAP:\t{}\n\t{}\n\t{}\n\t{}'.format(pcapfile,snapfile,splitfile,samplefile))
-    print('CSVs:\t{}\n\t{}'.format(sampledcsv,labelfile))
+    print('PCAP:\t{}\n\t{}\n\t{}\n\t{}'.format(pcap,pcap_snap,pcap_split,pcap_sampled))
+    print('CSVs:\t{}\n\t{}'.format(csv_sampled_export,cfg.packetfolder/cfg.filenames[findex]))
     print('\n'+20*'~'+' commands '+20*'~')
     print('\npacket-count: {}'.format(capinfoscmd))
     print('drop payload: {}'.format(editsnapcmd))
@@ -230,7 +210,7 @@ if __name__ == '__main__':
 
 
     # SAMPLING
-    splitlist = os.listdir(splitpath) # get a list of all files in split-directory
+    splitlist = os.listdir(split_folder) # get a list of all files in split-directory
     splitlist.sort() # sort list alphabetically, depending on OS you won't get a sorted list of files!
     splitcount = len(splitlist)
 
@@ -245,12 +225,12 @@ if __name__ == '__main__':
     for file in splitlist: # iterate over every splitted file
 
         scount += 1
-        if ((scount % 100) == 0) or (scount == 1) or (scount == splitcount):
-            print('\t> [{}/{}] {}'.format(scount,splitcount,file)) # limit informational output to every 100 packets
+        if ((scount % 100) == 0) or (scount == 1) or (scount == splitcount): # limit informational output to first, every 100 splitfiles and last file
+            print('\t> [{}/{}] {}'.format(scount,splitcount,file))
 
         # create capinfos command to gather packet count (pcount) of current split-file
-        infosplit = splitpath / file
-        capinfosplitcmd = r'{} -M -c {} | grep packets'.format(capinfospath,infosplit)
+        infosplit = split_folder / file
+        capinfosplitcmd = r'capinfos -M -c {} | grep packets'.format(infosplit)
         pcount = subprocess.check_output(capinfosplitcmd, shell=True, universal_newlines=True)
 
         for word in pcount.split():
@@ -263,8 +243,8 @@ if __name__ == '__main__':
         plistindex = np.arange(0,pcount,1) # same array, containing packet-indices
 
 
-        #if smode == 1: # every n-th packet, including first packet of the pcap
-        if smode == 5: # every n-th packet, including first packet of the pcap
+        #if mode == 1: # every n-th packet, including first packet of the pcap
+        if mode == 5: # every n-th packet, including first packet of the pcap
 
             modulo = samplepcount % n
 
@@ -315,9 +295,9 @@ if __name__ == '__main__':
                 arg = [str(int) for int in pslice] # create string containing packet numbers to drop, seperated with whitespaces as argument for editcap execution
                 arg = " ".join(arg)
 
-                tmpsplitfile = splitpath / file # split-file in current iteration to process with editcap
-                tmpfile = splitpath / 'tmp.pcap' # temporary file tmp.pcap created with editcap
-                editcapcmd = '{} {} {} {}'.format(editcappath,tmpsplitfile,tmpfile,arg) # editcap command to execute
+                tmpsplitfile = split_folder / file # split-file in current iteration to process with editcap
+                tmpfile = split_folder / 'tmp.pcap' # temporary file tmp.pcap created with editcap
+                editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg) # editcap command to execute
                 os.system(editcapcmd)
 
                 movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile) # replace split-file with sampled temporary file
@@ -332,7 +312,7 @@ if __name__ == '__main__':
     # VERIFICATION
     if check: # compare real sampled packet-count with calculated packet-count for basic result verification
         print('>>> Verifying sampled packet-count')
-        capinfoscmd = r'{} -M -c {} | grep packets'.format(capinfospath,samplefile)
+        capinfoscmd = r'capinfos -M -c {} | grep packets'.format(pcap_sampled)
         samplepacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
         for word in samplepacketcount.split():
             if word.isdigit():
@@ -342,7 +322,7 @@ if __name__ == '__main__':
 
 
     # FLOW-CREATION
-    print('>>> Create flows with go-flows from {}'.format(sampledcsv))
+    print('>>> Create flows with go-flows from {}'.format(csv_sampled_export))
     os.system(goflowscmd) # execute go-flows to process passed packet-sampled PCAP file
 
 
@@ -354,8 +334,8 @@ if __name__ == '__main__':
         end = timer()
         t = epochtime.time()
         print('\n(rpi-PacketSampling.py, runtime: %.3f' % (end-start),'seconds)\n')
-        with open(timecsv,'a') as csvfile:
+        with open(cfg.time,'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
-            csvwriter.writerow([t,'rpi-PacketSampling.py',filenames[findex],'end'])
+            csvwriter.writerow([t,'rpi-PacketSampling.py',cfg.filenames[findex],'end'])
 
     exit()
