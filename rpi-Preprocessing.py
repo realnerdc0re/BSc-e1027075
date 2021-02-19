@@ -47,7 +47,8 @@ wd = Path.cwd() # working directory
 mntd = PurePosixPath('/mnt') # mount directory
 flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV' # folder containing per-flow sampled csv
 packetfolder = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV' # folder containing packet-sampled csv
-logd = wd / 'logs'
+logd = wd / 'logs' # temporary logfolder in working directory
+log = 'logs_model-{}' # foldername to save logs
 
 # tmp directory, npy filenames for processing
 npsaved = wd / 'tmp'
@@ -74,7 +75,7 @@ parser.add_argument('--superverbose', action='store_true', help='output addition
 parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-s','--save', action='store_true', help='save model')
 parser.add_argument('-l','--load', action='store_true', help='load preprocessed CSV')
-parser.add_argument('-r','--rpi', action='store_true', help='execution on raspberry pi')
+parser.add_argument('-r','--remote', action='store_true', help='execution on remote machine, different method to kill dstat, changing foldername for results')
 # display runtime or export timestamps and dstat-logs
 timegroup = parser.add_mutually_exclusive_group(required=False)
 timegroup.add_argument('-t','--time', action='store_true', help='display script runtime')
@@ -568,22 +569,26 @@ if __name__ == '__main__':
     load = args.load
     model = args.model
     model = args.model
-    rpi = args.rpi
+    remote = args.remote
 
     export = args.export
     if export:
         time = True
         print('>>> clear log-directory')
-        for file in os.listdir(logd): # remove any exisiting logs in log-directory
+        for file in os.listdir(logd): # remove all files in the working directory logfolder
             Path.unlink(logd / file)
 
     # placeholder pickle-model for 32/64bit systems
-    if rpi: modelpkl = '{}_model_32bit.pkl'
+    if remote: modelpkl = '{}_model_32bit.pkl'
     else: modelpkl = '{}_model_64bit.pkl'
 
-    # set correct folder to save rp-Preprocessing.py logs
-    if model: logfolder = 'logs-rpi-Preprocessing-import'
-    else: logfolder = logfolder = 'logs-rpi-Preprocessing-fit'
+    # set correct folder for saving preprocessing & classification logs
+    if model:
+        if remote: log = log.format('import_remote')
+        else: log = log.format('import_local')
+    else: 
+        if remote: log = log.format('fit_remote')
+        else: log = log.format('fit_local')
 
     # positional arguments
     findex = args.file[0]
@@ -603,24 +608,24 @@ if __name__ == '__main__':
         samplefolder = packetfolder
         m = args.packetsampling[0]
 
-    # forge directory to import data
+    # forge foldername to import CSV based on arguments
     foldername = '{}_mode{}_vector{}_steps{}'.format(filenames[findex],m,j,n)
     if flowsampling:
         foldername = '{}_perflowsampled'.format(foldername) # base folder to store results, models and & logs
-        path = flowfolder / foldername / csvname[findex] # sampled input csv
-        rpilogs = flowfolder / foldername / logfolder
-        modeld = flowfolder / foldername / 'model'
+        path = flowfolder / foldername / csvname[findex] # sampled input CSV
+        logs = flowfolder / foldername / log # full logfolder path to save results
+        modeld = flowfolder / foldername / 'model' # full directory to export/import pickle model
     elif packetsampling:
-        foldername = '{}_packetsampled'.format(foldername) # base folder to store results, models and & logs
-        path = packetfolder / foldername / csvname[findex] # sampled input csv
-        rpilogs = packetfolder / foldername / logfolder
+        foldername = '{}_packetsampled'.format(foldername)
+        path = packetfolder / foldername / csvname[findex]
+        logs = packetfolder / foldername / log
         modeld = packetfolder / foldername / 'model'
 
     # create log & model folders if necessary
     if not os.path.exists(logd): os.mkdir(logd)
     if not os.path.exists(modeld): os.mkdir(modeld)
 
-    # logs
+    # logfiles
     reportcsv = logd / 'report.csv'
     resultcsv = logd / 'result.csv'
     timecsv = logd / 'time.csv'
@@ -628,16 +633,12 @@ if __name__ == '__main__':
     cplogs = 'cp -r {} {}/'
 
     if (model or save): # set correct model for import/save, based on device (32/64bit)
-        if rpi: modelname = filenames[findex]+str('_rpi')
+        if remote: modelname = filenames[findex]+str('_rpi')
         else: modelname = filenames[findex]
         modelfile = modeld / modelpkl.format(modelname)
 
-    if export: # remove any exisiting logs from logd in working directory
-        for file in os.listdir(logd):
-            Path.unlink(logd / file)
-
     if time: 
-        if rpi: os.system('killall python2')
+        if remote: os.system('killall python2')
         else: os.system('killall dstat')
         start = timer()
         t = epochtime.time()
@@ -652,7 +653,7 @@ if __name__ == '__main__':
     # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print('\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n\n{}\t--flowsampling\n{}\t--packetsampling'.format(verbose,superverbose,time,save,load,export,model,flowsampling,packetsampling))
+    print('\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n{}\t--remote\n\n{}\t--flowsampling\n{}\t--packetsampling'.format(verbose,superverbose,time,save,load,export,model,remote,flowsampling,packetsampling))
     print('\n'+20*'~'+' processing '+20*'~')
     print('\nbatchsize = {}\nsplitsize = {}'.format(batchsize,splitsize))
     print('\n'+20*'~'+' paths & file '+20*'~'+'\n')
@@ -998,7 +999,7 @@ if __name__ == '__main__':
     # STOP MONITORING
     if export:
         wait = 50 # seconds to wait before killing dstat
-        if rpi:
+        if remote: # different method to kill dstat on a Raspberry Pi, running dietPi compared to killing the process on Ubuntu
             pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
             pids = [int(s) for s in pids.split(' ')] # convert strings to list
         else:
@@ -1013,16 +1014,13 @@ if __name__ == '__main__':
         print('>>> Killing dstat')
         os.kill(pids[0],9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
 
-        print('>>> Saving logs to folder {}'.format(rpilogs))
-
-        if not os.path.exists(rpilogs): os.mkdir(rpilogs) # create logfolder if necessary
-
+        print('>>> Saving logs to folder {}'.format(logs))
+        if not os.path.exists(logs): os.mkdir(logs) # create logfolder if necessary
         for root, dirs, files in os.walk(logd):
             for filename in files: # iterate over filenames found within the wd logfolder
                 log = logd / filename # full path for current logfile
-
                 print('\t> Saving {}'.format(filename))
-                os.system(cplogs.format(log,rpilogs))
+                os.system(cplogs.format(log,logs))
         print(20*'#')
 
     exit()
