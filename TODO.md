@@ -2,14 +2,14 @@
 
 ### CODE
 
-- use basefolderpaths from config.py also in rpi-Preprocessing, rpi-Sampling, rpi-FlowSampling, rpi-Packetsampling for more convenient customization of paths and way better maintenance possibilities
-- create logfolder names to distinguish betweenn local and remote machine
-- improve creation of samplearg, featurearg and samplingcmd in rpi-Sampling.py
+- set variables for PCAP path and all other useful base-folders in config.py, implement those in all scripts:
+	- rpi-Sampling.py
+	- rpi-Preprocessing.py
 
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 
-
+- once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
 
 #### EVALUATION
 
@@ -50,9 +50,11 @@
 
 #### NEXT
 
-- add AGM feature vectors for packet-sampling, make selection automatic depending on the --flowsampling/packetsampling argument alltogether
+- add AGM feature vectors for packet-sampling, make selection automatic depending on the given arguments --flowsampling/packetsampling argument alltogether
 
 - rpi-FlowSampling.py: samplingmode 2 & 4 - improvements?
+
+- use basefolderpaths from config.py also in rpi-Preprocessing, rpi-Sampling, rpi-FlowSampling, rpi-Packetsampling for more convenient customization of paths and way better maintenance possibilities
 
 
 #### LATER
@@ -61,7 +63,6 @@
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html) for all filepaths (FlowSampling.py, PacketSampling.py)
 - maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
 	- output nodes/leaves depth/sizes in results.csv
-- rsync Merged.csv directly after creation in Control.py (including info-file containing sampling info) to rpi if pingable (or make error-fallback)
 - try QEMU on Linux to virtualize dietpi ARM 32bit (https://raspberrytips.com/run-raspberry-in-virtual-machine/)
 	- https://wiki.ubuntu.com/Kernel/Dev/QemuARMVexpress
 	- https://gist.github.com/luk6xff/9f8d2520530a823944355e59343eadc1
@@ -69,14 +70,11 @@
 - create function for saving timestamps
 - get rid of unnecessary imports to save memory
 - use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)?
-- pyplot import only on non-rpi devices?
 - minor: verbose output makes no sense in Classification.py Xtrain,Xtest original and transformed is the same because its the same data
 - check sampling on rpi (flowsampling, packetsampling on original data)
-- when going full in on rpi, avoid useless write/reads of dataset-files to speed up the whole process (e.g. merge Preprocessing.py and Classification.py when doing the preprocessing on rpi), pack as many functions into a single script as possible to avoid time-sconsuming write/reads!
 - write script to evaluate data logged with dstat in combination with ML scores and timestamps saved
-- think about the substitutions for NaNs & Infs in preprocessing
+- think about the substitutions for NaNs & Infs in preprocessing other than mean average
 - implement automatic folder generation on script execution (os.path.exists(folder) and os.makedirs(folder)), do this with a separate python script for the base-folder structure. expand this structure if necessary for multiple test-runs? (important for wd/logs, and first time creation of time.csv if no file exists or if a file already exists on scriptstart outside of Control.py create new file (due to appending time within any other scripts than Control.py...))
-- improve filename generation, including working-directory instead of hardcoded /home/<user>/<project-folder>, maybe read folder-content, based on that create dictionary with filenames without extensions, use that and wd as base to forge filepaths and filenames 
 
 
 #### IMPROVEMENTS
@@ -89,6 +87,13 @@
 
 ## DONE
 
+- set variables for PCAP path and all other useful base-folders in config.py, implement those in all scripts:
+	- rpi-PacketSampling.py
+	- rpi-FlowSampling.py
+- create logfolder names to distinguish betweenn local and remote machine (convention now: logs_<whatever>_remote/local)
+	- rpi-Preprocessing.py: logs_model-import/fit_local/remote
+	- rpi-Sampling.py: logs_Sampling
+- improve creation of samplearg, featurearg and samplingcmd in rpi-Sampling.py
 - write script for automated experiment execution (Master.py):
 	- implement configuration file (config.py) containing all necessary information to execute all experiments
 	- does following steps subsequently:
