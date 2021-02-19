@@ -44,7 +44,7 @@ mntd = Path('/mnt')
 flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV' # folder containing per-flow sampled csv
 packetfolder = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV' # folder containing packet-sampled csv
 logd = wd / 'logs'
-logfolder = 'logs-rpi-Sampling'
+logfolder = 'logs_Sampling'
 reportcsv = logd / 'report.csv'
 resultcsv = logd / 'result.csv'
 timecsv = logd / 'time.csv'
@@ -82,11 +82,10 @@ args = parser.parse_args()
 
 # function that start dstat
 def threadFunc():
-    #os.system(dstat.format(dstatcsv))
     os.system(dstat)
     return
 th = threading.Thread(target=threadFunc)
-
+# used in waiting periode before killing dstat at the end of the script
 def progressBar(it, prefix="", size=60, file=sys.stdout):
     count = len(it)
     def show(j):
@@ -172,27 +171,25 @@ if __name__ == '__main__':
     elif packetsampling: foldername = '{}_packetsampled'.format(foldername)
 
     csvd = samplingd / foldername
-    csvname = filenames[findex]+str('.csv')
-    csvsave = csvd / csvname
-    csvinfo = csvd / 'information.csv'
-    goflowsconf = wd / 'go-flows-configurations' / featurevectors[j]
-    rpilogs = csvd / logfolder
-    scsv = samplingd / csvname
-    movecmd = str('mv ')+str(scsv) +str(' ')+str(csvsave)
-    cplogs = 'cp -r {} {}/'
-    #cplogs = 'cp -R {} {}'.format(logd,rpilogs)
+    csvname = '{}.{}'.format(filenames[findex],'csv')
+    csvsave = csvd / csvname # directory where sampled CSV and logs are stored when script is finished
+    csvinfo = csvd / 'information.csv' # CSV containing informations about chosen sampling
+    goflowsconf = wd / 'go-flows-configurations' / featurevectors[j] # full path to selected feature-vector
+    rpilogs = csvd / logfolder # directory to save all logs
+    scsv = samplingd / csvname # temporary directory to store sampled CSV
 
+    movecmd = 'mv {} {}'.format(scsv,csvsave)
+    cplogs = 'cp -r {} {}/' # command to copy logs at the end of the script, using placeholders based on arguments
 
     if not os.path.exists(csvd): os.mkdir(csvd) # create csv-directory if it doesn't exist
 
 
-    # set arguemnts for sampling-script execution
-    if superverbose: verbosearg = " --superverbose"
-    elif verbose: verbosearg = " --verbose"
-    else: verbosearg = ""
-    # set command for time
-    if time: timearg = " --time"
-    else: timearg = ""
+    # set arguments for sampling-script execution
+    if superverbose: verbosearg = '--superverbose'
+    elif verbose: verbosearg = '--verbose'
+    else: verbosearg = ''
+    if time: timearg = '--time'
+    else: timearg = ''
 
 
     # check passed optional arguments and commands
@@ -215,16 +212,21 @@ if __name__ == '__main__':
     if findex == 0:
         for fcount in range(1,len(filenames)): # iterate over all PCAP files
             if flowsampling:
-                sarg = " --flowsampling "
-                samplearg = " "+str(m)+" "+str(fcount)+" "+str(n)
-                featurearg =" "+str(j)
-                samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+                #sarg = " --flowsampling "
+                #samplearg = " "+str(m)+" "+str(fcount)+" "+str(n)
+                samplearg = '{} {} {} {}'.format(m,fcount,n,j)
+                #featurearg =" "+str(j)
+                #samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+                samplingcmd = 'python3 rpi-FlowSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
 
             elif packetsampling:
-                sarg = " --packetsampling "
-                samplearg = " "+str(split)+" "+str(m)+" "+str(fcount)+" "+str(n)
-                featurearg =" "+str(j)
-                samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+                #sarg = " --packetsampling "
+                #samplearg = " "+str(split)+" "+str(m)+" "+str(fcount)+" "+str(n)
+                samplearg = '{} {} {} {} {}'.format(split,m,fcount,n,j)
+                #featurearg =" "+str(j)
+                #samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+                samplingcmd = 'python3 rpi-PacketSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
+
 
             print('\n>>> Execute sampling: {}\n\t> {}\n\t> {}\n\t> {}\n\t> n={}'.format(samplingcmd,filenames[fcount],featurevectors[j],samplingmode,n))
             os.system(samplingcmd) # start sampling
@@ -246,16 +248,21 @@ if __name__ == '__main__':
     else:
         # forge script execution-command out of given arguments
         if flowsampling: 
-            sarg = " --flowsampling "
-            samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
-            featurearg =" "+str(j)
-            samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+            #sarg = " --flowsampling "
+            #samplearg = " "+str(m)+" "+str(findex)+" "+str(n)
+            samplearg = '{} {} {} {}'.format(m,findex,n,j)
+            #featurearg =" "+str(j)
+            #samplingcmd = "python3 rpi-FlowSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+            samplingcmd = 'python3 rpi-FlowSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
 
         elif packetsampling: 
-            sarg = " --packetsampling "
-            samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
-            featurearg =" "+str(j)
-            samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+            #sarg = " --packetsampling "
+            #samplearg = " "+str(split)+" "+str(m)+" "+str(findex)+" "+str(n)
+            samplearg = '{} {} {} {} {}'.format(split,m,findex,n,j)
+            #featurearg =" "+str(j)
+            #samplingcmd = "python3 rpi-PacketSampling.py"+str(verbosearg)+str(timearg)+str(samplearg)+str(featurearg)
+            samplingcmd = 'python3 rpi-PacketSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
+
 
         print('\n>>> Execute sampling: {}\n\t> {}\n\t> {}\n\t> {}\n\t> n={}'.format(samplingcmd,filenames[findex],featurevectors[j],samplingmode,n))
         os.system(samplingcmd)
@@ -310,56 +317,3 @@ if __name__ == '__main__':
         print(20*'#')
 
     exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    ### SCRIPTS BELOW HAVE TO BE TWEAKED TO ACCESS DATA FROM FORGED PATH csvsave
-
-    # PRE-PROCESSING
-    #preparg = " "+str(findex)
-    prepcmd = "python3 Preprocessing.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
-    print('>>> pre-processing:\n\t{}'.format(prepcmd))
-    os.system(prepcmd)
-
-
-    # CLASSIFICATION
-    # forge executable command + arguments
-    #classificationarg = " "+str(findex)
-    classificationcmd = "python3 Classification.py"+str(verbosearg)+str(timearg)+str(osarg)+str(sarg)+str(findex)
-    print('>>> classification:\n\t{}'.format(classificationcmd))
-    os.system(classificationcmd)
-
-    if time:
-        end = timer()
-        t = epochtime.time()
-        print('\nrpi-Control.py\n\t<<< runtime: %.3f' % (end-start),'seconds')
-        if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'rpi-Control.py','end'])
-
-    # MONITORING
-    # get running dstat pid
-    # -q ...doesn't output pid to console, -s ...single-shot, only displays 
-    pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -sq')
-    #pid = os.system('pidof /usr/bin/python3 /usr/bin/dstat -s')
-    
-    # wait 50 seconds for dstat before terminating the process, seems like dstat writes its output to the target-file around every 45 seconds
-    epochtime.sleep(50)
-
-    # kill running dstat process
-    os.kill(pid,9)
-    exit() # NOT THE ACTUAL EXIT, its just old code used in the script I dont want to delete for now! SCROLL UP!
-
