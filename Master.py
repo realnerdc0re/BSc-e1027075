@@ -26,6 +26,12 @@ parser.add_argument('-l','--local', action='store_true',help='just do sampling a
 args = parser.parse_args()
 
 
+def callCommand(function):
+    if (os.system(function)) != 0:
+        print(Fore.RED+'\n<<< ERROR for os.system({})\n'.format(function)+Style.RESET_ALL)
+        exit()
+    return
+
 if __name__ == '__main__':
 
     start = timer()
@@ -85,12 +91,12 @@ if __name__ == '__main__':
 
                     # LOCAL
                     print('>>> Sample PCAP on local machine: {}'.format(sampling))
-                    os.system(sampling)
+                    callCommand(sampling)
 
                     print('>>> Create and save model on local machine: {}'.format(model))
-                    os.system(model)
+                    callCommand(model)
 
-                    if local:
+                    if local: # leave current iteration
                         end = timer()
                         print('\n(runtime : %.3f' % (end-start),'seconds)\n')
                         continue
@@ -98,19 +104,16 @@ if __name__ == '__main__':
 
                     # REMOTE
                     print('>>> Create base-folder on remote machine: {}'.format(mkdir))
-                    os.system(mkdir)
+                    callCommand(mkdir)
 
                     print('>>> Sync content from local to remote machine: {}'.format(sync))
-                    os.system(sync)
-                    #input('...')
+                    callCommand(sync)
 
                     print('>>> Execute pre-processing and classification on remote machine: {}'.format(ssh))
-                    os.system(ssh)
-                    #input('...')
+                    callCommand(ssh)
 
                     print('>>> Sync results back to local machine: {}'.format(resync))
-                    os.system(resync)
-                    #input('...')
+                    callCommand(resync)
 
     end = timer()
     print(20*'#')
