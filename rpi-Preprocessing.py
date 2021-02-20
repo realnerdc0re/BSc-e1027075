@@ -30,34 +30,12 @@ import gc
 import joblib
 
 
-# DICTIONARIES
-# available sampling-modes, used for informational outputs
-flowsmode = {1:'every n-th packet',2:'sample & skip n packets',3:'sample first n packets of a flow',4:'sample n, skip n-1, sample n-2 ...'}
-packetsmode = {1:'every n-th packet',2:'time-based'}
-# capture files, https://www.unb.ca/cic/datasets/ids-2017.html
-filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
-# filenames of sampled, unlabeled CSVs
-csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
-# feature vectors, https://pkg.go.dev/github.com/CN-TU/go-flows
-featurevectors = {1:'AGM_10s.json', 2:'AGM_60s.json',3:'AGM_3600s.json',4:'CAIA_flowSampling.json',5:'CAIA_packetSampling.json'}
+import config as cfg # necessary configurations from config.py
 
-
-# FOLDERS
-wd = Path.cwd() # working directory
-mntd = PurePosixPath('/mnt') # mount directory
-flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV' # folder containing per-flow sampled csv
-packetfolder = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV' # folder containing packet-sampled csv
-logd = wd / 'logs' # temporary logfolder in working directory
-log = 'logs_model-{}' # foldername to save logs
-
-# tmp directory, npy filenames for processing
-npsaved = wd / 'tmp'
-Xtrainnpy = 'Xtrain_split_{}v{}.npy'
-Xtestnpy =  'Xtest_split_{}v{}.npy'
-
-
-# COMMANDS
-dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --swap --output {} > /dev/null 2>&1 &'
+# create base-folders if necessary
+if not os.path.exists(cfg.logs):            os.mkdir(cfg.logs)
+if not os.path.exists(cfg.fpath):           os.mkdir(cfg.fpath)
+if not os.path.exists(cfg.packetfolder):    os.mkdir(cfg.packetfolder)
 
 
 # ARGUMENT PARSING
@@ -65,9 +43,9 @@ dstat = 'dstat --epoch --cpu-adv --disk --mem-adv --swap --output {} > /dev/null
 import argparse
 parser = argparse.ArgumentParser(description='script for preprocessing labeled CSVs')
 # positional arguments
-parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
+parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(cfg.filenames))
 parser.add_argument('n', metavar='n', type=int,nargs=1,help='non-zero integer, used to determine sampling-steps')
-parser.add_argument('j', metavar='j', type=int,nargs=1,help='select feature-vector: {}'.format(featurevectors))
+parser.add_argument('j', metavar='j', type=int,nargs=1,help='select feature-vector: {}'.format(cfg.vectors))
 parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for StandardScaler batchsize')
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
@@ -82,13 +60,13 @@ timegroup.add_argument('-t','--time', action='store_true', help='display script 
 timegroup.add_argument('-e','--export', action='store_true', help='export timestamps & resource logs')
 # force sampling method & mode
 samplegroup = parser.add_mutually_exclusive_group(required=True)
-samplegroup.add_argument('-f','--flowsampling', metavar='m', type=int, nargs=1, choices=flowsmode, help='select sampling-mode: {}'.format(flowsmode))
-samplegroup.add_argument('-p','--packetsampling', metavar='m', type=int, nargs=1, choices=packetsmode, help='select sampling-mode: {}'.format(packetsmode))
+samplegroup.add_argument('-f','--flowsampling', metavar='m', type=int, nargs=1, choices=cfg.fsamplingmode, help='select sampling-mode: {}'.format(cfg.fsamplingmode))
+samplegroup.add_argument('-p','--packetsampling', metavar='m', type=int, nargs=1, choices=cfg.psamplingmode, help='select sampling-mode: {}'.format(cfg.psamplingmode))
 args = parser.parse_args()
 
 
 # starting dstat logging threaded
-def threadFunc(): os.system(dstat.format(dstatcsv))
+def threadFunc(): os.system(dstatcmd.format(cfg.dstat))
 th = threading.Thread(target=threadFunc)
 
 # progress bar signaling time to wait for dstat to write latest logs
@@ -554,88 +532,96 @@ def splitDataframe(dataset,testsize,verbose=False,time=False):
 
 if __name__ == '__main__':
 
-    splitsize = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file
-    chunksize = 1 # read CSV line-by-line
-    n_Xpca = 4 # number of components for PCA
+    # set variables given in config.py
+    splitsize   = cfg.splitsize
+    chunksize   = cfg.chunksize
+    n_Xpca      = cfg.n_PCA
 
-    # optional/boolean arguments
-    verbose = args.verbose
-    superverbose = args.superverbose
+    # set boolean variables based on argument passing
+    time            = args.time
+    save            = args.save
+    load            = args.load
+    model           = args.model
+    model           = args.model
+    remote          = args.remote
+    export          = args.export
+    verbose         = args.verbose
+    superverbose    = args.superverbose
+    flowsampling    = args.flowsampling
+    packetsampling  = args.packetsampling
     if superverbose: verbose = True
-    flowsampling = args.flowsampling
-    packetsampling = args.packetsampling
-    time = args.time
-    save = args.save
-    load = args.load
-    model = args.model
-    model = args.model
-    remote = args.remote
 
-    export = args.export
+    batch   = args.batch[0] # batch-size
+    findex  = args.file[0] # file-index
+    n       = args.n[0] # sampling-steps
+    j       = args.j[0] # feature-vector
+
     if export:
         time = True
         print('>>> clear log-directory')
-        for file in os.listdir(logd): # remove all files in the working directory logfolder
-            Path.unlink(logd / file)
+        for file in os.listdir(cfg.logs): # remove all files in the working directory logfolder
+            Path.unlink(cfg.logs / file)
 
-    # placeholder pickle-model for 32/64bit systems
-    if remote: modelpkl = '{}_model_32bit.pkl'
-    else: modelpkl = '{}_model_64bit.pkl'
 
-    # set correct folder for saving preprocessing & classification logs
-    if model:
-        if remote: log = log.format('import_remote')
-        else: log = log.format('import_local')
+    # FILES, PATHS & COMMANDS
+    wd = Path.cwd() # working directory
+
+    # filenames
+    csv_import  = '{}.csv'.format(cfg.filenames[findex])
+    npy_Xtrain  = 'Xtrain_split_{}v{}.npy'
+    npy_Xtest   = 'Xtest_split_{}v{}.npy'
+
+    # directories
+    log = 'logs_model-{}' # foldername to save logs
+
+    # commands
+    dstatcmd    = 'dstat --epoch --cpu-adv --disk --mem-adv --swap --output {} > /dev/null 2>&1 &'
+    cplogs      = 'cp -r {} {}/'
+
+    # placeholder pickle-model for 32/64bit systems, can also be used for remote/local
+    if remote:  modelpkl = '{}_model_remote.pkl'
+    else:       modelpkl = '{}_model_local.pkl'
+
+    # first set correct foldernames for preprocessing & classification logs
+    if (model or save):
+        if remote:  log = log.format('import_remote')
+        else:       log = log.format('import_local')
     else: 
-        if remote: log = log.format('fit_remote')
-        else: log = log.format('fit_local')
-
-    # positional arguments
-    findex = args.file[0]
-    n = args.n[0]
-    j = args.j[0]
-    batchsize = args.batch[0]
+        if remote:  log = log.format('fit_remote')
+        else:       log = log.format('fit_local')
 
     # set samplingmode and flags for further processing
     if flowsampling:
-        flowsampling = True
-        packetsampling = False
-        samplefolder = flowfolder
-        m = args.flowsampling[0]
+        flowsampling    = True
+        packetsampling  = False
+        samplefolder    = cfg.flowfolder
+        m               = args.flowsampling[0]
     elif packetsampling:
-        packetsampling = True
-        flowsampling = False
-        samplefolder = packetfolder
-        m = args.packetsampling[0]
+        packetsampling  = True
+        flowsampling    = False
+        samplefolder    = cfg.packetfolder
+        m               = args.packetsampling[0]
 
     # forge foldername to import CSV based on arguments
-    foldername = '{}_mode{}_vector{}_steps{}'.format(filenames[findex],m,j,n)
+    foldername = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
+
     if flowsampling:
         foldername = '{}_perflowsampled'.format(foldername) # base folder to store results, models and & logs
-        path = flowfolder / foldername / csvname[findex] # sampled input CSV
-        logs = flowfolder / foldername / log # full logfolder path to save results
-        modeld = flowfolder / foldername / 'model' # full directory to export/import pickle model
+        path = cfg.flowfolder / foldername / csv_import # sampled input CSV
+        logs = cfg.flowfolder / foldername / log # full logfolder path to save results
+        modeld = cfg.flowfolder / foldername / 'model' # full directory to export/import pickle model
     elif packetsampling:
         foldername = '{}_packetsampled'.format(foldername)
-        path = packetfolder / foldername / csvname[findex]
-        logs = packetfolder / foldername / log
-        modeld = packetfolder / foldername / 'model'
+        path = cfg.packetfolder / foldername / csv_import
+        logs = cfg.packetfolder / foldername / log
+        modeld = cfg.packetfolder / foldername / 'model'
+
+    # set full path to model file after all folder-paths are set up
+    if (model or save): modelfile = modeld / modelpkl.format(cfg.filenames[findex])
 
     # create log & model folders if necessary
-    if not os.path.exists(logd): os.mkdir(logd)
-    if not os.path.exists(modeld): os.mkdir(modeld)
-
-    # logfiles
-    reportcsv = logd / 'report.csv'
-    resultcsv = logd / 'result.csv'
-    timecsv = logd / 'time.csv'
-    dstatcsv = logd / 'dstat.csv'
-    cplogs = 'cp -r {} {}/'
-
-    if (model or save): # set correct model for import/save, based on device (32/64bit)
-        if remote: modelname = filenames[findex]+str('_rpi')
-        else: modelname = filenames[findex]
-        modelfile = modeld / modelpkl.format(modelname)
+    if not os.path.exists(cfg.logs):    os.mkdir(cfg.logs)
+    if not os.path.exists(modeld):      os.mkdir(modeld)
 
     if time: 
         if remote: os.system('killall python2')
@@ -644,8 +630,8 @@ if __name__ == '__main__':
         t = epochtime.time()
         if export: # write timestamp to csv
             th.start() # start dstat loggin
-            with open(timecsv,'w') as csvfile: # create file
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'w') as timecsv: # create file
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
                 csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
 
@@ -655,31 +641,31 @@ if __name__ == '__main__':
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print('\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n{}\t--remote\n\n{}\t--flowsampling\n{}\t--packetsampling'.format(verbose,superverbose,time,save,load,export,model,remote,flowsampling,packetsampling))
     print('\n'+20*'~'+' processing '+20*'~')
-    print('\nbatchsize = {}\nsplitsize = {}'.format(batchsize,splitsize))
+    print('\nbatchsize = {}\nsplitsize = {}'.format(batch,splitsize))
     print('\n'+20*'~'+' paths & file '+20*'~'+'\n')
-    print('FOLDER:\t{}\n\t{}\n\t{}\n'.format(logd,samplefolder,foldername))
-    print('JSON:\t{}'.format(featurevectors[j]))
-    if model or save: print('MODEL:\t{}'.format(modelpkl.format(modelname)))
-    print('CSV:\t{}'.format(csvname[findex]))
+    print('FOLDER:\t{}\n\t{}\n\t{}\n'.format(cfg.logs,samplefolder,foldername))
+    print('JSON:\t{}'.format(cfg.vectors[j]))
+    if model or save: print('MODEL:\t{}'.format(modelpkl.format(cfg.filenames[findex])))
+    print('CSV:\t{}'.format(csv_import))
     print('\n'+20*'~'+' commands '+20*'~')
-    print('\ndstat: {}\n\n'.format(dstat))
+    print('\ndstat: {}\n\n'.format(dstatcmd))
 
 
     # IMPORT CSV
     if time:
         t = epochtime.time()
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','importCSV','start'])
 
     print('>>> Importing CSV line-by-line, splitting into Xtrain & Xtest')
     # initialise empty dataframes
     dataset = pd.DataFrame()
-    Xtrain = pd.DataFrame()
-    Xtest = pd.DataFrame()
-    Ytrain = pd.Series(dtype=int)
-    Ytest = pd.Series(dtype=int)
+    Xtrain  = pd.DataFrame()
+    Xtest   = pd.DataFrame()
+    Ytrain  = pd.Series(dtype=int)
+    Ytest   = pd.Series(dtype=int)
 
     for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'): # read csv in chunks
         chunk = conversion(chunk,False) # convert values into smaller datatypes
@@ -688,10 +674,10 @@ if __name__ == '__main__':
         chunksplit = splitDataframe(chunk,0.30,False,False) # split into training & test portion on the fly:[Xtrain,Xtest,Ytrain,Ytest]
 
         # accumulate splits
-        Xtrain = Xtrain.append(chunksplit[0])
-        Xtest = Xtest.append(chunksplit[1])
-        Ytrain = Ytrain.append(chunksplit[2])
-        Ytest = Ytest.append(chunksplit[3])
+        Xtrain  = Xtrain.append(chunksplit[0])
+        Xtest   = Xtest.append(chunksplit[1])
+        Ytrain  = Ytrain.append(chunksplit[2])
+        Ytest   = Ytest.append(chunksplit[3])
 
     features = list(Xtrain) # used later to initialise empty np arrays via len(features)
     del chunksplit
@@ -703,8 +689,8 @@ if __name__ == '__main__':
     if time:
         t = epochtime.time()
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','Standardscaler-fit','start'])
 
     print('>>> StandardScaling partial fit to Xtrain')
@@ -712,7 +698,7 @@ if __name__ == '__main__':
     n = Xtrain.shape[0] # number of rows
     processed = 0
     while processed < n: # iterating until processed rows equals total rows of Xtrain
-        toprocess = min(batchsize, n-processed) # number of rows to process in this iteration
+        toprocess = min(batch, n-processed) # number of rows to process in this iteration
         scaler.partial_fit(Xtrain[processed:processed+toprocess]) # partial_fit scaler on current slice
         processed += toprocess # increase number of already processed rows, used to determin when to leave the loop
 
@@ -721,8 +707,8 @@ if __name__ == '__main__':
     if time:
         t = epochtime.time()
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','Split','start'])
 
 
@@ -734,7 +720,7 @@ if __name__ == '__main__':
     while toprocess > 0:
         index += 1
         print('\t[{}/{}] Xtrain'.format(index,iteration))
-        npsave = npsaved / Xtrainnpy.format(index,iteration)
+        npsave = cfg.tmp / npy_Xtrain.format(index,iteration)
 
         print('\t\t> Converting dtype')
         npXtrain = Xtrain[:][0:toprocess].to_numpy().astype(np.float32) # convert slice into np array
@@ -744,7 +730,8 @@ if __name__ == '__main__':
         np.save(npsave,npXtrain)
         n -= toprocess # number of rows that need to be processed
         toprocess = min(splitsize, n)# get slice-size for next iteration
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(Xtrainnpy.format(index,iteration),npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
+        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,iteration),npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
+
     iXtrain = np.arange(1,index+1,1) # create array to restore splitted files afterwards
     del Xtrain
     del npXtrain
@@ -763,11 +750,11 @@ if __name__ == '__main__':
         Xtest = Xtest.drop(Xtest.index[0:toprocess])
 
         print('\t\t> Saving')
-        npsave = npsaved / Xtestnpy.format(index,iteration)
+        npsave = cfg.tmp / npy_Xtest.format(index,iteration)
         np.save(npsave,npXtest)
         n -= toprocess
         toprocess = min(splitsize, n)
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(Xtestnpy.format(index,iteration),npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
+        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,iteration),npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
     iXtest = np.arange(1,index+1,1) # create array to restore splitted files later
     del Xtest
     del npXtest
@@ -779,8 +766,8 @@ if __name__ == '__main__':
         t = epochtime.time()
         #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtrain','start'])
 
 
@@ -788,25 +775,25 @@ if __name__ == '__main__':
     for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
         print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
         Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
-        npload = npsaved / Xtrainnpy.format(index,len(iXtrain)) # split-file to load in current iteration
+        npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain)) # split-file to load in current iteration
         tmp = np.load(npload).astype(np.float32) # load split-file
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(Xtrainnpy.format(index,len(iXtrain)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
+        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
         print('\t\t> Transforming')
         n = tmp.shape[0]
-        size = min(batchsize, n)
+        size = min(batch, n)
         while size > 0:
             tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
             tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
             Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
             n -= size
-            size = min(batchsize,n)
+            size = min(batch,n)
             if superverbose: print('\n{}\n{} {} {}MB'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
-        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(Xtrainnpy.format(index,len(iXtrain)),Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
+        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
         del tmpscaled
 
         print('\t\t> Saving')
-        npsave = npsaved / Xtrainnpy.format(index,len(iXtrain))
+        npsave = cfg.tmp / npy_Xtrain.format(index,len(iXtrain))
         np.save(npsave,Xtrain_scaled)
         del Xtrain_scaled
     del tmp
@@ -815,33 +802,33 @@ if __name__ == '__main__':
     if time:
         t = epochtime.time()
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtest','start'])
 
     for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
 
         print('\t[{}/{}] Xtest'.format(index,len(iXtest)))
         Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
-        npload = npsaved / Xtestnpy.format(index,len(iXtest))
+        npload = cfg.tmp / npy_Xtest.format(index,len(iXtest))
         tmp = np.load(npload).astype(np.float32) # load split-file
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(Xtestnpy.format(index,len(iXtest)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
+        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
 
         print('\t\t> Transforming')
         n = tmp.shape[0]
-        size = min(batchsize, n)
+        size = min(batch, n)
         while size > 0:
             tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
             tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
             Xtest_scaled = np.append(Xtest_scaled,tmpscaled,axis=0).astype(np.float32)
             n -= size
-            size = min(batchsize,n)
+            size = min(batch,n)
             if superverbose: print('\n{}\n{} {} {}MB'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
-        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(Xtestnpy.format(index,len(iXtest)),Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
+        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
         del tmpscaled
 
         print('\t\t> Saving')
-        npsave = npsaved / Xtestnpy.format(index,len(iXtest))
+        npsave = cfg.tmp / npy_Xtest.format(index,len(iXtest))
         np.save(npsave,Xtest_scaled)
         del Xtest_scaled
     del tmp
@@ -851,8 +838,8 @@ if __name__ == '__main__':
     if time:
         t = epochtime.time()
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-fit/transform-Xtrain','start'])
 
     print('>>> Applying PCA fit')
@@ -861,7 +848,7 @@ if __name__ == '__main__':
 
     for index in iXtrain: # partial fit PCA to Xtrain, iterating over split-files
         print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
-        npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
+        npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain))
         split = np.load(npload).astype(np.float32)
 
         print('\t\t> Fitting')
@@ -874,13 +861,13 @@ if __name__ == '__main__':
         Xtrain = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
         for index in iXtrain:
             print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
-            npload = npsaved / Xtrainnpy.format(index,len(iXtrain))
+            npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain))
             split = np.load(npload).astype(np.float32)
-            if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(Xtrainnpy.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+            if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
 
             print('\t\t> Transforming')
             split = ipca.transform(split)
-            if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(Xtrainnpy.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+            if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
 
             print('\t\t> Saving')
             Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32) # append splits to single Xtrain np.array
@@ -890,8 +877,8 @@ if __name__ == '__main__':
     if time:
         t = epochtime.time()
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-transform-Xtest','start'])
 
     # Xtest
@@ -899,13 +886,13 @@ if __name__ == '__main__':
     if model: print('>>> Applying PCA transform')
     for index in iXtest:
         print('\t[{}/{}] Xtest'.format(index,len(iXtest)))
-        npload = npsaved / Xtestnpy.format(index,len(iXtest))
+        npload = cfg.tmp / npy_Xtest.format(index,len(iXtest))
         split = np.load(npload).astype(np.float32)
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(Xtestnpy.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
 
         print('\t\t> Transforming')
         split = ipca.transform(split)
-        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(Xtestnpy.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
 
         print('\t\t> Saving')
         Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
@@ -920,8 +907,8 @@ if __name__ == '__main__':
         if time:
             t = epochtime.time()
             if export: # write timestamp to csv
-                with open(timecsv,'a') as csvfile:
-                    csvwriter = csv.writer(csvfile, delimiter=",")
+                with open(cfg.time,'a') as timecsv:
+                    csvwriter = csv.writer(timecsv, delimiter=",")
                     csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','start'])
 
         print('>>> Importing model')
@@ -931,8 +918,8 @@ if __name__ == '__main__':
         if time:
             t = epochtime.time()
             if export: # write timestamp to csv
-                with open(timecsv,'a') as csvfile:
-                    csvwriter = csv.writer(csvfile, delimiter=",")
+                with open(cfg.time,'a') as timecsv:
+                    csvwriter = csv.writer(timecsv, delimiter=",")
                     csvwriter.writerow([t,'rpi-Preprocessing.py','fitRandomForest','start'])
 
         print('>>> Fitting RandomForestClassifier')
@@ -947,8 +934,8 @@ if __name__ == '__main__':
     if time:
         t = epochtime.time()
         if export: # write timestamp to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','makePredictions','start'])
 
     print('>>> Creating predictions')
@@ -980,19 +967,19 @@ if __name__ == '__main__':
     
 
     if export:
-        print('\n>>> Exporting results to folder: {}'.format(logd))
+        print('\n>>> Exporting results to folder: {}'.format(cfg.logs))
         evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix],'PCA-components':[n_Xpca]}
         results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
-        results.to_csv(resultcsv) # save results
-        report.to_csv(reportcsv) # save classification-report
+        results.to_csv(cfg.result) # save results
+        report.to_csv(cfg.report) # save classification-report
 
     if time:
         end = timer()
         t = epochtime.time()
         print('\n(runtime: %.3f' % (end-start),'seconds)\n')
         if export: # write timestamps to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','main','end'])
 
 
@@ -1016,9 +1003,9 @@ if __name__ == '__main__':
 
         print('>>> Saving logs to folder {}'.format(logs))
         if not os.path.exists(logs): os.mkdir(logs) # create logfolder if necessary
-        for root, dirs, files in os.walk(logd):
+        for root, dirs, files in os.walk(cfg.logs):
             for filename in files: # iterate over filenames found within the wd logfolder
-                log = logd / filename # full path for current logfile
+                log = cfg.logs / filename # full path for current logfile
                 print('\t> Saving {}'.format(filename))
                 os.system(cplogs.format(log,logs))
         print(20*'#')
