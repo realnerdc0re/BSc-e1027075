@@ -2,16 +2,14 @@
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
 
 
-
-
 #######################################################################################
 # BASIC CONFIGURATION
 #######################################################################################
 # BASE directories
 # used for proper path generation
-mntd = PurePosixPath('/mnt')
-wd = Path.cwd()
-hd = Path.home()
+mntd    = PurePosixPath('/mnt')
+wd      = Path.cwd()
+hd      = Path.home()
 #######################################################################################
 # PCAP filepath & filenames (without extension)
 fpath = mntd / 'data' / 'CIC-IDS2017' / 'PCAP'
@@ -24,21 +22,27 @@ filenames = {
 4:'Thursday-WorkingHours',
 5:'Friday-WorkingHours'
 }
+
+pattern = '*Hours.csv' # pattern used to merge files after sampling every Workday
 #######################################################################################
-# FOLDERS
+# FOLDERS & LOGS
 # sampled CSVs & result logs, temporary logs in working directory
-flowfolder =  mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
-packetfolder = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
-logd = wd / 'logs'
-time = logd / 'time.csv'
+flowfolder      = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
+packetfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
+
+tmp     = wd / 'tmp'
+logs    = wd / 'logs'
+
+time    = logs / 'time.csv'
+dstat   = logs / 'dstat.csv'
+result  = logs / 'result.csv'
+report  = logs / 'report.csv'
 #######################################################################################
 # TOOLS
 # path to executable for go-flows and labeling-script
-goflowspath = hd / 'Git' / 'go-flows' / 'go-flows'
-labelingpath = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
+goflowspath     = hd / 'Git' / 'go-flows' / 'go-flows'
+labelingpath    = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
 #######################################################################################
-
-
 
 
 #######################################################################################
@@ -74,14 +78,12 @@ psamplingmode = {
 # TRESHOLD, change details here
 # numbers marks specific limits used for plausibility on specific
 # argument combinations to guarantee automated execution
-vectorlimit = 5
-samplinglimit = 5
+vectorlimit     = 5
+samplinglimit   = 5
 
-flowlimit = 4 # used to set mode to 'AGM' or '5tuple' for Labeling.py
+flowlimit   = 4 # used to set mode to 'AGM' or '5tuple' for Labeling.py
 packetlimit = 4
 #######################################################################################
-
-
 
 
 #######################################################################################
@@ -89,17 +91,21 @@ packetlimit = 4
 #######################################################################################
 # REMOTE MACHINE
 # username, IP and working directory for the remote machine
-remotewd = 'BSc-e1027075'
-remoteuser = 'dietpi'
-remoteip = '10.10.45.55'
-remote = '{}@{}'.format(remoteuser,remoteip)
+remotewd    = 'BSc-e1027075'
+remoteuser  = 'dietpi'
+remoteip    = '10.10.45.55'
+remote      = '{}@{}'.format(remoteuser,remoteip)
 #######################################################################################
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
-batchsize = 100000
-file = [3,4,5]
-vector = [4]
-mode = [1]
-steps = [5,7]
+batchsize   = 100000
+file        = [5]
+vector      = [4,5]
+mode        = [1,5]
+steps       = [5]
+n_PCA       = 4 # number of components for PCA
+chunksize   = 1 # read CSV line-by-line
+split       = 5000 # used for packetsampling, determines number of packets in editcap splits
+splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file
 #######################################################################################
