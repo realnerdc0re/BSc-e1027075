@@ -24,9 +24,9 @@ import math
 import config as cfg # necessary configurations from config.py
 
 # create base-folders if necessary
-if not os.path.exists(cfg.logd): os.mkdir(cfg.logd)
-if not os.path.exists(cfg.fpath): os.mkdir(cfg.fpath)
-if not os.path.exists(cfg.flowfolder): os.mkdir(cfg.flowfolder)
+if not os.path.exists(cfg.logs):        os.mkdir(cfg.logs)
+if not os.path.exists(cfg.fpath):       os.mkdir(cfg.fpath)
+if not os.path.exists(cfg.flowfolder):  os.mkdir(cfg.flowfolder)
 
 
 # ARGUMENT PARSING
@@ -363,7 +363,7 @@ if __name__ == '__main__':
     print('\nJSON:\t{}'.format(goflowsconf))
     print('PCAP:\t{}'.format(pcap))
     print('CSVs:\t{}\n\t{}\n\t{}'.format(csv_import,csv_sampled_export,csv_labeled_export))
-    print('\nlogs:\t{}'.format(cfg.logd))
+    print('\nlogs:\t{}'.format(cfg.logs))
     print('times:\t{}'.format(cfg.time))
     print('\n'+20*'~'+' commands '+20*'~')
     print("\ngo-flows: {}".format(goflowscmd))

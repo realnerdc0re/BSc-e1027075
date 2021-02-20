@@ -22,9 +22,9 @@ import sys
 import config as cfg # necessary configurations from config.py
 
 # create base-folders if necessary
-if not os.path.exists(cfg.logd): os.mkdir(cfg.logd)
-if not os.path.exists(cfg.fpath): os.mkdir(cfg.fpath)
-if not os.path.exists(cfg.packetfolder): os.mkdir(cfg.packetfolder)
+if not os.path.exists(cfg.logs):            os.mkdir(cfg.logs)
+if not os.path.exists(cfg.fpath):           os.mkdir(cfg.fpath)
+if not os.path.exists(cfg.packetfolder):    os.mkdir(cfg.packetfolder)
 
 
 # ARGUMENT PARSING
@@ -173,6 +173,8 @@ if __name__ == '__main__':
     print('\nJSON:\t{}'.format(goflowsconf))
     print('PCAP:\t{}\n\t{}\n\t{}\n\t{}'.format(pcap,pcap_snap,pcap_split,pcap_sampled))
     print('CSVs:\t{}\n\t{}'.format(csv_sampled_export,cfg.packetfolder/cfg.filenames[findex]))
+    print('\nlogs:\t{}'.format(cfg.logs))
+    print('times:\t{}'.format(cfg.time))
     print('\n'+20*'~'+' commands '+20*'~')
     print('\npacket-count: {}'.format(capinfoscmd))
     print('drop payload: {}'.format(editsnapcmd))
