@@ -139,8 +139,7 @@ def createExperiments(folders,verbose=False):
                 print('\t\t< Experiment:')
                 print('\t\t\t< {}'.format(tmp.fullpath))
                 print('\t\t\t< {}'.format(tmp.file))
-                if tmp.sampling == 'perflowsampled': print('\t\t\t< {}'.format(cfg.fsamplingmode[tmp.mode]))
-                elif tmp.sampling == 'packetsampled': print('\t\t\t< {}'.format(cfg.psamplingmode[tmp.mode]))
+                print('\t\t\t< {}'.format(cfg.samplingmode[tmp.mode]))
                 print('\t\t\t< {}'.format(cfg.vectors[tmp.vector]))
                 print('\t\t\t< n = {}'.format(tmp.steps))
                 print('\t\t\t< {}\n'.format(tmp.sampling))
@@ -210,9 +209,7 @@ if __name__ == '__main__':
             print('\t\t< n = {}'.format(steps[i]))
         print('\t<< sampling-modes:')
         for i in range(0,len(modes)):
-            if modes[i]>cfg.modelimit: print('\t\t< {}'.format(cfg.psamplingmode[steps[i]]))
-            else: print('\t\t< {}'.format(cfg.fsamplingmode[steps[i]]))
-
+            print('\t\t< {}'.format(cfg.samplingmode[steps[i]]))
 
     print('>>> Converting timestamps, adding runtimes, adjusting logs')
     maxruntime = 0
@@ -269,20 +266,17 @@ if __name__ == '__main__':
             timelabels = [stamp[1] for stamp in stamps]
 
             # graph title & subtitle
-            sampling = exp[n][i].sampling
-            if sampling == 'perflowsampled':
-                mode = cfg.fsamplingmode[exp[n][i].mode]
-                samplingtype = 'per-flow sampling'
-            elif sampling == 'packetsampled':
-                mode = cfg.psamplingmode[exp[n][i].mode]
-                samplingtype = 'packet sampling'
-            steps = exp[n][i].steps
-            vector = cfg.vectors[exp[n][i].vector]
+            sampling    = exp[n][i].sampling
+            steps       = exp[n][i].steps
+            vector      = cfg.vectors[exp[n][i].vector]
+            mode        = cfg.samplingmode[exp[n][i].mode]
+            # nicer output for title
+            if sampling     == 'perflowsampled':    samplingtype = 'per-flow sampling'
+            elif sampling   == 'packetsampled':     samplingtype = 'packet sampling'
 
             title = '{}\n'.format(samplingtype)
             subtitle = '({}, n={})\n{}'.format(mode,steps,vector)
 
-            #title = '{}\n{} ({}, n={})'.format(featurevectors[i],samplingtypes[i],samplingmodes[i],samplingsteps[i])
             fig = plt.figure(figsize=(21.0,9.0))
             plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"usr"'],color = '#000000',label='CPU python')
             plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"sys"'],color = '#566573',label='CPU system')
@@ -335,15 +329,13 @@ if __name__ == '__main__':
             timelabels = [stamp[1] for stamp in stamps]
 
             # graph title & subtitle
-            sampling = exp[n][i].sampling
-            if sampling == 'perflowsampled':
-                mode = cfg.fsamplingmode[exp[n][i].mode]
-                samplingtype = 'per-flow sampling'
-            elif sampling == 'packetsampled':
-                mode = cfg.psamplingmode[exp[n][i].mode]
-                samplingtype = 'packet sampling'
-            steps = exp[n][i].steps
-            vector = cfg.vectors[exp[n][i].vector]
+            sampling    = exp[n][i].sampling
+            steps       = exp[n][i].steps
+            vector      = cfg.vectors[exp[n][i].vector]
+            mode        = cfg.samplingmode[exp[n][i].mode]
+            # nicer output for title
+            if sampling     == 'perflowsampled':    samplingtype = 'per-flow sampling'
+            elif sampling   == 'packetsampled':     samplingtype = 'packet sampling'
 
             title = '{}\n'.format(samplingtype)
             subtitle = '({}, n={})\n{}'.format(mode,steps,vector)
@@ -403,16 +395,12 @@ if __name__ == '__main__':
 
             # graph title & subtitle
             sampling    = exp[n][i].sampling
-            vector      = cfg.vectors[exp[n][i].vector]
             steps       = exp[n][i].steps
-
-            if sampling == 'perflowsampled':
-                mode = cfg.fsamplingmode[exp[n][i].mode]
-                samplingtype = 'per-flow sampling'
-            elif sampling == 'packetsampled':
-                mode = cfg.psamplingmode[exp[n][i].mode]
-                samplingtype = 'packet sampling'
-
+            vector      = cfg.vectors[exp[n][i].vector]
+            mode        = cfg.samplingmode[exp[n][i].mode]
+            # nicer output for title
+            if sampling     == 'perflowsampled':    samplingtype = 'per-flow sampling'
+            elif sampling   == 'packetsampled':     samplingtype = 'packet sampling'
 
             title = '{}\n{} ({}, n={})'.format(vector,sampling,mode,steps)
 
