@@ -23,20 +23,33 @@ filenames = {
 5:'Friday-WorkingHours'
 }
 
-pattern = '*Hours.csv' # pattern used to merge files after sampling every Workday
+pattern = '*Hours.csv' # pattern used to merge files
 #######################################################################################
-# FOLDERS & LOGS
+# FOLDERS, FILES & LOGS
 # sampled CSVs & result logs, temporary logs in working directory
 flowfolder      = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
 packetfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
 
+# filenames used for logs
+csv_dstat   = 'dstat.csv'
+csv_time    = 'time.csv'
+csv_result  = 'result.csv'
+csv_report  = 'report.csv'
+csv_info    = 'information.csv'
+
+# working directory folders
 tmp     = wd / 'tmp'
 logs    = wd / 'logs'
 
-time    = logs / 'time.csv'
-dstat   = logs / 'dstat.csv'
-result  = logs / 'result.csv'
-report  = logs / 'report.csv'
+# full path to wd logs
+time    = logs / csv_time
+dstat   = logs / csv_dstat
+result  = logs / csv_result
+report  = logs / csv_report
+
+# pickle-model files
+model_remote    = '{}_model_remote.pkl'
+model_local     = '{}_model_local.pkl'
 #######################################################################################
 # TOOLS
 # path to executable for go-flows and labeling-script
@@ -100,12 +113,20 @@ remote      = '{}@{}'.format(remoteuser,remoteip)
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 batchsize   = 100000
-file        = [5]
+file        = [4,5]
 vector      = [4,5]
 mode        = [1,5]
-steps       = [5]
+steps       = [3,5]
 n_PCA       = 4 # number of components for PCA
 chunksize   = 1 # read CSV line-by-line
 split       = 5000 # used for packetsampling, determines number of packets in editcap splits
 splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file
+#######################################################################################
+
+
+#######################################################################################
+# EVALUATION
+
+
+
 #######################################################################################
