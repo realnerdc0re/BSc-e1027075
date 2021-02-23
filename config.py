@@ -40,6 +40,7 @@ csv_info    = 'information.csv'
 # working directory folders
 tmp     = wd / 'tmp'
 logs    = wd / 'logs'
+figures = wd / 'figures'
 
 # full path to wd logs
 time    = logs / csv_time
@@ -93,6 +94,8 @@ psamplingmode = {
 # argument combinations to guarantee automated execution
 vectorlimit     = 5
 samplinglimit   = 5
+
+modelimit   = 4 # used to determine choice for samplingmodes in evaluation
 
 flowlimit   = 4 # used to set mode to 'AGM' or '5tuple' for Labeling.py
 packetlimit = 4
