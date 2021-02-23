@@ -693,7 +693,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','fit  scaler','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','fit scaler','start'])
 
     print('>>> StandardScaling partial fit to Xtrain')
     scaler = StandardScaler(copy=False)
