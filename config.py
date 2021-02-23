@@ -83,11 +83,13 @@ fsamplingmode = {
 3:'sample first n packets of a flow',
 4:'sample n, skip n-1, sample n-2 ...'
 }
-
 psamplingmode = {
 5:'every n-th packet',
 6:'time-based'
 }
+# merge dictionaries for easier addressing later on
+samplingmode = fsamplingmode.copy()
+samplingmode.update(psamplingmode)
 #######################################################################################
 # TRESHOLD, change details here
 # numbers marks specific limits used for plausibility on specific
