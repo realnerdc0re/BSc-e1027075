@@ -17,6 +17,7 @@ from timeit import default_timer as timer
 import argparse
 parser = argparse.ArgumentParser(description='Script to automate experiments based on a given configuration via config.py. The Script does the sampling and model-creation on the local machine and syncs all necessary files from the local machine to a remote machine afterwards. Subsequently it creates predictions on the remote machine, saves the results and syncs back to the local machine.')
 parser.add_argument('-v','--verbose', action='store_true', help='output verbose information')
+parser.add_argument('-f','--fit', action='store_true', help='fit model on remote machine')
 # force either just local or remote execution
 execution = parser.add_mutually_exclusive_group(required=True)
 execution.add_argument('-l','--local', action='store_true', help='run scripts on local machine')
@@ -36,8 +37,9 @@ if __name__ == '__main__':
     start = timer()
 
     verbose = args.verbose
-    local   = args.local
     remote  = args.remote
+    local   = args.local
+    fit     = args.fit
 
     # check passed optional arguments and commands
     print('\n'+40*'~'+' SCRIPT: Master.py '+40*'~')
@@ -82,8 +84,9 @@ if __name__ == '__main__':
                     folder   = foldername.format(cfg.filenames[file],mode,vector,steps)
                     sampling = 'python3 rpi-Sampling.py -e {} {} {} {} {}'.format(sarg,mode,file,steps,vector)
                     model    = 'python3 rpi-Preprocessing.py -e -s {} {} {} {} {} {}'.format(sarg,mode,file,steps,vector,cfg.batchsize)
-                    ssh      = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -m {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # importing model on remote
-                    #ssh      = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # saving model on remote
+
+                    if fit: ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # saving model on remote
+                    else:   ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -m {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # importing model on remote
 
                     sync         = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
                     resync       = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
