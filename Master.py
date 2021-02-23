@@ -13,16 +13,14 @@ from colorama import Fore, Style
 from timeit import default_timer as timer
 
 
-
-
-# MISSING: mv original PCAP files into other folder, use editcap to just get small splitfile for testing purpuse speeeding up tests
-
-
 # ARGUMENT PARSING
 import argparse
 parser = argparse.ArgumentParser(description='Script to automate experiments based on a given configuration via config.py. The Script does the sampling and model-creation on the local machine and syncs all necessary files from the local machine to a remote machine afterwards. Subsequently it creates predictions on the remote machine, saves the results and syncs back to the local machine.')
 parser.add_argument('-v','--verbose', action='store_true', help='output verbose information')
-parser.add_argument('-l','--local', action='store_true',help='just do sampling and classification on local machine')
+# force either just local or remote execution
+execution = parser.add_mutually_exclusive_group(required=True)
+execution.add_argument('-l','--local', action='store_true', help='run scripts on local machine')
+execution.add_argument('-r','--remote', action='store_true', help='run scripts on remote machine')
 args = parser.parse_args()
 
 
@@ -32,12 +30,14 @@ def callCommand(function):
         exit()
     return
 
+
 if __name__ == '__main__':
 
     start = timer()
 
     verbose = args.verbose
     local   = args.local
+    remote  = args.remote
 
     # check passed optional arguments and commands
     print('\n'+40*'~'+' SCRIPT: Master.py '+40*'~')
@@ -88,35 +88,36 @@ if __name__ == '__main__':
                     sync         = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
                     resync       = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
 
+                    if (not remote):
+                        # LOCAL
+                        print('>>> Sample PCAP on local machine: {}'.format(sampling))
+                        callCommand(sampling)
 
-                    # LOCAL
-                    print('>>> Sample PCAP on local machine: {}'.format(sampling))
-                    callCommand(sampling)
+                        print('>>> Create and save model on local machine: {}'.format(model))
+                        callCommand(model)
 
-                    print('>>> Create and save model on local machine: {}'.format(model))
-                    callCommand(model)
+                        if local: # leave current iteration
+                            end = timer()
+                            print('\n(runtime : %.3f' % (end-start),'seconds)\n')
+                            continue
 
-                    if local: # leave current iteration
-                        end = timer()
-                        print('\n(runtime : %.3f' % (end-start),'seconds)\n')
-                        continue
+                    if (not local):
+                        # REMOTE
+                        print('>>> Create base-folder on remote machine: {}'.format(mkdir))
+                        callCommand(mkdir)
 
+                        print('>>> Sync content from local to remote machine: {}'.format(sync))
+                        callCommand(sync)
 
-                    # REMOTE
-                    print('>>> Create base-folder on remote machine: {}'.format(mkdir))
-                    callCommand(mkdir)
+                        print('>>> Execute pre-processing and classification on remote machine: {}'.format(ssh))
+                        callCommand(ssh)
 
-                    print('>>> Sync content from local to remote machine: {}'.format(sync))
-                    callCommand(sync)
-
-                    print('>>> Execute pre-processing and classification on remote machine: {}'.format(ssh))
-                    callCommand(ssh)
-
-                    print('>>> Sync results back to local machine: {}'.format(resync))
-                    callCommand(resync)
+                        print('>>> Sync results back to local machine: {}'.format(resync))
+                        callCommand(resync)
 
     end = timer()
     print(20*'#')
     print('\n(runtime : %.3f' % (end-start),'seconds)\n')
+    print(Fore.GREEN+'\n\n<<< EXPERIMENTS SUCCESSFULLY COMPLETED!\n'+Style.RESET_ALL)
 
     exit()
