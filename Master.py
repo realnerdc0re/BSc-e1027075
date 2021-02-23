@@ -91,21 +91,20 @@ if __name__ == '__main__':
                     sync         = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
                     resync       = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
 
-                    if (not remote):
-                        # LOCAL
+
+                    if (not remote): # LOCAL
                         print('>>> Sample PCAP on local machine: {}'.format(sampling))
                         callCommand(sampling)
 
                         print('>>> Create and save model on local machine: {}'.format(model))
                         callCommand(model)
 
-                        if local: # leave current iteration
+                        if local: # skip processing on remote machine
                             end = timer()
                             print('\n(runtime : %.3f' % (end-start),'seconds)\n')
                             continue
 
-                    if (not local):
-                        # REMOTE
+                    if (not local): # REMOTE
                         print('>>> Create base-folder on remote machine: {}'.format(mkdir))
                         callCommand(mkdir)
 
