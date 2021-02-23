@@ -2,26 +2,30 @@
 
 ### CODE
 
-- set variables for PCAP path and all other useful base-folders in config.py, implement those in all scripts:
-	- rpi-Sampling.py
-	- rpi-Preprocessing.py
+- describe softlink usage on remote machine in config.py to get user aware of this for documentation
+- mention authorization via SSH keys for Master.py execution in config.py
+
 
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 
 - once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
 
+
+
 #### EVALUATION
 
-- change script to read data from new folder-structure, containing logs-rpi* subfolders for fit/import model...
+- save PNG for all generated charts in the same folder where the data is actually fetched from
 
-- dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
+- group experiment classobjects based on following comparisons (files always Merged?):
+    - same featurevector, same samplingmethod
+        - different steps
+    - same steps, same samplingmethods
+        - different featurevector
+    - same steps, same featurevectors
+        - different samplingmethods
 
 - improve title & suptitle for spidercharts similar to graphs
-
-- change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
-
-- create names and folderpath for plots to save when running rpi-Evaluation.py (plt.savefig('filepath/filename.png'))
 
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
@@ -62,11 +66,11 @@
 - get rid of superverbose?
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html) for all filepaths (FlowSampling.py, PacketSampling.py)
 - maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
-	- output nodes/leaves depth/sizes in results.csv
+    - output nodes/leaves depth/sizes in results.csv
 - try QEMU on Linux to virtualize dietpi ARM 32bit (https://raspberrytips.com/run-raspberry-in-virtual-machine/)
-	- https://wiki.ubuntu.com/Kernel/Dev/QemuARMVexpress
-	- https://gist.github.com/luk6xff/9f8d2520530a823944355e59343eadc1
-	- if above fails, just virtualize Linux with hardware similar to rpi (500MB RAM, one core CPU...)
+    - https://wiki.ubuntu.com/Kernel/Dev/QemuARMVexpress
+    - https://gist.github.com/luk6xff/9f8d2520530a823944355e59343eadc1
+    - if above fails, just virtualize Linux with hardware similar to rpi (500MB RAM, one core CPU...)
 - create function for saving timestamps
 - get rid of unnecessary imports to save memory
 - use numpy.vectorize to speed up cell replacements (https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html)?
@@ -86,34 +90,47 @@
 
 
 ## DONE
-
+- change evaluation script to read data from new folder-structure, containing logs-rpi* subfolders for fit/import model...
+- dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
+- evaluation: implement a class experiment, containing info about file, vector, steps, samplingmethod and find experiments that can be used for comparisons based on that class
+- implement csv_... filenames in rpi-Sampling.py and rpi-Evaluation.py
+- clean complete folders before progressing on rpi-Evaluation.py to have all sampled data
+    - add logfolder-names to config.py and implement in rpi-Preprocessing & rpi-Evaluation
+- add properties for pandas df to import into class Experiments for
+    - dstat.csv
+    - time.csv
+    - result.csv
+    - report.csv
 - set variables for PCAP path and all other useful base-folders in config.py, implement those in all scripts:
-	- rpi-PacketSampling.py
-	- rpi-FlowSampling.py
+    - rpi-PacketSampling.py
+    - rpi-FlowSampling.py
+    - rpi-Preprocessing.py
+    - rpi-Sampling.py
 - create logfolder names to distinguish betweenn local and remote machine (convention now: logs_<whatever>_remote/local)
-	- rpi-Preprocessing.py: logs_model-import/fit_local/remote
-	- rpi-Sampling.py: logs_Sampling
+    - rpi-Preprocessing.py: logs_model-import/fit_local/remote
+    - rpi-Sampling.py: logs_Sampling
 - improve creation of samplearg, featurearg and samplingcmd in rpi-Sampling.py
+- change forged commands into single lines using placeholders (e.g. samplingcmd in Control.py) directly in os.system(samplingcmd.format(verbosearg,timearg,osarg,samplearg,featurearg...))
 - write script for automated experiment execution (Master.py):
-	- implement configuration file (config.py) containing all necessary information to execute all experiments
-	- does following steps subsequently:
-		- check online status of remote machine (VM/rpi)
-		- rpi-Sampling.py on local machine to create sampled CSV
-		- rpi-Preprocessing.py on local machine to create model
-		- create directory for necessary data on remote machine (VM/rpi), containing:
-			- sampled CSV
-			- fitted pickle-model
-		- sync above mentioned files to remote machine via rsync
-		- execute rpi-Preprocessing.py on remote machine, importing the synced model, saving results on remote machine
-		- sync back results to the local machine for further evaluation
+    - implement configuration file (config.py) containing all necessary information to execute all experiments
+    - does following steps subsequently:
+        - check online status of remote machine (VM/rpi)
+        - rpi-Sampling.py on local machine to create sampled CSV
+        - rpi-Preprocessing.py on local machine to create model
+        - create directory for necessary data on remote machine (VM/rpi), containing:
+            - sampled CSV
+            - fitted pickle-model
+        - sync above mentioned files to remote machine via rsync
+        - execute rpi-Preprocessing.py on remote machine, importing the synced model, saving results on remote machine
+        - sync back results to the local machine for further evaluation
 - improved saving log-files at the end of rpi-Preprocessing.py
 - implement --rpi on rpi-Preprocessing.py to properly kill dstat, since this has to be done in different ways on Linux and dietpi
 - set softlink on rpi so no script paths have to be changed in rpi-Preprocessing.py:
-	- save data to process on rpi/vm into a folder 'data' in the homefolder (e.g. /home/dietpi/data), retaining original folderstructure from desktop machine (e.g. ) when syncing sampled data from desktop to rpi
-	- set softlink via: sudo ln -s /home/dietpi/data/ /mnt/
+    - save data to process on rpi/vm into a folder 'data' in the homefolder (e.g. /home/dietpi/data), retaining original folderstructure from desktop machine (e.g. ) when syncing sampled data from desktop to rpi
+    - set softlink via: sudo ln -s /home/dietpi/data/ /mnt/
 - remove unnecessary if time executions in rpi-Preprocessing.py (all the stop timestamps)
 - change paths in rpi-Preprocessing.py to use /mnt/... whatever for desktop machine, copy accordingly on rpi as mentioned in task below
-	- needs all informations about sampling methods in arguments to choose correct data
+    - needs all informations about sampling methods in arguments to choose correct data
 - rpi-Preprocessing.py: use folders that determine sampling-mode, -steps & feature-vector (e.g. /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/Merged_mode1_vector2_steps5/) instead of old folder /mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV/
 - rpi-Control.py: move logs into proper folder after sampling is done or after whole process is done
 - add perflow/packetsampled at the end of foldername for easier differentiation later on
@@ -132,7 +149,7 @@
 - include swap usage in dstat (--swap)
 - change labels in time.csv: improve segment-names to be more precise to distinguish between fit and import model
 - create timestamps for segements automatically from time.csv
-	- use those timestamps for xticks in graphs, and label those for better graph readability
+    - use those timestamps for xticks in graphs, and label those for better graph readability
 - when saving model also include PCA component number in result.csv
 - improve names for flow-/packetsampling in results to be better distinguishable (e.g. per-flow sampling, packet sampling), has to be changed in rpi-Evaluation (merged spiderchart), rpi-Control (info used to generate informations.csv), rpi-Preprocessing (logged informations) and in the overview flowchart
 - take care of different dataframe splits on rpi due to chunked processing when saving model on Desktop and use same chunked processing when saving the RandomForest() model -> create models on Desktop with rpi-Preprocessing.py to use same training portion
@@ -161,7 +178,7 @@
 - better handling for time.csv creation (writing or appending, based on fresh script start or execution within Control.py)
 - tweak importCSV in Preprocessing.py to support chunksize on rpi
 - restructure Classification.py main depending on argument choices...
-	- saving results to file not implemented on -l loading right now
+    - saving results to file not implemented on -l loading right now
 - Classification.py: take care when using --time to check if /logs/time.csv is already existing to open with 'a' append, or with 'w' write
 - add command to only import model, but preprocess data on rpi via -m --model & to import test data only -d, --data
 - tweak Classification.py to read CSV line-by-line into pandas dataframe on rpi (chunksize)
