@@ -11,6 +11,9 @@
 
 - once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
 
+- config.py: get limits directy from dictionary-entries?
+
+
 
 
 #### EVALUATION
@@ -90,6 +93,8 @@
 
 
 ## DONE
+
+- config.py: append psamplingmode at the end of fsamplingmode dictionary so I don't have anything to change afterwards when tweaking samplingmodes?
 - change evaluation script to read data from new folder-structure, containing logs-rpi* subfolders for fit/import model...
 - dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
 - evaluation: implement a class experiment, containing info about file, vector, steps, samplingmethod and find experiments that can be used for comparisons based on that class
