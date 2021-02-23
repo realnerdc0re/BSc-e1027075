@@ -140,6 +140,7 @@ csv/packet-sampled/tmp/*
 logs/*
 rpi-logs/*
 logs-rpi/*
+figures/*
 # files
 Merged.csv
 Merged_processed.csv
