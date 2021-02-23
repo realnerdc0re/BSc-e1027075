@@ -158,7 +158,7 @@ if __name__ == '__main__':
     csv_folder  = samplingfolder / folder
     csv_tmp     = samplingfolder / csv_name # temporary location of sampled CSV returned from called scripts
     csv_save    = csv_folder / csv_name # correct location of sampled CSV.
-    csv_info    = csv_folder / 'information.csv' # CSV containing informations about chosen sampling
+    csv_info    = csv_folder / cfg.csv_info # CSV containing informations about chosen sampling
     logs        = csv_folder / 'logs_Sampling' # directory to save all logs
 
     # commands
