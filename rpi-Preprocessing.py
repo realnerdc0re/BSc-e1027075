@@ -579,8 +579,10 @@ if __name__ == '__main__':
     cplogs      = 'cp -r {} {}/'
 
     # placeholder pickle-model for 32/64bit systems, can also be used for remote/local
-    if remote:  modelpkl = '{}_model_remote.pkl'
-    else:       modelpkl = '{}_model_local.pkl'
+    #if remote:  modelpkl = '{}_model_remote.pkl'
+    #else:       modelpkl = '{}_model_local.pkl'
+    if remote:  modelpkl = cfg.model_remote
+    else:       modelpkl = cfg.model_local
 
     # first set correct foldernames for preprocessing & classification logs
     if (model or save):
@@ -657,7 +659,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','importCSV','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','import CSV','start'])
 
     print('>>> Importing CSV line-by-line, splitting into Xtrain & Xtest')
     # initialise empty dataframes
@@ -691,7 +693,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','Standardscaler-fit','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','fit  scaler','start'])
 
     print('>>> StandardScaling partial fit to Xtrain')
     scaler = StandardScaler(copy=False)
@@ -709,7 +711,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','Split','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','split files','start'])
 
 
     print('>>> Splitting data to reduce memory consumption') # split training data into smaller portions for transformation and save to disk to free up memory
@@ -768,7 +770,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtrain','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','scale Xtrain','start'])
 
 
     print('>>> StandardScaling')
@@ -804,7 +806,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','Scaler-transform-Xtest','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','scale Xtest','start'])
 
     for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
 
@@ -840,7 +842,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-fit/transform-Xtrain','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','fit PCA','start'])
 
     print('>>> Applying PCA fit')
     Xpca = []
@@ -879,7 +881,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA-transform-Xtest','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA Xtest','start'])
 
     # Xtest
     Xtest = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
@@ -909,7 +911,7 @@ if __name__ == '__main__':
             if export: # write timestamp to csv
                 with open(cfg.time,'a') as timecsv:
                     csvwriter = csv.writer(timecsv, delimiter=",")
-                    csvwriter.writerow([t,'rpi-Preprocessing.py','importRandomForest','start'])
+                    csvwriter.writerow([t,'rpi-Preprocessing.py','import model','start'])
 
         print('>>> Importing model')
         model = joblib.load(modelfile)
@@ -920,7 +922,7 @@ if __name__ == '__main__':
             if export: # write timestamp to csv
                 with open(cfg.time,'a') as timecsv:
                     csvwriter = csv.writer(timecsv, delimiter=",")
-                    csvwriter.writerow([t,'rpi-Preprocessing.py','fitRandomForest','start'])
+                    csvwriter.writerow([t,'rpi-Preprocessing.py','fit model','start'])
 
         print('>>> Fitting RandomForestClassifier')
         model = RandomForestClassifier()
@@ -936,7 +938,7 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','makePredictions','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','predictions','start'])
 
     print('>>> Creating predictions')
     predictions = model.predict(Xtest)
