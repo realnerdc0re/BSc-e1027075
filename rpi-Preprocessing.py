@@ -635,7 +635,7 @@ if __name__ == '__main__':
             with open(cfg.time,'w') as timecsv: # create file
                 csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
-                csvwriter.writerow([t,'rpi-Preprocessing.py','main','start'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','start','start'])
 
 
     # OUTPUT passed optional arguments & filepath
@@ -982,7 +982,7 @@ if __name__ == '__main__':
         if export: # write timestamps to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','main','end'])
+                csvwriter.writerow([t,'rpi-Preprocessing.py','end','end'])
 
 
     # STOP MONITORING
