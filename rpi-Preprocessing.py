@@ -997,8 +997,8 @@ if __name__ == '__main__':
             mypid = os.getpid() # pid of running script
             pids.remove(mypid)
 
-        #for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
-        #    epochtime.sleep(1)
+        for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
+            epochtime.sleep(1)
 
         print('>>> Killing dstat')
         os.kill(pids[0],9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
