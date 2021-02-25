@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='Script to automate experiments bas
 parser.add_argument('-v','--verbose', action='store_true', help='output verbose information')
 parser.add_argument('-f','--fit', action='store_true', help='fit model on remote machine')
 # force either just local or remote execution
-execution = parser.add_mutually_exclusive_group(required=True)
+execution = parser.add_mutually_exclusive_group(required=False)
 execution.add_argument('-l','--local', action='store_true', help='run scripts on local machine')
 execution.add_argument('-r','--remote', action='store_true', help='run scripts on remote machine')
 args = parser.parse_args()
@@ -111,7 +111,7 @@ if __name__ == '__main__':
                         print('>>> Sync content from local to remote machine: {}'.format(sync))
                         callCommand(sync)
 
-                        print('>>> Execute pre-processing and classification on remote machine: {}'.format(ssh))
+                        print(Fore.GREEN+'>>> Execute pre-processing and classification on remote machine: {}'.format(ssh)+Style.RESET_ALL)
                         callCommand(ssh)
 
                         print('>>> Sync results back to local machine: {}'.format(resync))
