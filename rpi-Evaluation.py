@@ -220,7 +220,7 @@ if __name__ == '__main__':
     for n in range(0,len(folders)):
         for i in range (0,len(exp[n])):
             start   = exp[n][i].time['epochtime'].iloc[0] # start epochtime
-            end     = exp[n][i].time['epochtime'].iloc[-1]+1 # end epochtime
+            end     = exp[n][i].time['epochtime'].iloc[-1]+1 # end epochtime plus 1 second
             exp[n][i].runtime = end-start # set current experiments runtime
 
             # dump dstat rows outside of script execution
@@ -259,7 +259,8 @@ if __name__ == '__main__':
             png_file = 'figures/CPU-usage_figure{}.png'
 
             # create list of relevant timestamps
-            for j in range(0,exp[n][i].time['epochtime'].shape[0]):
+            #for j in range(0,exp[n][i].time['epochtime'].shape[0]): # includes start/end timestamps
+            for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excludes start/end timestamps
                 ticks.append(exp[n][i].time['epochtime'][j])
                 labels.append(exp[n][i].time['segment'][j])
 
@@ -288,7 +289,8 @@ if __name__ == '__main__':
             # plot segments
             style = 'dotted'
             color = '#000000'
-            for j in (range (1,len(labels)-1)):
+            #for j in (range (1,len(labels)-1)):
+            for j in (range (0,len(labels))): # excludes start/end timestamps
                 plt.axvline(x=stamps[j][0],ymin=0,ymax=1,linestyle=style,color=color) # plot vertical lines
 
             # plot labels
@@ -322,7 +324,8 @@ if __name__ == '__main__':
             png_file = 'figures/RAM-usage_figure{}.png'
 
             # create list of relevant timestamps
-            for j in range(0,exp[n][i].time['epochtime'].shape[0]):
+            #for j in range(0,exp[n][i].time['epochtime'].shape[0]):
+            for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excludes start/end timestamps
                 ticks.append(exp[n][i].time['epochtime'][j])
                 labels.append(exp[n][i].time['segment'][j])
 
@@ -354,7 +357,8 @@ if __name__ == '__main__':
             # plot segments
             style = 'dotted'
             color = '#000000'
-            for j in (range (1,len(labels)-1)):
+            #for j in (range (1,len(labels)-1)):
+            for j in (range (0,len(labels))): # excludes start/end timestamps
                 plt.axvline(x=stamps[j][0],ymin=0,ymax=1,linestyle=style,color=color) # plot vertical lines
 
             # plot labels
