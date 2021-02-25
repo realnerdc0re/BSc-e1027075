@@ -206,6 +206,11 @@ if __name__ == '__main__':
             if v not in vectors:    vectors.append(v)
             if s not in steps:      steps.append(s)
             if m not in modes:      modes.append(m)
+
+    vectors.sort()
+    steps.sort()
+    modes.sort()
+
     if verbose:
         print('\t<< feature-vectors:')
         for i in range(0,len(vectors)):
@@ -249,7 +254,7 @@ if __name__ == '__main__':
 
 
     # CPU USAGE
-    print('>>> Creating CPU-usage graphs')
+    print('>>> Creating graphs CPU-usage')
     count = 0
     for n in range(0,len(folders)):
         for i in range (0,len(exp[n])):
@@ -314,7 +319,7 @@ if __name__ == '__main__':
 
 
     # RAM USAGE
-    print('>>> Creating memory-usage graphs')
+    print('>>> Creating graphs memory-usage')
     count = 0
     for n in range(0,len(folders)):
         #for i in range (0,1): # test loop only one experiment
@@ -383,7 +388,7 @@ if __name__ == '__main__':
 
 
     # SPIDER CHART
-    print('>>> Creating spider-chart graphs')
+    print('>>> Creating graphs spider-chart')
     count = 0
     for n in range(0,len(folders)):
         #for i in range (0,1): # test loop only one experiment
@@ -439,26 +444,9 @@ if __name__ == '__main__':
 
 
 
-    # SPIDER CHART COMPARISONS
-    print('>>> Prepare spider-chart comparisons')
-    print('\t>> Using similar feature-vectors')
+    # SPIDER CHART COMPARISON
 
-    for i in range(0,len(vectors)):
-        print('\t\t< {}'.format(cfg.vectors[vectors[i]]))
-    print('\t<< Search sampling-steps')
-    for i in range(0,len(steps)):
-        print('\t\t< n = {}'.format(steps[i]))
-
-    #for n in range(0, len(compare)):
-    #    tmp = []
-    #    for folder in compare[n]:
-
-
-
-    # TODO: compare same feature-vector experiments as simple starting point
-
-    # find experiments using the same feature-vector
-    print('>>> Bundle experiments for comparison')
+    print('>>> Creating graphs for comparison, bundle experiments')
 
     # palette containing different colors for random picks on comparison charts
     palette = []
@@ -479,6 +467,10 @@ if __name__ == '__main__':
     compare = exp.copy() # copy all experiment data
     count = 0
 
+
+    print('\t<< feature-vectors')
+    for i in range(0,len(vectors)):
+        print('\t\t< {}'.format(cfg.vectors[vectors[i]]))
 
     for v in vectors: # accumulate experiments with similar feature-vector
         tmp = []
@@ -527,7 +519,7 @@ if __name__ == '__main__':
             tmp_color.remove(color)
 
             # title & label
-            title = 'comparison\n{}\n'.format(cfg.vectors[v])
+            title = 'feature-vector\n{}\n'.format(cfg.vectors[v])
             label = 'n = {}, {}, {}'.format(x.steps,samplingtype,cfg.samplingmode[x.mode])
 
             # create lists for comparison-plot
@@ -554,7 +546,7 @@ if __name__ == '__main__':
 
 
 
-    print('\t<< Search sampling-steps')
+    print('\t<< Sampling-steps')
     for i in range(0,len(steps)):
         print('\t\t< n = {}'.format(steps[i]))
 
@@ -566,7 +558,7 @@ if __name__ == '__main__':
             for i in range (0,len(exp[n])):
                 if exp[n][i].steps == s:
                     tmp.append(exp[n][i])
-        print('iteration #{}:\n\nexperiments: {}\n{}'.format(count,len(tmp),tmp))
+        #print('iteration #{}:\n\nexperiments: {}\n{}'.format(count,len(tmp),tmp))
 
         # CREATE CHART
         # lists to accumulate values & labels for comparison
@@ -605,7 +597,7 @@ if __name__ == '__main__':
             tmp_color.remove(color)
 
             # title & label
-            title = 'n = {}'.format(s)
+            title = 'sampling-steps\nn = {}'.format(s)
             label = '{}\n{}\n{}\n{}'.format(x.file,cfg.vectors[x.vector],samplingtype,cfg.samplingmode[x.mode])
 
             # create lists for comparison-plot
@@ -614,7 +606,7 @@ if __name__ == '__main__':
             compare_colors.append(color)
             compare_labels.append(label)
 
-        plt.figure(figsize=(15.0,10.0))
+        plt.figure(figsize=(10.0,10.0))
         ax = plt.subplot(polar=True)
         width = 2
 
