@@ -113,13 +113,13 @@ def createExperiments(folders,verbose=False):
 
             parts = foldername.split('_') # splits foldername to gather experiment data
 
-            # set class properties
+            # set class properties based on foldername
             path        = folder
             file        = parts[0]
             sampling    = parts[4]
+            # can only be read this way for single digit options
             mode        = int(parts[1][-1])
             vector      = int(parts[2][-1])
-            steps       = int(parts[3][-1])
 
             # CSV logs full paths
             infocsv     = folder / cfg.csv_info
@@ -127,13 +127,15 @@ def createExperiments(folders,verbose=False):
             dstatcsv    = folder / 'logs_model-import_remote' / cfg.csv_dstat
             reportcsv   = folder / 'logs_model-import_remote' / cfg.report
             resultcsv   = folder / 'logs_model-import_remote' / cfg.csv_result
-
             # import CSV as dafaframe
             info    = read_csv(infocsv,delimiter=',',encoding='utf-8',index_col=0)
             time    = read_csv(timecsv,delimiter=',',encoding='utf-8')
             dstat   = read_csv(dstatcsv,delimiter='[,\t]',header=5,encoding='utf-8',engine='python')
             report  = read_csv(reportcsv,delimiter=',',encoding='utf-8')
             result  = read_csv(resultcsv,delimiter=',',encoding='utf-8')
+
+            # get sampling-steps from imported info
+            steps = int(info['0'].iloc[3])
 
             # create Experiment object
             tmp = Experiment(path,file,mode,vector,steps,sampling,info,time,dstat,report,result) # create temporary object
@@ -486,7 +488,7 @@ if __name__ == '__main__':
             for i in range (0,len(exp[n])):
                 if exp[n][i].vector == v:
                     tmp.append(exp[n][i])
-        print('iteration #{}:\n\nexperiments: {}\n{}'.format(count,len(tmp),tmp))
+        #print('iteration #{}:\n\nexperiments: {}\n{}'.format(count,len(tmp),tmp))
 
         # CREATE CHART
         # lists to accumulate values & labels for comparison
@@ -526,7 +528,7 @@ if __name__ == '__main__':
 
             # title & label
             title = 'comparison\n{}\n'.format(cfg.vectors[v])
-            label = 'n = {}, {}'.format(x.steps,samplingtype)
+            label = 'n = {}, {}, {}'.format(x.steps,samplingtype,cfg.samplingmode[x.mode])
 
             # create lists for comparison-plot
             compare_values.append(value)
