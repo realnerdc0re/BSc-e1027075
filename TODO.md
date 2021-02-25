@@ -38,7 +38,9 @@
     - same steps, same featurevectors
         - different samplingmethods
 
-- improve title & suptitle for spidercharts similar to graphs
+- improve title & suptitle for spidercharts similar to graphs, maybe do it like graphs with title, suptitle and different sizes normal/bold style
+
+- improve legend placement for comparison charts if labels are going to be that long as they are now
 
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
