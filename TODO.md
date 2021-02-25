@@ -9,6 +9,9 @@
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 
+- implement scapy to do the packet-sampling, using editcap is like a very poor bandaid in comparison and creatues issues for timebased sampling technique implementation
+
+
 - once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
 
 - config.py: get limits directy from dictionary-entries?
@@ -17,6 +20,13 @@
 
 
 #### EVALUATION
+
+
+- user inner classes for class Experiment
+
+- implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
+
+- develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
 
 - save PNG for all generated charts in the same folder where the data is actually fetched from
 
@@ -42,9 +52,11 @@
 
 - setup environment for LaTeX usage and check basics to add text-blocks to template on OSX
 
-- develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
-
 - create detailed flow-charts for the scripts in addition to the overview flow-chart
+
+- implement draft chapter-structure
+
+- START WRITING!
 
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 
@@ -94,6 +106,7 @@
 
 ## DONE
 
+- reading double digit sampling steps need to be improved in rpi-Evaluation.py. Either read from foldername or just use the actual information.csv instead (probably cleaner way to do it, check script line 121)
 - config.py: append psamplingmode at the end of fsamplingmode dictionary so I don't have anything to change afterwards when tweaking samplingmodes?
 - change evaluation script to read data from new folder-structure, containing logs-rpi* subfolders for fit/import model...
 - dstat swap- & memory-usage will have similar labels ("used", "free"): take care of duplicates in rpi-Evaluation.py
