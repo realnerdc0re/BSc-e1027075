@@ -30,6 +30,7 @@ pattern = '*Hours.csv' # pattern used to merge files
 flowfolder      = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
 packetfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
 
+
 # filenames used for logs
 csv_dstat   = 'dstat.csv'
 csv_time    = 'time.csv'
@@ -118,10 +119,10 @@ remote      = '{}@{}'.format(remoteuser,remoteip)
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 batchsize   = 100000
-file        = [4,5]
+file        = [0]
 vector      = [4,5]
-mode        = [1,5]
-steps       = [3,5]
+mode        = [1,3,5]
+steps       = [3,5,7,10]
 n_PCA       = 4 # number of components for PCA
 chunksize   = 1 # read CSV line-by-line
 split       = 5000 # used for packetsampling, determines number of packets in editcap splits
