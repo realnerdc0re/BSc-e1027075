@@ -648,6 +648,7 @@ if __name__ == '__main__':
     print('FOLDER:\t{}\n\t{}\n\t{}\n'.format(cfg.logs,samplefolder,foldername))
     print('JSON:\t{}'.format(cfg.vectors[j]))
     if model or save: print('MODEL:\t{}'.format(modelpkl.format(cfg.filenames[findex])))
+    print('MODE:\t{}'.format(cfg.samplingmode[m]))
     print('CSV:\t{}'.format(csv_import))
     print('\n'+20*'~'+' commands '+20*'~')
     print('\ndstat: {}\n\n'.format(dstatcmd))
