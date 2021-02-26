@@ -38,34 +38,6 @@ packetfolder        = []
 experiments_perflow = []
 experiments_packets = []
 
-# working directory
-#wd = Path.cwd()
-
-# logs-folder
-#logd = wd / 'evaluation'
-
-evaluationd = []
-reports = []
-results = []
-dstats = []
-infos = []
-times = []
-accuracyscores = []
-matrices = []
-runtimes = []
-samplingtypes = []
-samplingmodes = []
-samplingsteps = []
-featurevectors = []
-
-# files
-#reportcsv = logd / 'report.csv'
-#resultcsv = logd / 'result.csv'
-#timecsv = logd / 'time.csv'
-#dstatcsv = logd / 'dstat.csv'
-#infocsv = logd / 'information.csv'
-
-
 
 # class object containing all necessary experiment data
 class Experiment:
@@ -86,6 +58,7 @@ class Experiment:
         self.result     = result
 
         # chart-values
+
 
         # calculated values
         self.runtime    = runtime # runtime for preprocessing and classification in seconds
@@ -125,7 +98,7 @@ def createExperiments(folders,verbose=False):
             infocsv     = folder / cfg.csv_info
             timecsv     = folder / 'logs_model-import_remote' / cfg.csv_time
             dstatcsv    = folder / 'logs_model-import_remote' / cfg.csv_dstat
-            reportcsv   = folder / 'logs_model-import_remote' / cfg.report
+            reportcsv   = folder / 'logs_model-import_remote' / cfg.csv_report
             resultcsv   = folder / 'logs_model-import_remote' / cfg.csv_result
             # import CSV as dafaframe
             info    = read_csv(infocsv,delimiter=',',encoding='utf-8',index_col=0)
@@ -188,7 +161,14 @@ if __name__ == '__main__':
     print('\nfolders:\n\t{}\tsub-folders: {}\n\t{}\tsub-folders: {}\n\n'.format(cfg.flowfolder,len(flowfolder),cfg.packetfolder,len(packetfolder)))
     if verbose: input('...')
 
+    # clean figures directory
+    print('>>> Clear directory')
+    for filetype in cfg.types:
+        for file in sorted(Path(cfg.figures).glob(filetype)): # iterates over list of files, sorted by name
+            Path.unlink(file)
+            if verbose: print('\t<< {}'.format(file))
 
+    # create Experiments based on given folders
     print('>>> Creating objects')
     folders = [flowfolder,packetfolder] # list for different sampling-categories
     exp = createExperiments(folders,verbose) # save returned experiment objects for further processing
@@ -219,8 +199,8 @@ if __name__ == '__main__':
         for i in range(0,len(steps)):
             print('\t\t< n = {}'.format(steps[i]))
         print('\t<< sampling-modes:')
-        for i in range(0,len(modes)):
-            print('\t\t< {}'.format(cfg.samplingmode[steps[i]]))
+        for i in modes:
+            print('\t\t< {}'.format(cfg.samplingmode[i]))
 
     print('>>> Converting timestamps, adding runtimes, adjusting logs')
     maxruntime = 0
@@ -243,6 +223,7 @@ if __name__ == '__main__':
 
     print('>>> Converting memory values')
     convert = ['"used"','"total"','"cach"','"free"','"used".1','"free".1'] # features to convert (RAM, SWAP)
+
     for n in range(0,len(folders)):
         for i in range (0,len(exp[n])):
             rows = exp[n][i].dstat.shape[0]
@@ -357,9 +338,9 @@ if __name__ == '__main__':
             # plot graphs
             fig = plt.figure(figsize=(21.0,9.0))
             plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"total"'], color = '#000000',label='RAM total',linewidth=3)
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used"'],  color = '#566573',label='RAM used',linewidth=3)
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"cach"'],  color = '#AEB6BF',label='RAM cached',linewidth=3)
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used".1'],color = '#566573',label='SWAP used',linewidth=3)
+            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used"'],  color = '#566573',label='RAM used',linewidth=2)
+            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"cach"'],  color = '#AEB6BF',label='RAM cached',linewidth=2)
+            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used".1'],color = '#566573',label='SWAP used',linewidth=2)
 
             # plot segments
             style = 'dotted'
@@ -440,7 +421,6 @@ if __name__ == '__main__':
             # show/hide plots
             if (not plot): plt.close(fig) # close fig directly to not show it on script execution
             else: plt.show() # show single plot
-            plt.show()
 
 
 
@@ -464,18 +444,20 @@ if __name__ == '__main__':
     palette.append('#216918')
 
 
-    compare = exp.copy() # copy all experiment data
-    count = 0
-
 
     print('\t<< feature-vectors')
     for i in range(0,len(vectors)):
         print('\t\t< {}'.format(cfg.vectors[vectors[i]]))
 
+    count = 0
+    compare = exp.copy() # copy all experiment data
     for v in vectors: # accumulate experiments with similar feature-vector
         tmp = []
         tmp_color = palette.copy()
         count += 1
+
+        png_file = 'figures/Spiderchart-Comparison_vectors_figure{}.png'
+
         for n in range(0,len(folders)):
             for i in range (0,len(exp[n])):
                 if exp[n][i].vector == v:
@@ -542,7 +524,13 @@ if __name__ == '__main__':
         plt.ylim(0,100)
         plt.title(title,size='medium') # set title
         plt.legend()
-        plt.show()
+
+        if verbose: print('\t\t\t< {}'.format(png_file.format(count)))
+        plt.savefig(png_file.format(count)) # save plot to file
+
+        # show/hide plots
+        if (not plot): plt.close(fig) # close fig directly to not show it on script execution
+        else: plt.show() # show single plot
 
 
 
@@ -550,15 +538,17 @@ if __name__ == '__main__':
     for i in range(0,len(steps)):
         print('\t\t< n = {}'.format(steps[i]))
 
+    count = 0
     for s in steps: # accumulate experiments with similar feature-vector
         tmp = []
         tmp_color = palette.copy()
         count += 1
+        png_file = 'figures/Spiderchart-Comparison_steps_figure{}.png'
+
         for n in range(0,len(folders)):
             for i in range (0,len(exp[n])):
                 if exp[n][i].steps == s:
                     tmp.append(exp[n][i])
-        #print('iteration #{}:\n\nexperiments: {}\n{}'.format(count,len(tmp),tmp))
 
         # CREATE CHART
         # lists to accumulate values & labels for comparison
@@ -620,6 +610,47 @@ if __name__ == '__main__':
         plt.ylim(0,100)
         plt.title(title,size='medium') # set title
         plt.legend(loc='best')
-        plt.show()
+
+        if verbose: print('\t\t\t< {}'.format(png_file.format(count)))
+        plt.savefig(png_file.format(count)) # save plot to file
+
+        # show/hide plots
+        if (not plot): plt.close(fig) # close fig directly to not show it on script execution
+        else: plt.show() # show single plot
+
+
+
+    # CREATE COMPARISON TABLE
+    # first column contains different sampling/techniques, vectors & steps
+    # columns afterwards contain: accuracy, recall 0, recall 1, precision, F1
+
+    columns_list = ['experiment','accuracy-score','recall 0','recall 1','precision0','precision1','F1 0','F1 1','runtime','parameter']
+    chart = pd.DataFrame(columns=columns_list)
+
+    # fill chart with data, therefore cycle through experiment configurations
+    print('>>> Creating comparison table')
+    count = 0
+    for n in range(0,len(folders)):
+        for i in range (0,len(exp[n])):
+            tmp = exp[n][i] # current experiment
+
+            title = 'n={}, {}, {}'.format(tmp.steps,cfg.vectors[tmp.vector],cfg.samplingmode[tmp.mode])
+            accuracyscore   = float(tmp.result['summary'][2])
+            recall0         = tmp.report['recall'][0]
+            recall1         = tmp.report['recall'][1]
+            precision0      = tmp.report['precision'][0]
+            precision1      = tmp.report['precision'][1]
+            F10             = tmp.report['f1-score'][0]
+            F11             = tmp.report['f1-score'][1]
+            runtime         = tmp.runtime
+            parameter       = 100*F11/((1-recall1)*tmp.runtime/60)
+
+            tmpdf = pd.DataFrame([[title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,parameter]],columns=columns_list)
+            chart = chart.append(tmpdf)
+            savecsv = 'figures/comparison.csv'
+
+    print('>>> Saving comparison table')
+    chart.to_csv(savecsv)
+    if verbose: print('\t<< {}\n{}\n'.format(savecsv,chart))
 
     exit()
