@@ -3,6 +3,7 @@
 ### CODE
 
 - describe softlink usage on remote machine in config.py to get user aware of this for documentation
+
 - mention authorization via SSH keys for Master.py execution in config.py
 
 
@@ -21,14 +22,13 @@
 
 #### EVALUATION
 
-
 - user inner classes for class Experiment
 
 - implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
 
 - develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
 
-- save PNG for all generated charts in the same folder where the data is actually fetched from
+- save PNG for all generated charts in addition to wd/figures into the same folder where the data is actually fetched from
 
 - group experiment classobjects based on following comparisons (files always Merged?):
     - same featurevector, same samplingmethod
@@ -108,6 +108,12 @@
 
 ## DONE
 
+- create df for comparison table of different techniques, containing at least:
+    - accuracy
+    - recall 0,1
+    - precision
+    - F1
+- include sampling mode in informational output in rpi-Preprocessing.py
 - reading double digit sampling steps need to be improved in rpi-Evaluation.py. Either read from foldername or just use the actual information.csv instead (probably cleaner way to do it, check script line 121)
 - config.py: append psamplingmode at the end of fsamplingmode dictionary so I don't have anything to change afterwards when tweaking samplingmodes?
 - change evaluation script to read data from new folder-structure, containing logs-rpi* subfolders for fit/import model...
