@@ -121,8 +121,8 @@ remote      = '{}@{}'.format(remoteuser,remoteip)
 batchsize   = 100000
 file        = [0]
 vector      = [4,5]
-mode        = [1,3,5]
-steps       = [3,5,7,10]
+mode        = [1,5]
+steps       = [5,10]
 n_PCA       = 4 # number of components for PCA
 chunksize   = 1 # read CSV line-by-line
 split       = 5000 # used for packetsampling, determines number of packets in editcap splits
@@ -133,6 +133,5 @@ splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows 
 #######################################################################################
 # EVALUATION
 
-
-
+types = ['*.png','*.csv'] # used to clean figures folder when before processing data
 #######################################################################################
