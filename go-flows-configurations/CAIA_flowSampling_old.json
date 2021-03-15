@@ -4,45 +4,45 @@
     "flows": [
       {
         "features": [
-		    "flowStartMilliseconds",
-		    "flowDurationMilliseconds",
-		    
-		    "sourceIPAddress",
-                    "destinationIPAddress",
-            	    "sourceTransportPort",
-            	    "destinationTransportPort",
-            	    "protocolIdentifier",
+            "flowStartMilliseconds",
+            "flowDurationMilliseconds",
+            
+            "sourceIPAddress",
+            "destinationIPAddress",
+            "sourceTransportPort",
+            "destinationTransportPort",
+            "protocolIdentifier",
 
-		    {"apply": ["packetTotalCount", "forward"]},
-		    {"apply": ["octetTotalCount", "forward"]},
-		    {"apply": ["tcpSynTotalCount", "forward"]},
-		    {"apply": ["tcpAckTotalCount", "forward"]},
-		    {"apply": ["tcpFinTotalCount", "forward"]},
-		    {"apply": ["_tcpCwrTotalCount", "forward"]},
+            {"apply": ["packetTotalCount", "forward"]},
+            {"apply": ["octetTotalCount", "forward"]},
+            {"apply": ["tcpSynTotalCount", "forward"]},
+            {"apply": ["tcpAckTotalCount", "forward"]},
+            {"apply": ["tcpFinTotalCount", "forward"]},
+            {"apply": ["_tcpCwrTotalCount", "forward"]},
 
-		    {"apply": ["packetTotalCount", "backward"]},
-		    {"apply": ["octetTotalCount", "backward"]},
-		    {"apply": ["tcpSynTotalCount", "backward"]},
-		    {"apply": ["tcpAckTotalCount", "backward"]},
-		    {"apply": ["tcpFinTotalCount", "backward"]},
-		    {"apply": ["_tcpCwrTotalCount", "backward"]},
-		    
+            {"apply": ["packetTotalCount", "backward"]},
+            {"apply": ["octetTotalCount", "backward"]},
+            {"apply": ["tcpSynTotalCount", "backward"]},
+            {"apply": ["tcpAckTotalCount", "backward"]},
+            {"apply": ["tcpFinTotalCount", "backward"]},
+            {"apply": ["_tcpCwrTotalCount", "backward"]},
+            
 
-		    {"apply": [{"accumulate":["ipTotalLength"]}, "forward"]},
-		    {"apply": [{"accumulate":["_interPacketTimeSeconds"]}, "forward"]},
-		    {"apply": [{"accumulate":["ipTotalLength"]}, "backward"]},
-		    {"apply": [{"accumulate":["_interPacketTimeSeconds"]}, "backward"]}	    
+            {"apply": [{"accumulate":["ipTotalLength"]}, "forward"]},
+            {"apply": [{"accumulate":["_interPacketTimeSeconds"]}, "forward"]},
+            {"apply": [{"accumulate":["ipTotalLength"]}, "backward"]},
+            {"apply": [{"accumulate":["_interPacketTimeSeconds"]}, "backward"]}     
         ],
-	"active_timeout": 1800,
-	"idle_timeout": 300,
-	"bidirectional": true,
-	"key_features": [
-		"sourceIPAddress",
-		"destinationIPAddress",
-		"protocolIdentifier",
-		"sourceTransportPort",
-		"destinationTransportPort"
-	]
+    "active_timeout": 1800,
+    "idle_timeout": 300,
+    "bidirectional": true,
+    "key_features": [
+        "sourceIPAddress",
+        "destinationIPAddress",
+        "protocolIdentifier",
+        "sourceTransportPort",
+        "destinationTransportPort"
+    ]
       }
     ]
   }

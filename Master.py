@@ -20,7 +20,7 @@ parser.add_argument('-v','--verbose', action='store_true', help='output verbose 
 parser.add_argument('-f','--fit', action='store_true', help='fit model on remote machine')
 parser.add_argument('-m','--model', action='store_true', help='load model on local machine')
 parser.add_argument('--nosync',action='store_true',  help= 'no syncing from local to remote')
-# force either just local or remote execution
+# force either just local or remote execution if selected at all
 execution = parser.add_mutually_exclusive_group(required=False)
 execution.add_argument('-l','--local', action='store_true', help='run scripts on local machine')
 execution.add_argument('-r','--remote', action='store_true', help='run scripts on remote machine')
