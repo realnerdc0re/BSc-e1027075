@@ -57,7 +57,7 @@ if __name__ == '__main__':
     if not local:
         ping = os.system('ping -c 1 {} >/dev/null 2>&1'.format(cfg.remoteip)) # ping remote machine
 
-        if ping == 0:   print('>>> Status {}: '.format(cfg.remoteip)+Fore.GREEN+'ONLINE'+Style.RESET_ALL)
+        if ping == 0:   print('>>> Status {}: '.format(cfg.remoteip)+Fore.YELLOW+'ONLINE'+Style.RESET_ALL)
         else:           print('>>> Status {}: '.format(cfg.remoteip)+Fore.RED+'OFFLINE'+Style.RESET_ALL), exit()
 
     # iterate over configurations
@@ -99,10 +99,10 @@ if __name__ == '__main__':
 
 
                     if (not remote): # LOCAL
-                        print(Fore.GREEN+'\n>>> Sample PCAP on local machine: {}'.format(sampling)+Style.RESET_ALL)
+                        print(Fore.YELLOW+'\n>>> Sample PCAP on local machine: {}'.format(sampling)+Style.RESET_ALL)
                         callCommand(sampling)
 
-                        print(Fore.GREEN+'\n>>> Create and save model on local machine: {}'.format(model)+Style.RESET_ALL)
+                        print(Fore.YELLOW+'\n>>> Create and save model on local machine: {}'.format(model)+Style.RESET_ALL)
                         callCommand(model)
 
                         if local: # skip processing on remote machine
@@ -111,17 +111,17 @@ if __name__ == '__main__':
                             continue
 
                     if (not local): # REMOTE
-                        print(Fore.GREEN+'\n>>> Create base-folder on remote machine: {}'.format(mkdir)+Style.RESET_ALL)
+                        print(Fore.YELLOW+'\n>>> Create base-folder on remote machine: {}'.format(mkdir)+Style.RESET_ALL)
                         callCommand(mkdir)
 
                         if (not nosync):
-                            print(Fore.GREEN+'\n>>> Sync content from local to remote machine: {}'.format(sync)+Style.RESET_ALL)
+                            print(Fore.YELLOW+'\n>>> Sync content from local to remote machine: {}'.format(sync)+Style.RESET_ALL)
                             callCommand(sync)
 
-                        print(Fore.GREEN+'\n>>> Execute pre-processing and classification on remote machine: {}'.format(ssh)+Style.RESET_ALL)
+                        print(Fore.YELLOW+'\n>>> Execute pre-processing and classification on remote machine: {}'.format(ssh)+Style.RESET_ALL)
                         callCommand(ssh)
 
-                        print(Fore.GREEN+'\n>>> Sync results back to local machine: {}'.format(resync)+Style.RESET_ALL)
+                        print(Fore.YELLOW+'\n>>> Sync results back to local machine: {}'.format(resync)+Style.RESET_ALL)
                         callCommand(resync)
 
     end = timer()
