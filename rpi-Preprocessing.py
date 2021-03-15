@@ -670,7 +670,7 @@ if __name__ == '__main__':
     Ytrain  = pd.Series(dtype=int)
     Ytest   = pd.Series(dtype=int)
 
-    for chunk in read_csv(path,chunksize=10**5,usecols=None,skipinitialspace=True,encoding='utf-8'): # read csv in chunks
+    for chunk in read_csv(path,chunksize=cfg.chunksize,usecols=None,skipinitialspace=True,encoding='utf-8'): # read csv in chunks
         chunk = conversion(chunk,False) # convert values into smaller datatypes
         cleanString(chunk,False,False) # remove string-features
         cleanNaN(chunk,0,False,False) # remove NaNs
