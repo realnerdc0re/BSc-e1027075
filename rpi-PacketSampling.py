@@ -6,6 +6,7 @@ Created on Fri Sep 11 09:25:55 2020
 @author: pjr
 """
 
+from pandas import read_csv
 from timeit import default_timer as timer
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
 from colorama import Fore, Style
@@ -93,6 +94,20 @@ def packetOutput(plist,n,verbose):
     
     return tmp
 
+def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
+    # informational output
+    if verbose: print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
+    print('\n>>> Importing {}'.format(csvpath))
+    csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
+    return csvdata
+# outputs basic datset informations
+def printdata(dataset,heading,verbose=False):
+
+    print('\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading) +40*'~'+'\n')
+    print('< Columns:\n{}\n'.format(dataset.columns))
+    print('< Dataset:\n{}\n'.format(dataset))
+    print('{}\n'.format(dataset.describe()))
+    return
 
 if __name__ == '__main__':
 
@@ -134,6 +149,8 @@ if __name__ == '__main__':
     pcap_split      = '{}_split.pcap'.format(cfg.filenames[findex])
     pcap_sampled    = '{}_sampled.pcap'.format(cfg.filenames[findex]) # sampled PCAP
     csv_sampled     = '{}_unlabeled.csv'.format(cfg.filenames[findex]) # sampled CSV
+
+    csv_file        = cfg.packetfolder / csv_sampled
 
     # directories
     snap_folder         = cfg.fpath / 'snapPCAP'
@@ -331,6 +348,12 @@ if __name__ == '__main__':
     # LABELING
     if verbose: print('>>> Labeling: {}'.format(labelingcmd))
     os.system(labelingcmd)
+
+    if verbose:
+        dataset = importCSV(csv_file,None,verbose)
+        printdata(dataset,'packet-sampled',verbose)
+
+
 
     if time:
         end = timer()
