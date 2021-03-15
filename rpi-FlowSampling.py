@@ -85,6 +85,18 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
         else: print('\t- {}'.format(feature))
 
     return tmp
+# returns list of features based on keyword
+def filterFeatures(dataset,keyword,verbose=False,time=False):
+
+    features = dataset.columns
+    tmp = []
+
+    for feature in features:
+        if keyword in feature:
+            tmp.append(feature)
+            print('\t+ {}'.format(feature))
+        else: print('\t- {}'.format(feature))
+    return tmp
 # converts accumulated per-packet features into np.array
 def convertToArray(dataset,features,verbose=False,time=False):
 
@@ -378,28 +390,91 @@ if __name__ == '__main__':
 
 
     # PER-FLOW SAMPLING
+    keyword = 'apply(accumulate'
     print('>>> Identifying accumulated features')
-    keyword = 'apply(accumulate' # all per_packet features from go-flows begin with this string
-    features = perpacketFeatures(dataset,keyword,verbose,time) # get list of accumulated perpacket-features that have to be sampled
+    features = filterFeatures(dataset,keyword,verbose,time) # get list of accumulated perpacket-features that have to be sampled
+
+    keyword = 'TotalCount'
+    print('>>> Identifying features containing: {}'.format(keyword))
+    totalFeatures = filterFeatures(dataset,keyword,verbose,time) # list containing all 'TotalCount' features
+
+    keyword = 'ipTotal'
+    print('>>> Identifying features containing: {}'.format(keyword))
+    ipTotal = filterFeatures(dataset,keyword,verbose,time) # list containing all 'ipTotal' features
+
+    keyword = 'interPacket'
+    print('>>> Identifying features containing: {}'.format(keyword))
+    interPacket = filterFeatures(dataset,keyword,verbose,time) # list containing all 'interPacket' features
     if verbose: print('\n< Original:\n{}\n'.format(dataset[features].head(n=20)))
 
-    print('>>> Converting accumulated values')
+    print('\n\n>>> Converting accumulated values')
     convertToArray(dataset,features,verbose,time)
     if verbose: print('\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
     print('>>> Applying per-flow sampling')
-    #flowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
     lambdaflowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
     if verbose: print('\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
 
-    # CALCULATIONS (calculate mean values of accumulated per_packet features)
-    print('>>> Calculating mean values')
-    for feature in features: # iterate over per_packet features
+    # CALCULATIONS
+    print('\n\n>>> Create features & calculate values')
+    # totalPacketCounts as CAIA features
+    key = ['forward','backward']
+    for word in key:
+        for feature in totalFeatures:
+            if word in feature:
+                newfeature = '{},{}'.format('packetTotalCount',word)
+                print('\t> {}'.format(newfeature))
+                dataset.insert(6,newfeature,0)
+                dataset[newfeature] = dataset[feature].apply(lambda x: len(x))
+                break
+
+    # calculate min, mean, max & stdev for CAIA features
+    key     = ['min','mean','max','stdev'] # parameters to calculate
+    for feature in (ipTotal+interPacket):
+        for word in key:
+            newfeature = '{}: {}'.format(feature,word)
+            print('\t> {}'.format(newfeature))
+            dataset.insert(len(dataset.columns),newfeature,0) # initialise new feature after last column
+
+            # apply calculations on new features
+            if   word == 'min':   dataset[newfeature] = dataset[feature].apply(lambda x: np.amin(x))
+            elif word == 'mean':  dataset[newfeature] = dataset[feature].apply(lambda x: sum(x)/len(x))
+            elif word == 'max':   dataset[newfeature] = dataset[feature].apply(lambda x: np.amax(x))
+            elif word == 'stdev': dataset[newfeature] = dataset[feature].apply(lambda x: np.std(x))
+
+    # summarize totalCounts
+    print('>>> Calculate')
+    for feature in totalFeatures:
+        print('\t> {}:'.format(feature))
+        dataset[feature] = dataset[feature].apply(lambda x: sum(x))
+
+
+    # DROP, RENAME & SORT
+    # drop features not necessary anymore
+    print('>>> Drop features')
+    for feature in (ipTotal+interPacket):
         print('\t> {}'.format(feature))
-        dataset[feature] = dataset[feature].apply(lambda x: sum(x)/len(x))
+        dataset.drop(columns=feature,inplace=True)
+
+    # rename features
+    print('>>> Rename features')
+    features = dataset.columns
+    for feature in features:
+        tmp = feature.replace('apply(accumulate','(')
+        print('\t> {} >> {}'.format(feature,tmp))
+        dataset.rename(columns={feature:tmp},inplace=True)
+
+    # sort features
+    print('>>> Sort features')
+    features = dataset.columns.tolist() # get list of features
+    preordered = ['flowStartMilliseconds', 'sourceIPAddress', 'destinationIPAddress','sourceTransportPort', 'destinationTransportPort', 'protocolIdentifier','packetTotalCount,forward', 'packetTotalCount,backward']
+    for feature in preordered: features.remove(feature) # remove preordered features from list
+    features.sort() # sort remaining features
+    dataset = dataset[preordered+features]
 
     if verbose:
+        features = dataset.columns
         print('\n< Calculated:\n{}\n'.format(dataset[features].head(n=20))), input('...\n')
         printdata(dataset,'per-flow sampled',verbose)
 
