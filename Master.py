@@ -95,10 +95,10 @@ if __name__ == '__main__':
 
 
                     if (not remote): # LOCAL
-                        print('>>> Sample PCAP on local machine: {}'.format(sampling))
+                        print(Fore.GREEN+'\n>>> Sample PCAP on local machine: {}'.format(sampling)+Style.RESET_ALL)
                         callCommand(sampling)
 
-                        print('>>> Create and save model on local machine: {}'.format(model))
+                        print(Fore.GREEN+'\n>>> Create and save model on local machine: {}'.format(model)+Style.RESET_ALL)
                         callCommand(model)
 
                         if local: # skip processing on remote machine
@@ -107,17 +107,17 @@ if __name__ == '__main__':
                             continue
 
                     if (not local): # REMOTE
-                        print('>>> Create base-folder on remote machine: {}'.format(mkdir))
+                        print(Fore.GREEN+'\n>>> Create base-folder on remote machine: {}'.format(mkdir)+Style.RESET_ALL)
                         callCommand(mkdir)
 
                         if (not nosync):
-                            print('>>> Sync content from local to remote machine: {}'.format(sync))
+                            print(Fore.GREEN+'\n>>> Sync content from local to remote machine: {}'.format(sync)+Style.RESET_ALL)
                             callCommand(sync)
 
-                        print(Fore.GREEN+'>>> Execute pre-processing and classification on remote machine: {}'.format(ssh)+Style.RESET_ALL)
+                        print(Fore.GREEN+'\n>>> Execute pre-processing and classification on remote machine: {}'.format(ssh)+Style.RESET_ALL)
                         callCommand(ssh)
 
-                        print('>>> Sync results back to local machine: {}'.format(resync))
+                        print(Fore.GREEN+'\n>>> Sync results back to local machine: {}'.format(resync)+Style.RESET_ALL)
                         callCommand(resync)
 
     end = timer()
