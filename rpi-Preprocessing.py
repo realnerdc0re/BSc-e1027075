@@ -585,7 +585,7 @@ if __name__ == '__main__':
     else:       modelpkl = cfg.model_local
 
     # first set correct foldernames for preprocessing & classification logs
-    if (model or save):
+    if model:
         if remote:  log = log.format('import_remote')
         else:       log = log.format('import_local')
     else: 
