@@ -2,27 +2,19 @@
 
 ### CODE
 
-- describe softlink usage on remote machine in config.py to get user aware of this for documentation
-
-- mention authorization via SSH keys for Master.py execution in config.py
-
+- implement rpi-Evaluation.py execution at the end of Master.py
 
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 
 - implement scapy to do the packet-sampling, using editcap is like a very poor bandaid in comparison and creatues issues for timebased sampling technique implementation
 
-
 - once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
 
 - config.py: get limits directy from dictionary-entries?
 
 
-
-
 #### EVALUATION
-
-- user inner classes for class Experiment
 
 - implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
 
@@ -48,21 +40,11 @@
 
 ### THESIS
 
-- check LaTeX basics
+- describe softlink usage on remote machine in config.py to get user aware of this for documentation
 
-- maybe check svn client for linux/osx (SmartSVN, rabbitVCS...)
-
-- setup environment for LaTeX usage and check basics to add text-blocks to template on OSX
-
-- create detailed flow-charts for the scripts in addition to the overview flow-chart
-
-- implement draft chapter-structure
-
-- START WRITING!
+- mention authorization via SSH keys for Master.py execution in thesis
 
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
-
-
 
 
 
@@ -100,14 +82,23 @@
 
 #### IMPROVEMENTS
 
+- user inner classes for class Experiment
 - change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
 - create config file to import, containing all necessary file- and folderpaths, paths to executable tools... and import this file instead of making definitions inside every script
 - choose another method to load/save data, model & results
 - improve FlowSampling method (function convertToList), now using actual lists instead of np array for iteration, etc..
 
 
+
+
 ## DONE
 
+- check LaTeX basics
+- setup environment for LaTeX usage and check basics to add text-blocks to template on OSX
+- create detailed flow-charts for the scripts in addition to the overview flow-chart
+- implement draft chapter-structure
+
+- adjust CAIA_perflowSampling.json feature vector to have correct per-flow sampling features
 - create df for comparison table of different techniques, containing at least:
     - accuracy
     - recall 0,1
