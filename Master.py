@@ -43,14 +43,16 @@ if __name__ == '__main__':
     nosync  = args.nosync
     local   = args.local
     fit     = args.fit
-    model   = args.model
+    models  = args.model
 
     # check passed optional arguments and commands
     print('\n'+40*'~'+' SCRIPT: Master.py '+40*'~')
     if verbose:
-        print('\nfiles:\n\t{}\n\nsampling-modes:\n\t{}\n\nfeature-vectors:\n\t{}\n'.format(cfg.filenames,cfg.mode,cfg.vectors))
+        print('\nfiles:\n\t{}\n\nsampling-modes:\n\t{}{}\n\nfeature-vectors:\n\t{}\n'.format(cfg.filenames,cfg.fsamplingmode,cfg.psamplingmode,cfg.vectors))
         print(20*'~'+' configuration '+20*'~')
         print('\n\tfile:\t{}\n\tvector:\t{}\n\tmode:\t{}\n\tstep:\t{}\n\n'.format(cfg.file,cfg.vector,cfg.mode,cfg.steps))
+        print(20*'~'+' arguments '+20*'~')
+        print('\n\tverb:\t{}\n\tfit:\t{}\n\tmodel:\t{}\n\tnosync:\t{}\n\tlocal:\t{}\n\tremote:\t{}\n\n'.format(verbose,fit,models,nosync,local,remote))
         input('...')
 
     # check online-status of remote machine
@@ -88,7 +90,7 @@ if __name__ == '__main__':
                     folder   = foldername.format(cfg.filenames[file],mode,vector,steps)
                     sampling = 'python3 rpi-Sampling.py -e {} {} {} {} {}'.format(sarg,mode,file,steps,vector)
 
-                    if model: model = 'python3 rpi-Preprocessing.py -e -m {} {} {} {} {} {}'.format(sarg,mode,file,steps,vector,cfg.batchsize)
+                    if models: model = 'python3 rpi-Preprocessing.py -e -m {} {} {} {} {} {}'.format(sarg,mode,file,steps,vector,cfg.batchsize)
                     else: model = 'python3 rpi-Preprocessing.py -e -s {} {} {} {} {} {}'.format(sarg,mode,file,steps,vector,cfg.batchsize)
 
                     if fit: ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # saving model on remote
