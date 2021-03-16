@@ -18,14 +18,15 @@
             {"apply": [{"accumulate":["tcpFinTotalCount"]}, "forward"]},
             {"apply": [{"accumulate":["_tcpCwrTotalCount"]}, "forward"]},
 
+            {"apply": [{"accumulate":["ipTotalLength"]}, "forward"]},
+            {"apply": [{"accumulate":["_interPacketTimeSeconds"]}, "forward"]},
+
             {"apply": [{"accumulate":["octetTotalCount"]}, "backward"]},
             {"apply": [{"accumulate":["tcpSynTotalCount"]}, "backward"]},
             {"apply": [{"accumulate":["tcpAckTotalCount"]}, "backward"]},
             {"apply": [{"accumulate":["tcpFinTotalCount"]}, "backward"]},
             {"apply": [{"accumulate":["_tcpCwrTotalCount"]}, "backward"]},
 
-            {"apply": [{"accumulate":["ipTotalLength"]}, "forward"]},
-            {"apply": [{"accumulate":["_interPacketTimeSeconds"]}, "forward"]},
             {"apply": [{"accumulate":["ipTotalLength"]}, "backward"]},
             {"apply": [{"accumulate":["_interPacketTimeSeconds"]}, "backward"]}
 
