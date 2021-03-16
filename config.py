@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
 
-
 #######################################################################################
 # BASIC CONFIGURATION
 #######################################################################################
@@ -13,7 +12,6 @@ hd      = Path.home()
 #######################################################################################
 # PCAP filepath & filenames (without extension)
 fpath = mntd / 'data' / 'CIC-IDS2017' / 'PCAP'
-
 filenames = {
 0:'Merged',
 1:'Monday-WorkingHours',
@@ -22,33 +20,27 @@ filenames = {
 4:'Thursday-WorkingHours',
 5:'Friday-WorkingHours'
 }
-
 pattern = '*Hours.csv' # pattern used to merge files
 #######################################################################################
 # FOLDERS, FILES & LOGS
 # sampled CSVs & result logs, temporary logs in working directory
 flowfolder      = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
 packetfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
-
-
 # filenames used for logs
 csv_dstat   = 'dstat.csv'
 csv_time    = 'time.csv'
 csv_result  = 'result.csv'
 csv_report  = 'report.csv'
 csv_info    = 'information.csv'
-
 # working directory folders
 tmp     = wd / 'tmp'
 logs    = wd / 'logs'
 figures = wd / 'figures'
-
 # full path to wd logs
 time    = logs / csv_time
 dstat   = logs / csv_dstat
 result  = logs / csv_result
 report  = logs / csv_report
-
 # pickle-model files
 model_remote    = '{}_model_remote.pkl'
 model_local     = '{}_model_local.pkl'
@@ -59,15 +51,12 @@ goflowspath     = hd / 'Git' / 'go-flows' / 'go-flows'
 labelingpath    = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
 #######################################################################################
 
-
 #######################################################################################
 # SAMPLING CONFIGURATION
 #######################################################################################
 # FEATURE-VECTORS
 # directory within working directory and filenames of available feature-vectors
-
 vectorfolder = 'go-flows-configurations'
-
 vectors = {
 1:'AGM_10s.json',
 2:'AGM_60s.json',
@@ -97,13 +86,10 @@ samplingmode.update(psamplingmode)
 # argument combinations to guarantee automated execution
 vectorlimit     = 5
 samplinglimit   = 5
-
-modelimit   = 4 # used to determine choice for samplingmodes in evaluation
-
-flowlimit   = 4 # used to set mode to 'AGM' or '5tuple' for Labeling.py
-packetlimit = 4
+modelimit       = 4 # used to determine choice for samplingmodes in evaluation
+flowlimit       = 4 # used to set mode to 'AGM' or '5tuple' for Labeling.py
+packetlimit     = 4
 #######################################################################################
-
 
 #######################################################################################
 # EXPERIMENT CONFIGURATION
@@ -118,17 +104,16 @@ remote      = '{}@{}'.format(remoteuser,remoteip)
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
-batchsize   = 100000 # batchsize used for Standard Scaler partial fit
-file        = [5]
-vector      = [4]
-mode        = [1]
-steps       = [5]
+file        = [0]
+vector      = [5]
+mode        = [5]
+steps       = [3,5,7,10]
 n_PCA       = 4 # number of components for PCA
+batchsize   = 10**5 # batchsize used for Standard Scaler partial fit
 chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed!)
 split       = 5000 # used for packetsampling, determines number of packets in editcap splits
 splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file
 #######################################################################################
-
 
 #######################################################################################
 # EVALUATION
