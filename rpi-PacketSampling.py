@@ -208,7 +208,7 @@ if __name__ == '__main__':
         for word in totalpacketcount.split():
             if word.isdigit():
                 totalpacketcount = int(word) # total number of packets in pcap
-                totalpackets = np.arange(1,totalpacketcount+1,1) # create numpy array from total packet count for easy determination of sampled packet count
+                totalpackets = np.arange(1,totalpacketcount+1,1)
                 totalsamplecount = len(totalpackets[0::n])
                 print('\t< {}\n\t< {} packets total\n\t< {} packets sampled'.format(capinfoscmd,totalpacketcount,totalsamplecount))
 
@@ -229,8 +229,10 @@ if __name__ == '__main__':
 
 
     # SAMPLING
-    splitlist = os.listdir(split_folder) # get a list of all files in split-directory
-    splitlist.sort() # sort list alphabetically, depending on OS you won't get a sorted list of files!
+    # get a list of all files in split-directory
+    # sort list alphabetically, depending on OS you won't get a sorted list of files!
+    splitlist = os.listdir(split_folder) 
+    splitlist.sort()
     splitcount = len(splitlist)
 
     # various variables to determine necessary packet-skips for sampling on split-file transition
@@ -258,8 +260,10 @@ if __name__ == '__main__':
         packetskip = nextpacketskip # skips for current split-file based on last iteration
         samplepcount = pcount - packetskip # packets to sample in current iteration, considering skips
 
-        plist = np.arange(1,pcount+1,1) # array containing original packets numbers of current iterations file (readability in verbose)
-        plistindex = np.arange(0,pcount,1) # same array, containing packet-indices
+        # array containing packet-numbers of the current split-file
+        plist = np.arange(1,pcount+1,1)
+        # same array, containing packet-indices
+        plistindex = np.arange(0,pcount,1)
 
 
         #if mode == 1: # every n-th packet, including first packet of the pcap
@@ -268,7 +272,8 @@ if __name__ == '__main__':
             modulo = samplepcount % n
 
             if modulo != 0:
-                nextpacketskip = n - modulo # number of packets to skip in next iteration
+                # number of packets to skip in next iteration
+                nextpacketskip = n - modulo
                 nextsamplepstart = nextpacketskip
             else:
                 nextpacketskip = 0
@@ -279,10 +284,14 @@ if __name__ == '__main__':
                 print('\n\t< {} skipped packets, this iteration'.format(packetskip))
                 print('\t< {} skipped packets, next iteration'.format(nextpacketskip))
 
-            pskip = plist[packetskip:] # array already considering packets to skip from last iteration
-            psample = plistindex[packetskip::n] # index-numbers of packets to sample in current iteration
-            psamplenumber = plist[packetskip::n] # packet-number of packets to sample in current iteration (readability in verbose)
-            pdrop = np.delete(plist,psample.tolist()) # packets to drop in current iteration via editcap
+            # array already considering packets to skip from last iteration
+            pskip = plist[packetskip:]
+            # index-numbers of packets to sample in current iteration
+            psample = plistindex[packetskip::n]
+            # packet-number of packets to sample in current iteration (readability in verbose)
+            psamplenumber = plist[packetskip::n]
+            # packets to drop in current iteration via editcap
+            pdrop = np.delete(plist,psample.tolist())
 
             if verbose: # verbose output for improved sampling comprehension
                 print('\n\t'+10*'~'+' sampling '+10*'~')
@@ -295,12 +304,16 @@ if __name__ == '__main__':
                 pprint = packetOutput(pdrop,10,False)
                 print('\n\t< Dropped: {} packets\n\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1])))
 
-            pdrop = np.flip(pdrop) # flip the list to drop packets via editcap, starting from the end
-            iteration = int(len(pdrop)/512)+1 # number of iterations until all packets are dropped, 512 packets per slice is a limiting factor from editcap
+            # flip the list to drop packets via editcap, starting from the end
+            pdrop = np.flip(pdrop)
+            # number of iterations until all packets are dropped
+            iteration = int(len(pdrop)/512)+1
 
             for i in range(0,iteration):
-                pslice = pdrop[0:512] # create a slice of 512 packets to remove with editcaps
-                pdrop = pdrop[512:] # remove these 512 packets from droplist for next iteration
+                # create a slice of 512 packets to remove with editcaps
+                pslice = pdrop[0:512]
+                # remove these 512 packets from droplist for next iteration
+                pdrop = pdrop[512:]
 
                 if superverbose: # detailed output for dropped packets via editcap
                     print('\n\t\t'+10*'~'+' packet removal {}/{} '.format(i+1,iteration)+10*'~')
@@ -310,16 +323,18 @@ if __name__ == '__main__':
                     if i < (iteration-1): # only display remaining packets until last iteration
                         pprint = packetOutput(pdrop,10,False)
                         print('\n\t\t<< Remaining, {} packets\n\t\t<< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1])))  
-
-                arg = [str(int) for int in pslice] # create string containing packet numbers to drop, seperated with whitespaces as argument for editcap execution
+                # create string containing packet numbers to drop
+                arg = [str(int) for int in pslice]
+                # seperated with whitespaces necessary as editcap argument
                 arg = " ".join(arg)
 
                 tmpsplitfile = split_folder / file # split-file in current iteration to process with editcap
                 tmpfile = split_folder / 'tmp.pcap' # temporary file tmp.pcap created with editcap
-                editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg) # editcap command to execute
+                editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg)
                 os.system(editcapcmd)
 
-                movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile) # replace split-file with sampled temporary file
+                # replace split-file with sampled temporary file
+                movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
                 os.system(movecmd)
 
 
@@ -341,8 +356,8 @@ if __name__ == '__main__':
 
 
     # FLOW-CREATION
-    print('>>> Create flows with go-flows from {}'.format(csv_sampled_export))
-    os.system(goflowscmd) # execute go-flows to process passed packet-sampled PCAP file
+    print('>>> Create flows with go-flows: {}'.format(csv_sampled_export))
+    os.system(goflowscmd)
 
 
     # LABELING
