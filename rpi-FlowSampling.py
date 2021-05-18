@@ -87,7 +87,6 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
     return tmp
 # returns list of features based on keyword
 def filterFeatures(dataset,keyword,verbose=False,time=False):
-
     features = dataset.columns
     tmp = []
 
@@ -99,13 +98,13 @@ def filterFeatures(dataset,keyword,verbose=False,time=False):
     return tmp
 # converts accumulated per-packet features into np.array
 def convertToArray(dataset,features,verbose=False,time=False):
-
     for feature in features: # iterate over given features
         print('\t> {}'.format(feature))
-
         # converting given strings from go-flows perpacket features or NaNs into np.arrays
-        dataset[feature] = dataset[feature].apply(lambda x: np.fromstring(x[1:len(x)-1],dtype=int, sep=" ") if type(x) == str else (np.array([float('nan')]) if pd.isna(x) else x))
-
+        dataset[feature] = dataset[feature].apply(lambda x: 
+            np.fromstring(x[1:len(x)-1],dtype=int, sep=" ") if type(x) == str 
+            else (np.array([float('nan')]) if pd.isna(x) 
+            else x))
     return
 # per-flow sampling using iterations
 def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
@@ -385,26 +384,27 @@ if __name__ == '__main__':
     # FLOW-CREATION
     print('\n\n>>> Create flows with go-flows from {}'.format(pcap))
     os.system(goflowscmd) # execute go-flows to process passed PCAP file
-    dataset = importCSV(csv_import,None,verbose) # import flow-sampled CSV created with go-flows
+    dataset = importCSV(csv_import,None,verbose)
     if verbose: printdata(dataset,'go-flows CSV',verbose)
 
 
     # PER-FLOW SAMPLING
     keyword = 'apply(accumulate'
     print('>>> Identifying accumulated features')
-    features = filterFeatures(dataset,keyword,verbose,time) # get list of accumulated perpacket-features that have to be sampled
+    # get list of accumulated perpacket-features that have to be sampled
+    features = filterFeatures(dataset,keyword,verbose,time)
 
     keyword = 'TotalCount'
     print('>>> Identifying features containing: {}'.format(keyword))
-    totalFeatures = filterFeatures(dataset,keyword,verbose,time) # list containing all 'TotalCount' features
+    totalFeatures = filterFeatures(dataset,keyword,verbose,time)
 
     keyword = 'ipTotal'
     print('>>> Identifying features containing: {}'.format(keyword))
-    ipTotal = filterFeatures(dataset,keyword,verbose,time) # list containing all 'ipTotal' features
+    ipTotal = filterFeatures(dataset,keyword,verbose,time)
 
     keyword = 'interPacket'
     print('>>> Identifying features containing: {}'.format(keyword))
-    interPacket = filterFeatures(dataset,keyword,verbose,time) # list containing all 'interPacket' features
+    interPacket = filterFeatures(dataset,keyword,verbose,time)
     if verbose: print('\n< Original:\n{}\n'.format(dataset[features].head(n=20)))
 
     print('\n\n>>> Converting accumulated values')
@@ -412,7 +412,7 @@ if __name__ == '__main__':
     if verbose: print('\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
     print('>>> Applying per-flow sampling')
-    lambdaflowSampling(dataset,n,features,mode,verbose,time) # sample per-packet features within each flow
+    lambdaflowSampling(dataset,n,features,mode,verbose,time)
     if verbose: print('\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n')
 
 
