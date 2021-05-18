@@ -2,7 +2,13 @@
 
 ### CODE
 
-- implement rpi-Evaluation.py execution at the end of Master.py
+- implement rpi-Evaluation.py execution at the end of Master.py? Or process manually (probably better and makes sense)
+
+- check total count features calculation in rpi-flowSampling.py and rpi-packetSampling.py? (do we need sum of values or just sum of packet counts?)
+
+- check feature vectors again for correct feature generation & calculation in the according scripts, also check original CAIA vector from CN-TU github.
+
+- check AGM feature vector for correct implementation on packet-based and flow-based sampling!!!
 
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
@@ -12,6 +18,8 @@
 - once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
 
 - config.py: get limits directy from dictionary-entries?
+
+- RF: random state for creating splits fixed for comparison? Setting parameters to control tree sizes to eventually reduce memory consumption, see scikit-learn documentation.
 
 
 #### EVALUATION
