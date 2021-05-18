@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     # iterate over configurations
     for file in cfg.file:
-        for vector in cfg.vector: # iterate over given feature-vectors
+        for vector in cfg.vector:
 
             # folder selection based on given feature-vector
             if vector < cfg.vectorlimit:
@@ -81,8 +81,10 @@ if __name__ == '__main__':
             for mode in cfg.mode: # iterate over given sampling-modes
 
                 # check plausibility of given configuration, continue on pointless combinations
-                if vector < cfg.vectorlimit and mode >= cfg.samplinglimit: continue # perflow feature-vectors and packetsampling-modes
-                elif vector >= cfg.vectorlimit and mode < cfg.samplinglimit: continue #packetsampling feature-vectors and perflowsampling-modes
+                # flow-based feature-vectors and packet-based sampling-modes
+                if vector < cfg.vectorlimit and mode >= cfg.samplinglimit: continue
+                # packet-based feature-vectors and flow-based sampling-modes
+                elif vector >= cfg.vectorlimit and mode < cfg.samplinglimit: continue
 
                 for steps in cfg.steps: # iterate over given sampling-steps
 
@@ -96,8 +98,8 @@ if __name__ == '__main__':
                     if fit: ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # saving model on remote
                     else:   ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -m {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # importing model on remote
 
-                    sync         = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
-                    resync       = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
+                    sync   = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
+                    resync = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
 
 
                     if (not remote): # LOCAL
