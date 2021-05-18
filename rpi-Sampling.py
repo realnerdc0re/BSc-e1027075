@@ -26,7 +26,6 @@ from timeit import default_timer as timer
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
 from pandas import read_csv
 
-
 import config as cfg # necessary configurations from config.py
 
 # create base-folders if necessary
@@ -34,7 +33,6 @@ if not os.path.exists(cfg.logs):            os.mkdir(cfg.logs)
 if not os.path.exists(cfg.fpath):           os.mkdir(cfg.fpath)
 if not os.path.exists(cfg.packetfolder):    os.mkdir(cfg.packetfolder)
 if not os.path.exists(cfg.flowfolder):      os.mkdir(cfg.flowfolder)
-
 
 
 # ARGUMENT PARSING
@@ -164,7 +162,7 @@ if __name__ == '__main__':
     # commands
     goflowsconf = wd / cfg.vectorfolder / cfg.vectors[j] # full path to selected feature-vector
     dstat       = 'dstat --epoch --cpu-adv --disk --mem-adv --swap --output {} > /dev/null 2>&1 &'.format(cfg.dstat)
-    movecmd     = 'mv {} {}'.format(csv_tmp,csv_save) # moves returned sampled CSV into correct folder
+    movecmd     = 'mv {} {}'.format(csv_tmp,csv_save) # moves sampled CSV into folder
     cplogs      = 'cp -r {} {}/' # command to copy logs at the end of the script, using placeholders based on arguments
 
     if not os.path.exists(csv_folder): os.mkdir(csv_folder) # create csv-directory if it doesn't exist
@@ -223,8 +221,10 @@ if __name__ == '__main__':
 
         print('\n>>> Merging sampled data')
         os.chdir(samplingfolder) # change directory for glob usage
-        matchedfiles = [i for i in glob.glob(cfg.pattern)] # save labeled files matching pattern into list
-        singlecsv = pd.concat([pd.read_csv(f) for f in matchedfiles]) # concat all labeled files into single CSV
+        # save labeled files matching pattern into list
+        matchedfiles = [i for i in glob.glob(cfg.pattern)]
+        # concat all labeled files into single CSV
+        singlecsv = pd.concat([pd.read_csv(f) for f in matchedfiles])
 
         print('>>> Saving file {}'.format(csv_save))
         singlecsv.to_csv(csv_save, index = False,encoding='utf-8-sig')
