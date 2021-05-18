@@ -2,7 +2,7 @@
 
 ### CODE
 
-- implement rpi-Evaluation.py execution at the end of Master.py? Or process manually (probably better and makes sense)
+- create tmp directory in working-directory if necessary when executing rpi-Preprocessing.py, otherwise error because folder is ignored in git and therefore not created
 
 - check total count features calculation in rpi-flowSampling.py and rpi-packetSampling.py? (do we need sum of values or just sum of packet counts?)
 
@@ -48,11 +48,7 @@
 
 ### THESIS
 
-- describe softlink usage on remote machine in config.py to get user aware of this for documentation
 
-- mention authorization via SSH keys for Master.py execution in thesis
-
-- create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 
 
 
@@ -70,7 +66,6 @@
 
 #### LATER
 
-- get rid of superverbose?
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html) for all filepaths (FlowSampling.py, PacketSampling.py)
 - maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
     - output nodes/leaves depth/sizes in results.csv
@@ -101,6 +96,9 @@
 
 ## DONE
 
+- describe softlink usage on remote machine in config.py to get user aware of this for documentation
+- mention authorization via SSH keys for Master.py execution in thesis
+- create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
 - check LaTeX basics
 - setup environment for LaTeX usage and check basics to add text-blocks to template on OSX
 - create detailed flow-charts for the scripts in addition to the overview flow-chart
@@ -225,6 +223,8 @@
 
 ## DISCARDED:
 
+- get rid of superverbose?
+- implement rpi-Evaluation.py execution at the end of Master.py? Or process manually (probably better and makes sense)
 - Virtualization: try to train RandomForest model in 32bit ARM dietpi VM (https://github.com/scikit-learn/scikit-learn/issues/2972)
 - re-install Proxmox VE latest version on my home-server to try ARM virtualization (added ARM support? https://forum.proxmox.com/threads/arm-support.72766/). FAILED, no ARM support
 - change filepath & filenames generated in Control.py (FlowSampling.py and PacketSampling.py) to include actual sampling mode and sampling steps (either as additional info-file or within the filenames) -> now done in Control.py/rpi-Control.py with creation of information.csv
