@@ -582,7 +582,7 @@ if __name__ == '__main__':
     #if remote:  modelpkl = '{}_model_remote.pkl'
     #else:       modelpkl = '{}_model_local.pkl'
     if remote:  modelpkl = cfg.model_remote
-    else:       modelpkl = cfg.model_local
+    else:       modelpkl = cfg.model_remote # cfg.model_local
 
     # first set correct foldernames for preprocessing & classification logs
     if model:
