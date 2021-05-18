@@ -20,7 +20,7 @@ filenames = {
 4:'Thursday-WorkingHours',
 5:'Friday-WorkingHours'
 }
-pattern = '*Hours.csv' # pattern used to merge files
+pattern = '*Hours.csv' # pattern used to merge files in Sampling.py
 #######################################################################################
 # FOLDERS, FILES & LOGS
 # sampled CSVs & result logs, temporary logs in working directory
@@ -97,17 +97,20 @@ packetlimit     = 4
 # REMOTE MACHINE
 # username, IP and working directory for the remote machine
 remotewd    = 'BSc-e1027075'
-remoteuser  = 'dietpi'
-remoteip    = '10.10.45.55'
+#remoteuser  = 'dietpi'
+#remoteip    = '10.10.45.55'
+#remoteip    = '192.168.178.29'
+remoteuser  = 'thesis'
+remoteip    = '10.10.40.209'
 remote      = '{}@{}'.format(remoteuser,remoteip)
 #######################################################################################
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 file        = [0]
-vector      = [5]
-mode        = [5]
-steps       = [3,5,7,10]
+vector      = [4]
+mode        = [1]
+steps       = [5]
 n_PCA       = 4 # number of components for PCA
 batchsize   = 10**5 # batchsize used for Standard Scaler partial fit
 chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed!)
