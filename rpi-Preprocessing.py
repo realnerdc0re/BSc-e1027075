@@ -49,10 +49,10 @@ parser.add_argument('j', metavar='j', type=int,nargs=1,help='select feature-vect
 parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for StandardScaler batchsize')
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
-parser.add_argument('--superverbose', action='store_true', help='output additional informations')
+parser.add_argument('--superverbose', action='store_true', help='output additional dataset related informations')
 parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-s','--save', action='store_true', help='save model')
-parser.add_argument('-l','--load', action='store_true', help='load preprocessed CSV')
+#parser.add_argument('-l','--load', action='store_true', help='load preprocessed CSV')
 parser.add_argument('-r','--remote', action='store_true', help='execution on remote machine, different method to kill dstat, changing foldername for results')
 # display runtime or export timestamps and dstat-logs
 timegroup = parser.add_mutually_exclusive_group(required=False)
@@ -540,7 +540,7 @@ if __name__ == '__main__':
     # set boolean variables based on argument passing
     time            = args.time
     save            = args.save
-    load            = args.load
+    #load            = args.load
     model           = args.model
     model           = args.model
     remote          = args.remote
@@ -608,15 +608,15 @@ if __name__ == '__main__':
     foldername = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
 
     if flowsampling:
-        foldername = '{}_perflowsampled'.format(foldername) # base folder to store results, models and & logs
-        path = cfg.flowfolder / foldername / csv_import # sampled input CSV
-        logs = cfg.flowfolder / foldername / log # full logfolder path to save results
-        modeld = cfg.flowfolder / foldername / 'model' # full directory to export/import pickle model
+        foldername = '{}_perflowsampled'.format(foldername) # base folder
+        path    = cfg.flowfolder / foldername / csv_import # sampled CSV directory
+        logs    = cfg.flowfolder / foldername / log # logfolder path
+        modeld  = cfg.flowfolder / foldername / 'model' # pickle model directory
     elif packetsampling:
         foldername = '{}_packetsampled'.format(foldername)
-        path = cfg.packetfolder / foldername / csv_import
-        logs = cfg.packetfolder / foldername / log
-        modeld = cfg.packetfolder / foldername / 'model'
+        path    = cfg.packetfolder / foldername / csv_import
+        logs    = cfg.packetfolder / foldername / log
+        modeld  = cfg.packetfolder / foldername / 'model'
 
     # set full path to model file after all folder-paths are set up
     if (model or save): modelfile = modeld / modelpkl.format(cfg.filenames[findex])
@@ -641,7 +641,7 @@ if __name__ == '__main__':
     # OUTPUT passed optional arguments & filepath
     print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print('\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--load\n{}\t--export\n{}\t--model\n{}\t--remote\n\n{}\t--flowsampling\n{}\t--packetsampling'.format(verbose,superverbose,time,save,load,export,model,remote,flowsampling,packetsampling))
+    print('\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--export\n{}\t--model\n{}\t--remote\n\n{}\t--flowsampling\n{}\t--packetsampling'.format(verbose,superverbose,time,save,export,model,remote,flowsampling,packetsampling))
     print('\n'+20*'~'+' processing '+20*'~')
     print('\nbatchsize = {}\nsplitsize = {}'.format(batch,splitsize))
     print('\n'+20*'~'+' paths & file '+20*'~'+'\n')
@@ -670,11 +670,12 @@ if __name__ == '__main__':
     Ytrain  = pd.Series(dtype=int)
     Ytest   = pd.Series(dtype=int)
 
-    for chunk in read_csv(path,chunksize=cfg.chunksize,usecols=None,skipinitialspace=True,encoding='utf-8'): # read csv in chunks
+    for chunk in read_csv(path,chunksize=cfg.chunksize,
+    usecols=None,skipinitialspace=True,encoding='utf-8'):
         chunk = conversion(chunk,False) # convert values into smaller datatypes
         cleanString(chunk,False,False) # remove string-features
         cleanNaN(chunk,0,False,False) # remove NaNs
-        chunksplit = splitDataframe(chunk,0.30,False,False) # split into training & test portion on the fly:[Xtrain,Xtest,Ytrain,Ytest]
+        chunksplit = splitDataframe(chunk,0.30,False,False) # split into training & test portion
 
         # accumulate splits
         Xtrain  = Xtrain.append(chunksplit[0])
@@ -698,12 +699,12 @@ if __name__ == '__main__':
 
     print('>>> StandardScaling partial fit to Xtrain')
     scaler = StandardScaler(copy=False)
-    n = Xtrain.shape[0] # number of rows
+    n = Xtrain.shape[0] # total number of rows
     processed = 0
-    while processed < n: # iterating until processed rows equals total rows of Xtrain
-        toprocess = min(batch, n-processed) # number of rows to process in this iteration
-        scaler.partial_fit(Xtrain[processed:processed+toprocess]) # partial_fit scaler on current slice
-        processed += toprocess # increase number of already processed rows, used to determin when to leave the loop
+    while processed < n: # iterating until done
+        toprocess = min(batch, n-processed) # number of rows to process in current iteration
+        scaler.partial_fit(Xtrain[processed:processed+toprocess])
+        processed += toprocess # increase number of already processed rows
 
 
     # SPLITTING DATA INTO SMALLER FILES
@@ -715,7 +716,7 @@ if __name__ == '__main__':
                 csvwriter.writerow([t,'rpi-Preprocessing.py','split files','start'])
 
 
-    print('>>> Splitting data to reduce memory consumption') # split training data into smaller portions for transformation and save to disk to free up memory
+    print('>>> Splitting data to reduce memory consumption')
     n = Xtrain.shape[0]
     toprocess = min(splitsize, n)
     iteration = int(n/splitsize)+1
@@ -971,7 +972,9 @@ if __name__ == '__main__':
 
     if export:
         print('\n>>> Exporting results to folder: {}'.format(cfg.logs))
-        evaluation = {'model':[model],'parameters':[parameters],'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],'confusion-matrix':[matrix],'PCA-components':[n_Xpca]}
+        evaluation = {'model':[model],'parameters':[parameters],
+        'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],
+        'confusion-matrix':[matrix],'PCA-components':[n_Xpca]}
         results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
         results.to_csv(cfg.result) # save results
         report.to_csv(cfg.report) # save classification-report
