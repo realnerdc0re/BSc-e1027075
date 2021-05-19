@@ -137,8 +137,7 @@ PCAPreader.py
 # folders
 CIC-IDS2017/*
 tmp/*
-csv/flow-sampled/tmp/*
-csv/packet-sampled/tmp/*
+csv/*
 logs/*
 rpi-logs/*
 logs-rpi/*
