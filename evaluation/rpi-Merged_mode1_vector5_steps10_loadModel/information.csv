@@ -1,6 +1,0 @@
-,0
-file,Merged
-packet sampling,True
-samplingmode,every n-th packet
-samplingsteps,10
-featurevector,CAIA_packetSampling.json
