@@ -83,7 +83,7 @@ if __name__ == '__main__':
                 # check plausibility of given configuration, continue on pointless combinations
                 # flow-based feature-vectors and packet-based sampling-modes
                 if vector < cfg.vectorlimit and mode >= cfg.samplinglimit: continue
-                # packet-based feature-vectors and flow-based sampling-modes
+                # packet-basefolderbased feature-vectors and flow-based sampling-modes
                 elif vector >= cfg.vectorlimit and mode < cfg.samplinglimit: continue
 
                 for steps in cfg.steps: # iterate over given sampling-steps
@@ -99,8 +99,8 @@ if __name__ == '__main__':
                     else:   ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -m {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # importing model on remote
 
                     sync   = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
+                    csync  = r'rsync -avz --progress {}/{} {}:{}'.format(cfg.wd,cfg.configuration,cfg.remote,cfg.remoteconf)
                     resync = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
-
 
                     if (not remote): # LOCAL
                         print(Fore.YELLOW+'\n>>> Sample PCAP on local machine: {}'.format(sampling)+Style.RESET_ALL)
@@ -117,6 +117,9 @@ if __name__ == '__main__':
                     if (not local): # REMOTE
                         print(Fore.YELLOW+'\n>>> Create base-folder on remote machine: {}'.format(mkdir)+Style.RESET_ALL)
                         callCommand(mkdir)
+
+                        print(Fore.YELLOW+'\n>>> Sync experiment configuration from local to remote machine: {}'.format(csync)+Style.RESET_ALL)
+                        callCommand(csync)
 
                         if (not nosync):
                             print(Fore.YELLOW+'\n>>> Sync content from local to remote machine: {}'.format(sync)+Style.RESET_ALL)
