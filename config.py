@@ -44,6 +44,8 @@ report  = logs / csv_report
 # pickle-model files
 model_remote    = '{}_model_remote.pkl'
 model_local     = '{}_model_local.pkl'
+# framework configuration file
+configuration = 'config.py'
 #######################################################################################
 # TOOLS
 # path to executable for go-flows and labeling-script
@@ -103,6 +105,7 @@ remotewd    = 'BSc-e1027075'
 remoteuser  = 'thesis'
 remoteip    = '10.10.40.209'
 remote      = '{}@{}'.format(remoteuser,remoteip)
+remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 #######################################################################################
 # EXPERIMENTS
 # batchsize for preprocessing
