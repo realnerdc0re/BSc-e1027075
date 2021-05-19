@@ -662,7 +662,7 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','import CSV','start'])
 
-    print('>>> Importing CSV in chunks, splitting into Xtrain & Xtest')
+    print('>>> Importing CSV in chunks of {} lines, splitting into Xtrain & Xtest'.format(cfg.chunksize))
     # initialise empty dataframes
     dataset = pd.DataFrame()
     Xtrain  = pd.DataFrame()
