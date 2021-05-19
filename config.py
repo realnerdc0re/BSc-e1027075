@@ -110,10 +110,10 @@ remote      = '{}@{}'.format(remoteuser,remoteip)
 file        = [0]
 vector      = [4]
 mode        = [1]
-steps       = [5]
+steps       = [3]
 n_PCA       = 4 # number of components for PCA
 batchsize   = 10**5 # batchsize used for Standard Scaler partial fit
-chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed!)
+chunksize   = 10**4 # read CSV in chunks (reading line-by-line not allowed!)
 split       = 5000 # used for packetsampling, determines number of packets in editcap splits
 splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file
 #######################################################################################
