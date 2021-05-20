@@ -117,6 +117,7 @@ if __name__ == '__main__':
         m               = args.flowsampling[0]
         samplingmode    = cfg.fsamplingmode[m]
         samplingfolder  = cfg.flowfolder
+        sampling        = 'flowbased'
 
         info            = {
         'file':             [cfg.filenames[findex]],
@@ -131,6 +132,7 @@ if __name__ == '__main__':
         m               = args.packetsampling[0]
         samplingmode    = cfg.psamplingmode[m]
         samplingfolder  = cfg.packetfolder
+        sampling        = 'packetbased'
 
         info = {
         'file':             [cfg.filenames[findex]],
@@ -144,9 +146,11 @@ if __name__ == '__main__':
     info = pd.DataFrame.from_dict(info,orient='index')
 
     # forge specific foldername
-    folder = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
-    if flowsampling: folder = '{}_perflowsampled'.format(folder)
-    elif packetsampling: folder = '{}_packetsampled'.format(folder)
+    #folder = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
+    folder = cfg.foldername.format(cfg.filenames[findex],m,j,n,sampling)
+
+    #if flowsampling: folder = '{}_perflowsampled'.format(folder)
+    #elif packetsampling: folder = '{}_packetsampled'.format(folder)
 
     # FILES, PATHS & COMMANDS
     wd = Path.cwd() # working directory
