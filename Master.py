@@ -11,6 +11,7 @@ import config as cfg
 
 from colorama import Fore, Style
 from timeit import default_timer as timer
+from os import path
 
 
 # ARGUMENT PARSING
@@ -20,6 +21,7 @@ parser.add_argument('-v','--verbose', action='store_true', help='output verbose 
 parser.add_argument('-f','--fit', action='store_true', help='fit model on remote machine')
 parser.add_argument('-m','--model', action='store_true', help='load model on local machine')
 parser.add_argument('--nosync',action='store_true',  help= 'no syncing from local to remote')
+parser.add_argument('--nosampling',action='store_true',help='use already sampled file if possible')
 # force either just local or remote execution if selected at all
 execution = parser.add_mutually_exclusive_group(required=False)
 execution.add_argument('-l','--local', action='store_true', help='run scripts on local machine')
@@ -44,6 +46,8 @@ if __name__ == '__main__':
     local   = args.local
     fit     = args.fit
     models  = args.model
+    nosamp  = args.nosampling
+    samp = True
 
     # check passed optional arguments and commands
     print('\n'+40*'~'+' SCRIPT: Master.py '+40*'~')
@@ -70,11 +74,13 @@ if __name__ == '__main__':
             if vector < cfg.vectorlimit:
                 basefolder  = cfg.flowfolder
                 sarg        = '-f'
-                foldername  = '{}_mode{}_vector{}_steps{}_perflowsampled'
+                #foldername  = '{}_mode{}_vector{}_steps{}_perflowsampled'
+                samplingtype = 'flowbased'
             else:
                 basefolder  = cfg.packetfolder
                 sarg        = '-p'
-                foldername  = '{}_mode{}_vector{}_steps{}_packetsampled'
+                #foldername  = '{}_mode{}_vector{}_steps{}_packetsampled'
+                samplingtype = 'packetbased'
 
             mkdir = "ssh {} 'mkdir -p {}'".format(cfg.remote,basefolder)
 
@@ -89,7 +95,8 @@ if __name__ == '__main__':
                 for steps in cfg.steps: # iterate over given sampling-steps
 
                     # forge folders & commands based on configuration
-                    folder   = foldername.format(cfg.filenames[file],mode,vector,steps)
+                    #folder   = foldername.format(cfg.filenames[file],mode,vector,steps)
+                    folder    = cfg.foldername.format(cfg.filenames[file],mode,vector,steps,samplingtype)
                     sampling = 'python3 rpi-Sampling.py -e {} {} {} {} {}'.format(sarg,mode,file,steps,vector)
 
                     if models: model = 'python3 rpi-Preprocessing.py -e -m {} {} {} {} {} {}'.format(sarg,mode,file,steps,vector,cfg.batchsize)
@@ -103,8 +110,19 @@ if __name__ == '__main__':
                     resync = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
 
                     if (not remote): # LOCAL
-                        print(Fore.YELLOW+'\n>>> Sample PCAP on local machine: {}'.format(sampling)+Style.RESET_ALL)
-                        callCommand(sampling)
+                        if nosamp:
+                            currentfile = cfg.filenames[file]+'.csv'
+                            print(Fore.YELLOW+'\n>>> Search experiment folder: {}'.format(basefolder/folder)+Style.RESET_ALL)
+                            if path.exists(basefolder/folder/currentfile):
+                                print(Fore.YELLOW+'>>> Found already sampled capture: {}'.format(currentfile)+Style.RESET_ALL)
+                                samp = False
+                            else:
+                                print(Fore.YELLOW+'>>> No sampled capture file found!'+Style.RESET_ALL)
+                                samp = True
+
+                        if samp:
+                            print(Fore.YELLOW+'\n>>> Sample PCAP on local machine: {}'.format(sampling)+Style.RESET_ALL)
+                            callCommand(sampling)
 
                         print(Fore.YELLOW+'\n>>> Create and save model on local machine: {}'.format(model)+Style.RESET_ALL)
                         callCommand(model)
