@@ -598,22 +598,25 @@ if __name__ == '__main__':
         packetsampling  = False
         samplefolder    = cfg.flowfolder
         m               = args.flowsampling[0]
+        sampling        = 'flowbased'
     elif packetsampling:
         packetsampling  = True
         flowsampling    = False
         samplefolder    = cfg.packetfolder
         m               = args.packetsampling[0]
+        sampling        = 'packetbased'
 
     # forge foldername to import CSV based on arguments
     foldername = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
+    foldername = cfg.foldername.format(cfg.filenames[findex],m,j,n,cfg.maxtrees,sampling)
 
     if flowsampling:
-        foldername = '{}_perflowsampled'.format(foldername) # base folder
+        #foldername = '{}_perflowsampled'.format(foldername) # base folder
         path    = cfg.flowfolder / foldername / csv_import # sampled CSV directory
         logs    = cfg.flowfolder / foldername / log # logfolder path
         modeld  = cfg.flowfolder / foldername / 'model' # pickle model directory
     elif packetsampling:
-        foldername = '{}_packetsampled'.format(foldername)
+        #foldername = '{}_packetsampled'.format(foldername)
         path    = cfg.packetfolder / foldername / csv_import
         logs    = cfg.packetfolder / foldername / log
         modeld  = cfg.packetfolder / foldername / 'model'
@@ -927,7 +930,7 @@ if __name__ == '__main__':
                     csvwriter.writerow([t,'rpi-Preprocessing.py','fit model','start'])
 
         print('>>> Fitting RandomForestClassifier')
-        model = RandomForestClassifier()
+        model = RandomForestClassifier(n_estimators=cfg.maxtrees,max_depth=cfg.maxdepth,max_leaf_nodes=cfg.maxleaves)
         model = model.fit(Xtrain,Ytrain)
         del Xtrain
 
@@ -951,11 +954,21 @@ if __name__ == '__main__':
     print('>>> Creating classification-report')
     report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
 
+    print('>>> Obtain various Random Forest estimator values')
+    depths = [t.get_depth() for t in model.estimators_]
+    leaves = [t.get_n_leaves() for t in model.estimators_]
+
+
     print('>>> Saving parameters, accuracy-score and feature-importance')
     parameters = model.get_params(deep=True)
     accuracyscore = accuracy_score(Ytest,predictions)
     featureimportance = model.feature_importances_
 
+    # output model estimators
+    print('\n\n'+10*'~'+' {}: estimators '.format(model)+10*'~')
+    print('Trees: {}'.format(len(depths)))
+    print('Depths:\n{}'.format(depths))
+    print('Leaves:\n{}'.format(leaves))
 
     # output final results
     print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
@@ -968,13 +981,13 @@ if __name__ == '__main__':
     print('u  "0":',matrix[0])
     print('e  "1":',matrix[1])
     print('\n\nClassification-Report:\n\n',report)
-    
+
 
     if export:
         print('\n>>> Exporting results to folder: {}'.format(cfg.logs))
         evaluation = {'model':[model],'parameters':[parameters],
         'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],
-        'confusion-matrix':[matrix],'PCA-components':[n_Xpca]}
+        'confusion-matrix':[matrix],'PCA-components':[n_Xpca],'Trees':[len(depths)],'Depths':[depths],'Leaves':[leaves]}
         results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
         results.to_csv(cfg.result) # save results
         report.to_csv(cfg.report) # save classification-report
