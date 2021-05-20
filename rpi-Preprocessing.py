@@ -608,7 +608,7 @@ if __name__ == '__main__':
 
     # forge foldername to import CSV based on arguments
     foldername = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
-    foldername = cfg.foldername.format(cfg.filenames[findex],m,j,n,cfg.maxtrees,sampling)
+    foldername = cfg.foldername.format(cfg.filenames[findex],m,j,n,sampling)
 
     if flowsampling:
         #foldername = '{}_perflowsampled'.format(foldername) # base folder
