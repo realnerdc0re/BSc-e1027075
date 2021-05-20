@@ -41,7 +41,7 @@ experiments_packets = []
 
 # class object containing all necessary experiment data
 class Experiment:
-    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,runtime=0,parameter=0):
+    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,runtime=0,parameter=0,maxram=0,trees=0):
         # contains info
         self.fullpath   = fullpath
         self.file       = file
@@ -60,9 +60,11 @@ class Experiment:
         # chart-values
 
 
-        # calculated values
+        # specific parameters
         self.runtime    = runtime # runtime for preprocessing and classification in seconds
         self.parameter  = parameter # parameter including accuracy, runtime ???
+        self.maxram     = maxram # maximum value for used RAM
+        self.trees      = trees
 
     def __str__(self):
         return str(self.__class__)+': '+str(self.__dict__)
@@ -124,8 +126,8 @@ def createExperiments(folders,verbose=False):
                 print('\t\t\t< {}\n'.format(tmp.sampling))
 
             # appending Experiment object to list, based on sampling method
-            if tmp.sampling == 'perflowsampled': experiments_perflow.append(tmp)
-            elif tmp.sampling == 'packetsampled': experiments_packets.append(tmp)
+            if tmp.sampling   == 'flowbased': experiments_perflow.append(tmp)
+            elif tmp.sampling == 'packetbased': experiments_packets.append(tmp)
 
         print('\t<< Saving objects')
         #if verbose: input('...')
@@ -171,6 +173,7 @@ if __name__ == '__main__':
     # create Experiments based on given folders
     print('>>> Creating objects')
     folders = [flowfolder,packetfolder] # list for different sampling-categories
+    print('{}'.format(folders))
     exp = createExperiments(folders,verbose) # save returned experiment objects for further processing
 
 
@@ -220,6 +223,8 @@ if __name__ == '__main__':
             # search maximum runtime of all experiments, used for spider chart generation later on
             if (end-start) > maxruntime: maxruntime = (end-start)
 
+            # get maximum used RAM
+            exp[n][i].maxram = exp[n][i].dstat['"used"'].max()/1024**2
 
     print('>>> Converting memory values')
     convert = ['"used"','"total"','"cach"','"free"','"used".1','"free".1'] # features to convert (RAM, SWAP)
@@ -264,8 +269,8 @@ if __name__ == '__main__':
             title_vector      = cfg.vectors[exp[n][i].vector]
             title_mode        = cfg.samplingmode[exp[n][i].mode]
             # nicer output for title
-            if exp[n][i].sampling       == 'perflowsampled':    samplingtype = 'per-flow sampling'
-            elif exp[n][i].sampling     == 'packetsampled':     samplingtype = 'packet sampling'
+            if exp[n][i].sampling       == 'flowbased':     samplingtype = 'flow-based sampling'
+            elif exp[n][i].sampling     == 'packetbased':   samplingtype = 'packet-based sampling'
 
             title = '{}\n'.format(samplingtype)
             subtitle = '({}, n={})\n{}'.format(title_mode,title_steps,title_vector)
@@ -284,7 +289,7 @@ if __name__ == '__main__':
             # plot labels
             plt.xticks(timestamps,timelabels,rotation=80) # create x-axis ticks
             plt.xlabel('segments', fontsize=14)
-            plt.ylabel('memory-usage',fontsize=14)
+            plt.ylabel('CPU usage',fontsize=14)
             plt.title(title,ha='center',fontsize=18) # set title
             plt.suptitle(subtitle,x=0.515,y=0.905,ha='center',fontsize=10) # suptitle position between 0 and 1
             plt.legend(loc='best')
@@ -329,8 +334,8 @@ if __name__ == '__main__':
             title_vector      = cfg.vectors[exp[n][i].vector]
             title_mode        = cfg.samplingmode[exp[n][i].mode]
             # nicer output for title
-            if exp[n][i].sampling     == 'perflowsampled':    samplingtype = 'per-flow sampling'
-            elif exp[n][i].sampling   == 'packetsampled':     samplingtype = 'packet sampling'
+            if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
+            elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based sampling'
 
             title = '{}\n'.format(samplingtype)
             subtitle = '({}, n={})\n{}'.format(title_mode,title_steps,title_vector)
@@ -395,8 +400,8 @@ if __name__ == '__main__':
             title_vector      = cfg.vectors[exp[n][i].vector]
             title_mode        = cfg.samplingmode[exp[n][i].mode]
             # nicer output for title
-            if exp[n][i].sampling     == 'perflowsampled':    samplingtype = 'per-flow sampling'
-            elif exp[n][i].sampling   == 'packetsampled':     samplingtype = 'packet sampling'
+            if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
+            elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based sampling'
 
             title = '{}\n{} ({}, n={})'.format(title_vector,title_sampling,title_mode,title_steps)
 
@@ -414,6 +419,7 @@ if __name__ == '__main__':
             # label parameters
             stats = ['used RAM\n({}%)'.format(int(RAM_used)),'cached RAM\n({}%)'.format(int(RAM_cached)),'CPU usage\n({}%)'.format(int(CPU_max)),'Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
             plt.xticks(angles[:-1],stats) # pass angles but last (repetition of first value)
+            plt.title(title,ha='center',fontsize=14)
 
             if verbose: print('\t<< {}'.format(png_file.format(count)))
             plt.savefig(png_file.format(count)) # save plot to file
@@ -486,8 +492,8 @@ if __name__ == '__main__':
             runtime     = x.runtime/maxruntime*100
 
             # nicer output for legend
-            if x.sampling     == 'perflowsampled':    samplingtype = 'per-flow sampling'
-            elif x.sampling   == 'packetsampled':     samplingtype = 'packet sampling'
+            if x.sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
+            elif x.sampling   == 'packetbased': samplingtype = 'packet-based sampling'
 
             # forge polar-compatible values and angles
             value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
@@ -572,8 +578,8 @@ if __name__ == '__main__':
             runtime     = x.runtime/maxruntime*100
 
             # nicer output for legend
-            if x.sampling     == 'perflowsampled':    samplingtype = 'per-flow sampling'
-            elif x.sampling   == 'packetsampled':     samplingtype = 'packet sampling'
+            if x.sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
+            elif x.sampling   == 'packetbased': samplingtype = 'packet-based sampling'
 
             # forge polar-compatible values and angles
             value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
@@ -624,7 +630,7 @@ if __name__ == '__main__':
     # first column contains different sampling/techniques, vectors & steps
     # columns afterwards contain: accuracy, recall 0, recall 1, precision, F1
 
-    columns_list = ['experiment','accuracy-score','recall 0','recall 1','precision0','precision1','F1 0','F1 1','runtime','parameter']
+    columns_list = ['experiment','accuracy-score','recall 0','recall 1','precision0','precision1','F1 0','F1 1','runtime','parameter','maxRAM','trees']
     chart = pd.DataFrame(columns=columns_list)
 
     # fill chart with data, therefore cycle through experiment configurations
@@ -634,7 +640,7 @@ if __name__ == '__main__':
         for i in range (0,len(exp[n])):
             tmp = exp[n][i] # current experiment
 
-            title = 'n={}, {}, {}'.format(tmp.steps,cfg.vectors[tmp.vector],cfg.samplingmode[tmp.mode])
+            title = '{}, n={}, {}, {}'.format(tmp.file,tmp.steps,cfg.vectors[tmp.vector],cfg.samplingmode[tmp.mode])
             accuracyscore   = float(tmp.result['summary'][2])
             recall0         = tmp.report['recall'][0]
             recall1         = tmp.report['recall'][1]
@@ -643,13 +649,16 @@ if __name__ == '__main__':
             F10             = tmp.report['f1-score'][0]
             F11             = tmp.report['f1-score'][1]
             runtime         = tmp.runtime
-            parameter       = 100*F11/((1-recall1)*tmp.runtime/60)
+            file            = tmp.file
+            parameter       = F11/((1-recall1)*tmp.runtime/60)*tmp.maxram/1024
+            maxram          = tmp.maxram
+            trees           = tmp.result['summary'][6]
 
-            tmpdf = pd.DataFrame([[title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,parameter]],columns=columns_list)
+            tmpdf = pd.DataFrame([[title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,parameter,maxram,trees]],columns=columns_list)
             chart = chart.append(tmpdf)
             savecsv = 'figures/comparison.csv'
 
-    print('>>> Saving comparison table')
+    print('>>> Saving comparison table: {}'.format(savecsv))
     chart.to_csv(savecsv)
     if verbose: print('\t<< {}\n{}\n'.format(savecsv,chart))
 
