@@ -24,6 +24,8 @@
 
 #### EVALUATION
 
+- add maximum RAM usage value and file that got processed to the comparison.csv!
+
 - implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
 
 - develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
@@ -96,6 +98,9 @@
 
 ## DONE
 
+- also sync config.py to remote to get immediately all configuration changes on parameters like batchsize, splitsize and so on...
+- implement foldername in config.py and use that in Preprocessing, Master and Sampling scripts
+- add --nosampling to skip sampling if possible (check if sampled file already exists and use the sampled & labeled csv instead of sampling)
 - describe softlink usage on remote machine in config.py to get user aware of this for documentation
 - mention authorization via SSH keys for Master.py execution in thesis
 - create more detailed charts for modules once they are finished (preprocessing, classification, sampling...)
