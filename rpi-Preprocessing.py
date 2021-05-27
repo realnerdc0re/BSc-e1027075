@@ -136,7 +136,7 @@ def summary(dataset):
     #resetpoptions()
     return
 # save timestamps
-def setTimestamp(text,write=False,append=False,export=False):
+def setTimestamp(infotext,write=False,append=False,export=args.export):
     t = epochtime.time()
     if write:    character = 'w'
     elif append: character = 'a'
@@ -144,7 +144,7 @@ def setTimestamp(text,write=False,append=False,export=False):
     if export: # write timestamp to csv
         with open(cfg.time,character) as timecsv:
             csvwriter = csv.writer(timecsv, delimiter=",")
-            csvwriter.writerow([t,'Preprocessing.py',text,'start'])
+            csvwriter.writerow([t,'Preprocessing.py',infotext,'start'])
     return
 
 
