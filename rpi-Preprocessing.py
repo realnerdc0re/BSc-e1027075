@@ -950,12 +950,12 @@ if __name__ == '__main__':
             print('>>> saving model {}'.format(modelfile))
             joblib.dump(model,str(modelfile),compress=True)
 
-    setTimestamp('predictions',append=True)
+    if time: setTimestamp('predictions',append=True)
 
     print('>>> Creating predictions')
     predictions = model.predict(Xtest)
 
-    setTimestamp('results',append=True) # use function to write timestamp to csv
+    if time: setTimestamp('results',append=True) # use function to write timestamp to csv
 
     print('>>> Creating confusion-matrix')
     matrix = confusion_matrix(Ytest,predictions)
