@@ -136,7 +136,7 @@ if __name__ == '__main__':
             csvwriter.writerow([t,'rpi-PacketSampling.py',cfg.filenames[findex],'start'])
 
     # set mode for later labeling.py
-    if j<cfg.packetlimit: labelmode = 'AGM'
+    if j<cfg.packetlimit or j>5: labelmode = 'AGM'
     elif j >= cfg.packetlimit: labelmode = '5tuple'
 
 
