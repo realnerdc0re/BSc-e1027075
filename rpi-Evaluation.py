@@ -41,7 +41,7 @@ experiments_packets = []
 
 # class object containing all necessary experiment data
 class Experiment:
-    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,runtime=0,parameter=0,maxram=0,trees=0):
+    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,maxram=0,trees=0):
         # contains info
         self.fullpath   = fullpath
         self.file       = file
@@ -62,9 +62,12 @@ class Experiment:
 
         # specific parameters
         self.runtime    = runtime # runtime for preprocessing and classification in seconds
+        self.classtime  = classtime # runtime for classification in seconds
+        self.classspeed = classspeed # classification speed in classifications per second
+        self.instances  = instances # number of instances to classify
         self.parameter  = parameter # parameter including accuracy, runtime ???
         self.maxram     = maxram # maximum value for used RAM
-        self.trees      = trees
+        self.trees      = trees # number of generated RF trees
 
     def __str__(self):
         return str(self.__class__)+': '+str(self.__dict__)
@@ -173,7 +176,6 @@ if __name__ == '__main__':
     # create Experiments based on given folders
     print('>>> Creating objects')
     folders = [flowfolder,packetfolder] # list for different sampling-categories
-    print('{}'.format(folders))
     exp = createExperiments(folders,verbose) # save returned experiment objects for further processing
 
 
@@ -212,6 +214,7 @@ if __name__ == '__main__':
             start   = exp[n][i].time['epochtime'].iloc[0] # start epochtime
             end     = exp[n][i].time['epochtime'].iloc[-1]+1 # end epochtime plus 1 second
             exp[n][i].runtime = end-start # set current experiments runtime
+            exp[n][i].classtime = exp[n][i].time['epochtime'].iloc[-1] - exp[n][i].time['epochtime'].iloc[-2] # classification time
 
             # dump dstat rows outside of script execution
             exp[n][i].dstat = exp[n][i].dstat[(exp[n][i].dstat['"epoch"'] >= start) & (exp[n][i].dstat['"epoch"'] <= end)]
@@ -630,7 +633,7 @@ if __name__ == '__main__':
     # first column contains different sampling/techniques, vectors & steps
     # columns afterwards contain: accuracy, recall 0, recall 1, precision, F1
 
-    columns_list = ['experiment','accuracy-score','recall 0','recall 1','precision0','precision1','F1 0','F1 1','runtime','parameter','maxRAM','trees']
+    columns_list = ['experiment','accuracy-score','recall 0','recall 1','precision0','precision1','F1 0','F1 1','runtime','classification time','instances','classification speed','parameter','maxRAM','trees']
     chart = pd.DataFrame(columns=columns_list)
 
     # fill chart with data, therefore cycle through experiment configurations
@@ -649,12 +652,15 @@ if __name__ == '__main__':
             F10             = tmp.report['f1-score'][0]
             F11             = tmp.report['f1-score'][1]
             runtime         = tmp.runtime
+            classtime       = tmp.classtime
+            instances       = tmp.report['support'][4]
+            classspeed      = instances/classtime
             file            = tmp.file
             parameter       = F11/((1-recall1)*tmp.runtime/60)*tmp.maxram/1024
             maxram          = tmp.maxram
             trees           = tmp.result['summary'][6]
 
-            tmpdf = pd.DataFrame([[title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,parameter,maxram,trees]],columns=columns_list)
+            tmpdf = pd.DataFrame([[title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,classtime,instances,classspeed,parameter,maxram,trees]],columns=columns_list)
             chart = chart.append(tmpdf)
             savecsv = 'figures/comparison.csv'
 
