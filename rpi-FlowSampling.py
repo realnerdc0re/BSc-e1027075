@@ -388,7 +388,7 @@ if __name__ == '__main__':
     if verbose: printdata(dataset,'go-flows CSV',verbose)
 
 
-    # PER-FLOW SAMPLING
+    # PER-FLOW SAMPLING post-processing for CAIA feature-vector
     keyword = 'apply(accumulate'
     print('>>> Identifying accumulated features')
     # get list of accumulated perpacket-features that have to be sampled
