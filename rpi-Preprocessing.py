@@ -950,17 +950,12 @@ if __name__ == '__main__':
             print('>>> saving model {}'.format(modelfile))
             joblib.dump(model,str(modelfile),compress=True)
 
-    if time:
-        t = epochtime.time()
-        if export: # write timestamp to csv
-            with open(cfg.time,'a') as timecsv:
-                csvwriter = csv.writer(timecsv, delimiter=",")
-                csvwriter.writerow([t,'rpi-Preprocessing.py','predictions','start'])
+    setTimestamp('predictions',append=True)
 
     print('>>> Creating predictions')
     predictions = model.predict(Xtest)
 
-    setTimestamp('results',append=True)
+    setTimestamp('results',append=True) # use function to write timestamp to csv
 
     print('>>> Creating confusion-matrix')
     matrix = confusion_matrix(Ytest,predictions)
