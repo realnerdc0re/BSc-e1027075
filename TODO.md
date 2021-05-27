@@ -2,6 +2,12 @@
 
 ### CODE
 
+- implement AGM feature handling in flowsampling and packet sampling
+
+- implement timestamp after predictions
+
+- implement replacing NaN with feature mean instead of 0
+
 - create tmp directory in working-directory if necessary when executing rpi-Preprocessing.py, otherwise error because folder is ignored in git and therefore not created
 
 - check total count features calculation in rpi-flowSampling.py and rpi-packetSampling.py? (do we need sum of values or just sum of packet counts?)
@@ -24,7 +30,7 @@
 
 #### EVALUATION
 
-- add maximum RAM usage value and file that got processed to the comparison.csv!
+- remove CPU usage and RAM cached from graphs and charts, its a useless stat
 
 - implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
 
@@ -98,6 +104,8 @@
 
 ## DONE
 
+- implemented PCA batchsize in configuration
+- add maximum RAM usage value and file that got processed to the comparison.csv!
 - also sync config.py to remote to get immediately all configuration changes on parameters like batchsize, splitsize and so on...
 - implement foldername in config.py and use that in Preprocessing, Master and Sampling scripts
 - add --nosampling to skip sampling if possible (check if sampled file already exists and use the sampled & labeled csv instead of sampling)
