@@ -26,6 +26,7 @@ pattern = '*Hours.csv' # pattern used to merge files in Sampling.py
 # sampled CSVs & result logs, temporary logs in working directory
 flowfolder      = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
 packetfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
+foldername      = '{}_mode{}_vector{}_steps{}_{}'
 # filenames used for logs
 csv_dstat   = 'dstat.csv'
 csv_time    = 'time.csv'
@@ -64,7 +65,8 @@ vectors = {
 2:'AGM_60s.json',
 3:'AGM_3600s.json',
 4:'CAIA_flowSampling.json',
-5:'CAIA_packetSampling.json'
+5:'CAIA_packetSampling.json',
+6:'AGM_10s.json'
 }
 #######################################################################################
 # SAMPLING-MODES
@@ -110,19 +112,22 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
-file        = [0]
-vector      = [4]
-mode        = [1]
-steps       = [3]
+file        = [5]
+vector      = [6]
+mode        = [5]
+steps       = [5]
 n_PCA       = 4 # number of components for PCA
-batchsize   = 10**5 # batchsize used for Standard Scaler partial fit
-chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed!)
+PCA_batch   = 10**5 # batchsize used for incremental PCA
+batchsize   = 10**5 # batchsize used for Standard Scaler partial fit (default 10**5)
+chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed! default 10**5)
 split       = 5000 # used for packetsampling, determines number of packets in editcap splits
-splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file
+splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file (default 25*10**4)
 #######################################################################################
-
+# MODEL ESTIMATORS
+maxtrees    = 100 # maximum number of trees
+maxdepth    = None # maximum tree-depth
+maxleaves   = None # maximum number of leafes per tree
 #######################################################################################
 # EVALUATION
-
 types = ['*.png','*.csv'] # used to clean figures folder when before processing data
 #######################################################################################
