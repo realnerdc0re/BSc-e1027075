@@ -960,7 +960,7 @@ if __name__ == '__main__':
     print('>>> Creating predictions')
     predictions = model.predict(Xtest)
 
-    setTimestamp('results',write=False,append=True,export=export)
+    setTimestamp('results',append=True)
 
     print('>>> Creating confusion-matrix')
     matrix = confusion_matrix(Ytest,predictions)
