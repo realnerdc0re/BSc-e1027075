@@ -135,6 +135,18 @@ def summary(dataset):
     if (not time): input('\n')
     #resetpoptions()
     return
+# save timestamps
+def setTimestamp(text,write=False,append=False,export=False):
+    t = epochtime.time()
+    if write:    character = 'w'
+    elif append: character = 'a'
+
+    if export: # write timestamp to csv
+        with open(cfg.time,character) as timecsv:
+            csvwriter = csv.writer(timecsv, delimiter=",")
+            csvwriter.writerow([t,'Preprocessing.py',text,'start'])
+    return
+
 
 # PRE-PROCESSING
 # convert to smaller datatypes to reduce memory consumption
@@ -947,6 +959,8 @@ if __name__ == '__main__':
 
     print('>>> Creating predictions')
     predictions = model.predict(Xtest)
+
+    setTimestamp('results',write=False,append=True,export=export)
 
     print('>>> Creating confusion-matrix')
     matrix = confusion_matrix(Ytest,predictions)
