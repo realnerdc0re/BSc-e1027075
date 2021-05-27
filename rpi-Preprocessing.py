@@ -851,7 +851,7 @@ if __name__ == '__main__':
 
     print('>>> Applying PCA fit')
     Xpca = []
-    ipca = IncrementalPCA(n_components = n_Xpca, batch_size = 10**5)
+    ipca = IncrementalPCA(n_components = n_Xpca, batch_size = cfg.PCA_batch)
 
     for index in iXtrain: # partial fit PCA to Xtrain, iterating over split-files
         print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
