@@ -1,0 +1,22 @@
+{
+        "features": [
+            "flowStartMilliseconds",
+            "sourceIPAddress",
+
+            {"apply": [{"accumulate":["destinationIPAddress"]}, "forward"]},
+            {"apply": [{"accumulate":["sourceTransportPort"]}, "forward"]},
+            {"apply": [{"accumulate":["destinationTransportPort"]}, "forward"]},
+            {"apply": [{"accumulate":["protocolIdentifier"]}, "forward"]},
+            {"apply": [{"accumulate":["ipTTL"]}, "forward"]},
+            {"apply": [{"accumulate":["_tcpFlags"]}, "forward"]},
+            {"apply": [{"accumulate":["octetTotalCount"]}, "forward"]}
+
+        ],
+    "active_timeout": 1800,
+    "idle_timeout": 300,
+    "bidirectional":false,
+        "key_features": [
+            "sourceIPAddress",
+        "__timeWindow10s"
+        ]
+      }
