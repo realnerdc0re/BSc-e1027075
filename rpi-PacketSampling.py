@@ -47,6 +47,17 @@ args = parser.parse_args()
 
 
 # FUNCTIONS
+# set/reset options for maximum columns to display and floating point output precision
+def poptions():
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', 10)
+    pd.set_option('display.precision',3)
+    return
+def resetpoptions():
+    pd.reset_option('display.max_columns', 15)
+    pd.reset_option('display.max_rows', 15)
+    pd.reset_option('display.precision', 6)
+    return
 # returns list of features that contains multiple packet-values based on feature-keyword
 def perpacketFeatures(dataset,keyword,verbose=False,time=False):
     
@@ -93,7 +104,21 @@ def packetOutput(plist,n,verbose):
         if (not time): input('\n...')
     
     return tmp
+# encode combinations of tcp flags
+def tcpflagEncoder(dataset,feature):
 
+    for i in range(0,len(dataset.index)):
+        cell = dataset[feature][i] # current cell
+
+        if isinstance(cell,str):
+            value = 0
+            for char in cell:
+                value += cfg.tcpflags[char]
+
+            dataset.at[i,feature] = int(str(value),2) # convert (pseudo) binary to decimal
+            #dataset.at[i,feature] = value # use number as decimal instead of binary to decimal conversion
+    return
+# import CSV as pandas dataframe
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     # informational output
     if verbose: print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
@@ -108,6 +133,8 @@ def printdata(dataset,heading,verbose=False):
     print('< Dataset:\n{}\n'.format(dataset))
     print('{}\n'.format(dataset.describe()))
     return
+
+
 
 if __name__ == '__main__':
 
@@ -359,16 +386,37 @@ if __name__ == '__main__':
     print('>>> Create flows with go-flows: {}'.format(csv_sampled_export))
     os.system(goflowscmd)
 
+    # CALCULATIONS FOR AGM feature-vectors
+    if cfg.vectors[j][0:3] == 'AGM':
+        dataset = importCSV(csv_sampled_export,None,verbose)
+        printdata(dataset,'AGM_10s.json',verbose=False)
+        if verbose: print('\n{}'.format(dataset.value_counts('mode(_tcpFlags)')))
+
+        print('>>> Encoding TCP flags')
+        tcpflagEncoder(dataset,'mode(_tcpFlags)')
+
+        print('>>> Drop features')
+        dropfeatures = ['mode(destinationIPAddress)']
+        for feature in dropfeatures:
+            print('\t> {}'.format(feature))
+            dataset.drop(columns=feature,inplace=True)
+
+        if verbose: print('{}'.format(dataset.value_counts('mode(_tcpFlags)')))
+
+        # save dataframe as CSV for further preprocessing & classification
+        print('>>> Saving {}'.format(csv_sampled_export))
+        dataset.to_csv(csv_sampled_export, index=False)
+
+
+
 
     # LABELING
-    if verbose: print('>>> Labeling: {}'.format(labelingcmd))
+    print('>>> Labeling: {}'.format(labelingcmd))
     os.system(labelingcmd)
 
     if verbose:
         dataset = importCSV(csv_file,None,verbose)
         printdata(dataset,'packet-sampled',verbose)
-
-
 
     if time:
         end = timer()
