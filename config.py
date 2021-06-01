@@ -2,7 +2,6 @@
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
 from colorama import Fore, Style
 
-
 #######################################################################################
 # BASIC CONFIGURATION
 #######################################################################################
@@ -64,8 +63,8 @@ labelingpath    = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
 vectorfolder = 'go-flows-configurations'
 vectors = {
 1:'AGM_10s_flowbased.json',
-2:'AGM_60s.json',
-3:'AGM_3600s.json',
+2:'AGM_60s.json', # unused
+3:'AGM_3600s.json', # unused
 4:'CAIA_flowSampling.json',
 5:'CAIA_packetSampling.json',
 6:'AGM_10s.json'
@@ -141,10 +140,14 @@ splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows 
 maxtrees    = 100 # maximum number of trees
 maxdepth    = None # maximum tree-depth
 maxleaves   = None # maximum number of leafes per tree
+
+#######################################################################################
+# OUTPUTS
 #######################################################################################
 # EVALUATION
 types = ['*.png','*.csv'] # used to clean figures folder when before processing data
 #######################################################################################
 # INFORMATIONAL OUTPUT
-vcolor = Fore.WHITE # color used for verbose output
+# color used for verbose output
+vcolor = Fore.WHITE
 #######################################################################################

@@ -1,50 +1,24 @@
 ## INPROGRESS
 
 ### CODE
-
 - implement AGM feature handling in flowSampling.py
     - how to handle mode when only two different values are in one flows feature? How does go-flows handle this for packet-based sampling e.g.?
-    - maybe convert textual features to numerical values (encoding) before calculation distinct and modeCount, mode only gets saved for _tcpFlags....
-        - encoding features right at the beginning could be helpful so conversion to numpy arrays can be applied directly
-
-- implement AGM feature handling in packetSampling.py
-    - change condition to first three letters of feature vector instead of number
-    - drop destination IP feature before labeling
-
 - implement timestamp after predictions
-
 - implement replacing NaN with feature mean instead of 0
 
-- create tmp directory in working-directory if necessary when executing rpi-Preprocessing.py, otherwise error because folder is ignored in git and therefore not created
-
-- check total count features calculation in rpi-flowSampling.py and rpi-packetSampling.py? (do we need sum of values or just sum of packet counts?)
-
-- check feature vectors again for correct feature generation & calculation in the according scripts, also check original CAIA vector from CN-TU github.
-
-- check AGM feature vector for correct implementation on packet-based and flow-based sampling!!!
-
-
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
-
+- rename scripts and feature-vectors properly and change everything connected accordingly (shittask)
 - implement scapy to do the packet-sampling, using editcap is like a very poor bandaid in comparison and creatues issues for timebased sampling technique implementation
-
 - once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
-
-- config.py: get limits directy from dictionary-entries?
-
+- config.py: get limits directy from dictionary-entries same way I implemented the sampling-modes
 - RF: random state for creating splits fixed for comparison? Setting parameters to control tree sizes to eventually reduce memory consumption, see scikit-learn documentation.
 
-
 #### EVALUATION
-
+- add model file size as experiment parameter
 - remove CPU usage and RAM cached from graphs and charts, its a useless stat
-
 - implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
-
 - develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
-
 - save PNG for all generated charts in addition to wd/figures into the same folder where the data is actually fetched from
-
 - group experiment classobjects based on following comparisons (files always Merged?):
     - same featurevector, same samplingmethod
         - different steps
@@ -52,35 +26,22 @@
         - different featurevector
     - same steps, same featurevectors
         - different samplingmethods
-
 - improve title & suptitle for spidercharts similar to graphs, maybe do it like graphs with title, suptitle and different sizes normal/bold style
-
 - improve legend placement for comparison charts if labels are going to be that long as they are now
-
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
-
 
 
 ### THESIS
 
 
-
-
-
-
 ## TODO
 
-#### NEXT
-
+### NEXT
 - add AGM feature vectors for packet-sampling, make selection automatic depending on the given arguments --flowsampling/packetsampling argument alltogether
-
 - rpi-FlowSampling.py: samplingmode 2 & 4 - improvements?
-
 - use basefolderpaths from config.py also in rpi-Preprocessing, rpi-Sampling, rpi-FlowSampling, rpi-Packetsampling for more convenient customization of paths and way better maintenance possibilities
 
-
-#### LATER
-
+### LATER
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html) for all filepaths (FlowSampling.py, PacketSampling.py)
 - maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
     - output nodes/leaves depth/sizes in results.csv
@@ -97,9 +58,7 @@
 - think about the substitutions for NaNs & Infs in preprocessing other than mean average
 - implement automatic folder generation on script execution (os.path.exists(folder) and os.makedirs(folder)), do this with a separate python script for the base-folder structure. expand this structure if necessary for multiple test-runs? (important for wd/logs, and first time creation of time.csv if no file exists or if a file already exists on scriptstart outside of Control.py create new file (due to appending time within any other scripts than Control.py...))
 
-
-#### IMPROVEMENTS
-
+### IMPROVEMENTS
 - user inner classes for class Experiment
 - change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
 - create config file to import, containing all necessary file- and folderpaths, paths to executable tools... and import this file instead of making definitions inside every script
@@ -110,7 +69,14 @@
 
 
 ## DONE
-
+- save model uncompressed to gather file-size that has to be loaded into memory directly from file
+- create tmp directory in working-directory if necessary when executing rpi-Preprocessing.py, otherwise error because folder is ignored in git and therefore not created
+- implement AGM feature handling in flowSampling.py
+    - maybe convert textual features to numerical values (encoding) before calculation distinct and modeCount, mode only gets saved for _tcpFlags....
+    - encoding features right at the beginning could be helpful so conversion to numpy arrays can be applied directly
+- implement AGM feature handling in packetSampling.py
+    - change condition to first three letters of feature vector instead of number
+    - drop destination IP feature before labeling
 - implemented PCA batchsize in configuration
 - add maximum RAM usage value and file that got processed to the comparison.csv!
 - also sync config.py to remote to get immediately all configuration changes on parameters like batchsize, splitsize and so on...
