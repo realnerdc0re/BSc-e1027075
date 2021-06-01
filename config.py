@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
+from colorama import Fore, Style
+
 
 #######################################################################################
 # BASIC CONFIGURATION
@@ -142,4 +144,7 @@ maxleaves   = None # maximum number of leafes per tree
 #######################################################################################
 # EVALUATION
 types = ['*.png','*.csv'] # used to clean figures folder when before processing data
+#######################################################################################
+# INFORMATIONAL OUTPUT
+vcolor = Fore.WHITE # color used for verbose output
 #######################################################################################
