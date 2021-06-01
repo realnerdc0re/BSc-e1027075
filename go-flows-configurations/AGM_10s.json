@@ -1,43 +1,43 @@
 {
         "features": [
-		    "flowStartMilliseconds",
-		    "sourceIPAddress",
+            "flowStartMilliseconds",
+            "sourceIPAddress",
 
-		    {"distinct":["destinationIPAddress"]},
-		    {"mode":["destinationIPAddress"]},
-		    {"modeCount":["destinationIPAddress"]},
+            {"distinct":["destinationIPAddress"]},
+            {"mode":["destinationIPAddress"]},
+            {"modeCount":["destinationIPAddress"]},
 
-		    {"distinct":["sourceTransportPort"]},
-		    {"mode":["sourceTransportPort"]},
-		    {"modeCount":["sourceTransportPort"]},
+            {"distinct":["sourceTransportPort"]},
+            {"mode":["sourceTransportPort"]},
+            {"modeCount":["sourceTransportPort"]},
 
-		    {"distinct":["destinationTransportPort"]},
-		    {"mode":["destinationTransportPort"]},
-		    {"modeCount":["destinationTransportPort"]},
+            {"distinct":["destinationTransportPort"]},
+            {"mode":["destinationTransportPort"]},
+            {"modeCount":["destinationTransportPort"]},
 
-		    {"distinct":["protocolIdentifier"]},
-		    {"mode":["protocolIdentifier"]},
-		    {"modeCount":["protocolIdentifier"]},
+            {"distinct":["protocolIdentifier"]},
+            {"mode":["protocolIdentifier"]},
+            {"modeCount":["protocolIdentifier"]},
 
-		    {"distinct":["ipTTL"]},
-		    {"mode":["ipTTL"]},
-		    {"modeCount":["ipTTL"]},
+            {"distinct":["ipTTL"]},
+            {"mode":["ipTTL"]},
+            {"modeCount":["ipTTL"]},
 
-		    {"distinct":["_tcpFlags"]},
-		    {"mode":["_tcpFlags"]},
-		    {"modeCount":["_tcpFlags"]},
+            {"distinct":["_tcpFlags"]},
+            {"mode":["_tcpFlags"]},
+            {"modeCount":["_tcpFlags"]},
 
-		    {"distinct":["octetTotalCount"]},
-		    {"mode":["octetTotalCount"]},
-		    {"modeCount":["octetTotalCount"]},
+            {"distinct":["octetTotalCount"]},
+            {"mode":["octetTotalCount"]},
+            {"modeCount":["octetTotalCount"]},
 
-		    "packetTotalCount"
+            "packetTotalCount"
         ],
-	"active_timeout": 1800,
-	"idle_timeout": 300,
-	"bidirectional":false,
+    "active_timeout": 1800,
+    "idle_timeout": 300,
+    "bidirectional":false,
         "key_features": [
             "sourceIPAddress",
-	    "__timeWindow10s"
+        "__timeWindow10s"
         ]
       }
