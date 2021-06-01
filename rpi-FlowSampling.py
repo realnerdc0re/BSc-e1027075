@@ -251,7 +251,7 @@ def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                     tmp = tmp[2*n:] # remove sampled packets & packets to skip
 
                     if superverbose:
-                        print(Fore.WHITE+'\n\n'+10*'~'+' sampling, iteration: {}/{} '.format((j+1),iterations)+10*'~')
+                        print(cfg.vcolor+'\n\n'+10*'~'+' sampling, iteration: {}/{} '.format((j+1),iterations)+10*'~')
                         print('Sampled:')
                         print(len(psample))
                         print(psample+Style.RESET_ALL)
@@ -272,7 +272,7 @@ def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                 m = n
                 k = n
 
-                if superverbose: print(Fore.WHITE+'[{}/{}]:\n{}\n{}'.format(i,len(dataset.index),tmp,type(tmp))+Style.RESET_ALL)
+                if superverbose: print(cfg.vcolor+'[{}/{}]:\n{}\n{}'.format(i,len(dataset.index),tmp,type(tmp))+Style.RESET_ALL)
 
                 while (tmp.size > 0 and m > 0): # iterate as long as list is not empty and there are still values to sample
                     psample.extend(tmp[0:m]) # sample m values
@@ -281,7 +281,7 @@ def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
                     m = k-1 # set value to sample for next iteration
 
                     if superverbose:
-                        print(Fore.WHITE+'\n\n'+10*'~'+' sampling '+10*'~')
+                        print(cfg.vcolor+'\n\n'+10*'~'+' sampling '+10*'~')
                         # only output non-empty list
                         if tmp.size > 0:
                             print('\nSliced:')
@@ -319,9 +319,9 @@ def searchNaN(dataset,features,verbose=False,time=False):
 
     # informational output
     if verbose:
-        print(Fore.WHITE+'\n'+40*'~'+' FUNCTION: searchNaN '+40*'~')
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: searchNaN '+40*'~')
 
-    print(Fore.WHITE+'>>> Searching NaNs')
+    print(cfg.vcolor+'>>> Searching NaNs')
 
     length = dataset.shape[0]
     count = 0
@@ -333,7 +333,7 @@ def searchNaN(dataset,features,verbose=False,time=False):
                 if np.isnan(dataset[feature][i]).any(): # check if any element in array is NaN
                     count += 1
                     currentcount += 1
-                    print(Fore.WHITE+'\t\t > found NaN in row {}: {}'.format(i,dataset[feature][i]))
+                    print(cfg.vcolor+'\t\t > found NaN in row {}: {}'.format(i,dataset[feature][i]))
             if currentcount == 0: print('\t\t > no NaNs found')
         else: continue
     print('<<< Total NaNs: {}\n\n'.format(count)+Style.RESET_ALL)
@@ -345,7 +345,7 @@ def searchNaN(dataset,features,verbose=False,time=False):
     return
 # encode post-calculations, takes single element list to apply encoding
 def tcpflagEncoder(dataset,feature,verbose=False):
-    if verbose: print(Fore.WHITE+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
+    if verbose: print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
 
     # https://www.keycdn.com/support/tcp-flags
     tcpflags = {
@@ -374,29 +374,15 @@ def tcpflagEncoder(dataset,feature,verbose=False):
             #dataset.at[i,feature] = value # simply use number as decimal
         elif (len(cell)==0): dataset.at[i,feature] = ''
 
-    if verbose: print(Fore.WHITE+'\npost-encoding:\n{}'.format(dataset[feature])+Style.RESET_ALL)
+    if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])+Style.RESET_ALL)
 
     return
 # encode before calculations are applied, takes multi element list to apply encoding
 def tcpflagPreEncoder(dataset,feature,verbose=False):
 
     if verbose:
-        print(Fore.WHITE+'\n'+40*'~'+' FUNCTION: tcpflagPreEncoder '+40*'~')
-
-    # https://www.keycdn.com/support/tcp-flags
-    tcpflags = {
-        'A':100000000, # ACK
-        'P': 10000000, # PSH
-        'F':  1000000, # FIN
-        'R':   100000, # RST
-        'S':    10000, # SYN
-        'U':     1000, # URG
-        'E':      100, # ECE
-        'C':       10, # CWR
-        'N':        1  # NS
-    }
-
-    if verbose: print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagPreEncoder '+40*'~')
+        print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
 
     for i in range(0,dataset.shape[0]):
         cell = dataset[feature][i] # current cell
@@ -414,7 +400,7 @@ def tcpflagPreEncoder(dataset,feature,verbose=False):
 
             dataset.at[i,feature] = tmp # save array
 
-    if verbose: print(Fore.WHITE+'\npost-encoding:\n{}'.format(dataset[feature])); input('...\n'+Style.RESET_ALL)
+    if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])); input('...\n'+Style.RESET_ALL)
 
     return
 
@@ -513,15 +499,15 @@ if __name__ == '__main__':
         keyword = 'interPacket'
         print('>>> Identifying features containing: {}'.format(keyword))
         interPacket = filterFeatures(dataset,keyword,verbose,time)
-        if verbose: print(Fore.WHITE+'\n< Original:\n{}\n'.format(dataset[features].head(n=20))+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Original:\n{}\n'.format(dataset[features].head(n=20))+Style.RESET_ALL)
 
         print('>>> Converting accumulated values')
         convertToArray(dataset,features,1,verbose,time)
-        if verbose: print(Fore.WHITE+'\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
 
         print('>>> Applying flow-based sampling')
         lambdaflowSampling(dataset,n,features,mode,verbose,time)
-        if verbose: print(Fore.WHITE+'\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
 
 
         # CALCULATIONS
@@ -560,7 +546,7 @@ if __name__ == '__main__':
 
         # DROP, RENAME & SORT
         # drop features not necessary anymore
-        print('>>> Drop features')
+        print('>>> Dropping features')
         for feature in (ipTotal+interPacket):
             print('\t> {}'.format(feature))
             dataset.drop(columns=feature,inplace=True)
@@ -607,19 +593,19 @@ if __name__ == '__main__':
 
         print('>>> Converting accumulated features') # converts to numpy array
         convertToArray(dataset,features,1,verbose,time)
-        if verbose: print(Fore.WHITE+'\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
 
         print('>>> Converting textual features') # converts to list
         convertToArray(dataset,textual,2,verbose,time)
-        if verbose: print(Fore.WHITE+'\n< Converted:\n{}'.format(dataset[textual].head(n=20))), input('...\n'+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[textual].head(n=20))), input('...\n'+Style.RESET_ALL)
 
         print('>>> Applying flow-based sampling')
         lambdaflowSampling(dataset,n,features+textual,mode,verbose,time)
-        if verbose: print(Fore.WHITE+'\n< Sampled:\n{}'.format(dataset[features+textual].head(n=20))); input('...\n'+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Sampled:\n{}'.format(dataset[features+textual].head(n=20))); input('...\n'+Style.RESET_ALL)
 
         if debug:
             searchNaN(dataset,features,verbose=True,time=False)
-            print(Fore.WHITE+'Dtypes:\n{}'.format(dataset.dtypes)); input('...\n'+Style.RESET_ALL)
+            print(cfg.vcolor+'Dtypes:\n{}'.format(dataset.dtypes)); input('...\n'+Style.RESET_ALL)
 
 
         # ENCODE tcpFlags & CONVERT to numpy array
@@ -661,14 +647,14 @@ if __name__ == '__main__':
 
         # CHECK CALCULATIONS
         if verbose: #compare calculations to original array values
-            print(Fore.WHITE+'>>> Check applied calculations\n')
+            print(cfg.vcolor+'>>> Check applied calculations\n')
             for feature in (features+textual):
                 tmp = pd.DataFrame() # initialise empty dataframe
                 modes = ['modeCount','mode','distinct']
                 for mode in modes:
                     tmp.insert(0,mode,dataset[feature+': {}'.format(mode)]) # forge dataframe to increased readability of output
                 tmp.insert(0,feature,dataset[feature]) # add original feature column
-                print(Fore.WHITE+'{}'.format(tmp)); input('...'+Style.RESET_ALL)
+                print(cfg.vcolor+'{}'.format(tmp)); input('...'+Style.RESET_ALL)
 
 
         # CHECK FOR NaN values again
@@ -694,7 +680,7 @@ if __name__ == '__main__':
 
     if verbose:
         features = dataset.columns
-        print(Fore.WHITE+'\n< Calculated:\n{}\n'.format(dataset[features].head(n=20))+Style.RESET_ALL), input('...\n')
+        print(cfg.vcolor+'\n< Calculated:\n{}\n'.format(dataset[features].head(n=20))+Style.RESET_ALL), input('...\n')
         printdata(dataset,'per-flow sampled',verbose)
 
     # save dataframe as CSV for further preprocessing & classification
@@ -703,7 +689,7 @@ if __name__ == '__main__':
 
 
     # LABELING
-    if verbose: print(Fore.WHITE+'\n>>> Labeling: {}'.format(labelingcmd)+Style.RESET_ALL)
+    if verbose: print(cfg.vcolor+'>>> Labeling: {}'.format(labelingcmd)+Style.RESET_ALL)
     os.system(labelingcmd) # label benign & attack traffic as last step of preparation
 
     if time:

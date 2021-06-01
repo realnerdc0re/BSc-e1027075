@@ -97,15 +97,19 @@ def packetOutput(plist,n,verbose):
         tmp[i] = " ".join(tmp[i])
     
     if verbose:
-        print('\n\n\n'+40*'~'+' FUNCTION: packetOutput '+40*'~')
+        print(cfg.vcolor+'\n\n\n'+40*'~'+' FUNCTION: packetOutput '+40*'~')
         print('\npacket-list, length:\n{}'.format(len(plist)))
         print('\npacket-list, content:\n{}'.format(plist))
-        print('\npacket-list, formatted:\n{}'.format(tmp))
-        if (not time): input('\n...')
+        print('\npacket-list, formatted:\n{}'.format(tmp)+Style.RESET_ALL)
+        if (not time): input(cfg.vcolor+'\n...'+Style.RESET_ALL)
     
     return tmp
 # encode combinations of tcp flags
-def tcpflagEncoder(dataset,feature):
+def tcpflagEncoder(dataset,feature,verbose=False):
+
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
+        print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
 
     for i in range(0,len(dataset.index)):
         cell = dataset[feature][i] # current cell
@@ -117,6 +121,9 @@ def tcpflagEncoder(dataset,feature):
 
             dataset.at[i,feature] = int(str(value),2) # convert (pseudo) binary to decimal
             #dataset.at[i,feature] = value # use number as decimal instead of binary to decimal conversion
+
+    if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])); input('...\n'+Style.RESET_ALL)
+
     return
 # import CSV as pandas dataframe
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
@@ -127,13 +134,11 @@ def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     return csvdata
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
-
     print('\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading) +40*'~'+'\n')
     print('< Columns:\n{}\n'.format(dataset.columns))
     print('< Dataset:\n{}\n'.format(dataset))
     print('{}\n'.format(dataset.describe()))
     return
-
 
 
 if __name__ == '__main__':
@@ -240,24 +245,20 @@ if __name__ == '__main__':
                 print('\t< {}\n\t< {} packets total\n\t< {} packets sampled'.format(capinfoscmd,totalpacketcount,totalsamplecount))
 
 
-    # DROP PAYLOAD
+    # DROP PAYLOAD from every packet
     print('>>> Dropping payload: {}'.format(editsnapcmd))
     os.system(editsnapcmd)
-
 
     # CLEAN SPLIT-FOLDER
     print('>>> Cleaning folder: {}'.format(cleansplitPCAP))
     os.system(cleansplitPCAP)
 
-
     # CREATE SPLIT-FILES
     print('>>> Splitting PCAP: {}'.format(editsplitcmd))
     os.system(editsplitcmd)
 
-
     # SAMPLING
-    # get a list of all files in split-directory
-    # sort list alphabetically, depending on OS you won't get a sorted list of files!
+    # get a list of all files in split-directory, sort list alphabetically because depending on OS you may won't get a sorted list
     splitlist = os.listdir(split_folder) 
     splitlist.sort()
     splitcount = len(splitlist)
@@ -293,9 +294,7 @@ if __name__ == '__main__':
         plistindex = np.arange(0,pcount,1)
 
 
-        #if mode == 1: # every n-th packet, including first packet of the pcap
         if mode == 5: # every n-th packet, including first packet of the pcap
-
             modulo = samplepcount % n
 
             if modulo != 0:
@@ -307,9 +306,9 @@ if __name__ == '__main__':
                 nextsamplepstart = 0
 
             if verbose:
-                print('\n\n\t'+20*'~'+' {} '.format(file)+20*'~')
+                print(cfg.vcolor+'\n\n\t'+20*'~'+' {} '.format(file)+20*'~')
                 print('\n\t< {} skipped packets, this iteration'.format(packetskip))
-                print('\t< {} skipped packets, next iteration'.format(nextpacketskip))
+                print('\t< {} skipped packets, next iteration'.format(nextpacketskip)+Style.RESET_ALL)
 
             # array already considering packets to skip from last iteration
             pskip = plist[packetskip:]
@@ -321,7 +320,7 @@ if __name__ == '__main__':
             pdrop = np.delete(plist,psample.tolist())
 
             if verbose: # verbose output for improved sampling comprehension
-                print('\n\t'+10*'~'+' sampling '+10*'~')
+                print(cfg.vcolor+'\n\t'+10*'~'+' sampling '+10*'~')
                 pprint = packetOutput(plist,10,False) # generates list-styled packet output for better readability
                 print('\n\t< Original, {} packets\n\t< [{} ... {}]'.format(len(plist),str(pprint[0]),str(pprint[1])))
                 pprint = packetOutput(pskip,10,False)
@@ -329,7 +328,7 @@ if __name__ == '__main__':
                 pprint = packetOutput(psamplenumber,10,False)
                 print('\n\t< Sampled: {} packets\n\t< [{} ... {}]'.format(len(psamplenumber),str(pprint[0]),str(pprint[1])))
                 pprint = packetOutput(pdrop,10,False)
-                print('\n\t< Dropped: {} packets\n\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1])))
+                print('\n\t< Dropped: {} packets\n\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
 
             # flip the list to drop packets via editcap, starting from the end
             pdrop = np.flip(pdrop)
@@ -343,13 +342,13 @@ if __name__ == '__main__':
                 pdrop = pdrop[512:]
 
                 if superverbose: # detailed output for dropped packets via editcap
-                    print('\n\t\t'+10*'~'+' packet removal {}/{} '.format(i+1,iteration)+10*'~')
+                    print(cfg.vcolor+'\n\t\t'+10*'~'+' packet removal {}/{} '.format(i+1,iteration)+10*'~')
                     pprint = packetOutput(pslice,10,False)
-                    print('\n\t\t<< Dropping, {} packets\n\t\t<< [{} ... {}]'.format(len(pslice),str(pprint[0]),str(pprint[1])))
+                    print('\n\t\t<< Dropping, {} packets\n\t\t<< [{} ... {}]'.format(len(pslice),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
 
                     if i < (iteration-1): # only display remaining packets until last iteration
                         pprint = packetOutput(pdrop,10,False)
-                        print('\n\t\t<< Remaining, {} packets\n\t\t<< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1])))  
+                        print(cfg.vcolor+'\n\t\t<< Remaining, {} packets\n\t\t<< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
                 # create string containing packet numbers to drop
                 arg = [str(int) for int in pslice]
                 # seperated with whitespaces necessary as editcap argument
@@ -371,7 +370,7 @@ if __name__ == '__main__':
 
 
     # VERIFICATION
-    if check: # compare real sampled packet-count with calculated packet-count for basic result verification
+    if check: # compare sampled packet-count with calculated packet-count for basic verification
         print('>>> Verifying sampled packet-count')
         capinfoscmd = r'capinfos -M -c {} | grep packets'.format(pcap_sampled)
         samplepacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
@@ -386,28 +385,22 @@ if __name__ == '__main__':
     print('>>> Create flows with go-flows: {}'.format(csv_sampled_export))
     os.system(goflowscmd)
 
-    # CALCULATIONS FOR AGM feature-vectors
+    # AGM feature-vector post-processing
     if cfg.vectors[j][0:3] == 'AGM':
         dataset = importCSV(csv_sampled_export,None,verbose)
-        printdata(dataset,'AGM_10s.json',verbose=False)
-        if verbose: print('\n{}'.format(dataset.value_counts('mode(_tcpFlags)')))
+        printdata(dataset,cfg.vectors[j],verbose=False)
 
         print('>>> Encoding TCP flags')
-        tcpflagEncoder(dataset,'mode(_tcpFlags)')
+        tcpflagEncoder(dataset,'mode(_tcpFlags)',verbose=verbose)
 
-        print('>>> Drop features')
+        print('>>> Dropping features')
         dropfeatures = ['mode(destinationIPAddress)']
         for feature in dropfeatures:
             print('\t> {}'.format(feature))
             dataset.drop(columns=feature,inplace=True)
 
-        if verbose: print('{}'.format(dataset.value_counts('mode(_tcpFlags)')))
-
-        # save dataframe as CSV for further preprocessing & classification
         print('>>> Saving {}'.format(csv_sampled_export))
         dataset.to_csv(csv_sampled_export, index=False)
-
-
 
 
     # LABELING
