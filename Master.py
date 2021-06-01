@@ -28,7 +28,7 @@ execution.add_argument('-l','--local', action='store_true', help='run scripts on
 execution.add_argument('-r','--remote', action='store_true', help='run scripts on remote machine')
 args = parser.parse_args()
 
-
+# executes passed commands, on error the script exits
 def callCommand(function):
     if (os.system(function)) != 0:
         print(Fore.RED+'\n<<< ERROR for os.system({})\n'.format(function)+Style.RESET_ALL)

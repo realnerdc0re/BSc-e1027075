@@ -80,7 +80,7 @@ fsamplingmode = {
 }
 psamplingmode = {
 5:'every n-th packet',
-6:'time-based'
+6:'time-based' # unused
 }
 # merge dictionaries for easier addressing later on
 samplingmode = fsamplingmode.copy()
@@ -125,9 +125,9 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
-file        = [3]
-vector      = [1]
-mode        = [1]
+file        = [0]
+vector      = [1,4,5,6]
+mode        = [1,3,5]
 steps       = [5]
 n_PCA       = 4 # number of components for PCA
 PCA_batch   = 10**5 # batchsize used for incremental PCA
