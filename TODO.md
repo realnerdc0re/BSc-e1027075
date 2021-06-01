@@ -2,7 +2,13 @@
 
 ### CODE
 
-- implement AGM feature handling in flowsampling and packet sampling
+- implement AGM feature handling in flowSampling.py
+    - how to handle mode when only two different values are in one flows feature? How does go-flows handle this for packet-based sampling e.g.?
+    - maybe convert textual features to numerical values (encoding) before calculation distinct and modeCount, mode only gets saved for _tcpFlags....
+        - encoding features right at the beginning could be helpful so conversion to numpy arrays can be applied directly
+
+- implement AGM feature handling in packetSampling.py
+    - change condition to first three letters of feature vector instead of number
 
 - implement timestamp after predictions
 
