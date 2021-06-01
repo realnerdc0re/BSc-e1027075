@@ -36,7 +36,7 @@ import config as cfg # necessary configurations from config.py
 if not os.path.exists(cfg.logs):            os.mkdir(cfg.logs)
 if not os.path.exists(cfg.fpath):           os.mkdir(cfg.fpath)
 if not os.path.exists(cfg.packetfolder):    os.mkdir(cfg.packetfolder)
-
+if not os.path.exists(cfg.tmp):             os.mkdir(cfg.tmp)
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
@@ -948,7 +948,7 @@ if __name__ == '__main__':
 
         if save:
             print('>>> saving model {}'.format(modelfile))
-            joblib.dump(model,str(modelfile),compress=True)
+            joblib.dump(model,str(modelfile),compress=False)
 
     if time: setTimestamp('predictions',append=True)
 
