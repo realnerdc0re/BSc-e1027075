@@ -9,6 +9,7 @@
 
 - implement AGM feature handling in packetSampling.py
     - change condition to first three letters of feature vector instead of number
+    - drop destination IP feature before labeling
 
 - implement timestamp after predictions
 
