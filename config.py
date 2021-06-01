@@ -61,7 +61,7 @@ labelingpath    = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
 # directory within working directory and filenames of available feature-vectors
 vectorfolder = 'go-flows-configurations'
 vectors = {
-1:'AGM_10s.json',
+1:'AGM_10s_flowbased.json',
 2:'AGM_60s.json',
 3:'AGM_3600s.json',
 4:'CAIA_flowSampling.json',
@@ -94,6 +94,18 @@ modelimit       = 4 # used to determine choice for samplingmodes in evaluation
 flowlimit       = 4 # used to set mode to 'AGM' or '5tuple' for Labeling.py
 packetlimit     = 4
 #######################################################################################
+tcpflags = {
+        'A':100000000, # ACK
+        'P': 10000000, # PSH
+        'F':  1000000, # FIN
+        'R':   100000, # RST
+        'S':    10000, # SYN
+        'U':     1000, # URG
+        'E':      100, # ECE
+        'C':       10, # CWR
+        'N':        1  # NS
+    }
+#######################################################################################
 
 #######################################################################################
 # EXPERIMENT CONFIGURATION
@@ -112,9 +124,9 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
-file        = [5]
-vector      = [6]
-mode        = [5]
+file        = [3]
+vector      = [1]
+mode        = [1]
 steps       = [5]
 n_PCA       = 4 # number of components for PCA
 PCA_batch   = 10**5 # batchsize used for incremental PCA
