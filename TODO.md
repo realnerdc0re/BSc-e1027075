@@ -1,10 +1,8 @@
 ## INPROGRESS
 
 ### CODE
-- implement AGM feature handling in flowSampling.py
+- rpi-flowSampling.py:  implement AGM feature handling
     - how to handle mode when only two different values are in one flows feature? How does go-flows handle this for packet-based sampling e.g.?
-- implement timestamp after predictions
-- implement replacing NaN with feature mean instead of 0
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 - rename scripts and feature-vectors properly and change everything connected accordingly (shittask)
@@ -14,6 +12,7 @@
 - RF: random state for creating splits fixed for comparison? Setting parameters to control tree sizes to eventually reduce memory consumption, see scikit-learn documentation.
 
 #### EVALUATION
+- add classification speed and F1-scores for 0 and 1 (maybe even replace Precision or Recall parameter with F1-scores), remove CPU usage and cached RAM from Spiderchart
 - add model file size as experiment parameter
 - remove CPU usage and RAM cached from graphs and charts, its a useless stat
 - implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
@@ -69,6 +68,8 @@
 
 
 ## DONE
+- rpi-Preprocessing.py: implement replacing NaN with feature mean instead of 0!!!!
+- implement timestamp after predictions
 - save model uncompressed to gather file-size that has to be loaded into memory directly from file
 - create tmp directory in working-directory if necessary when executing rpi-Preprocessing.py, otherwise error because folder is ignored in git and therefore not created
 - implement AGM feature handling in flowSampling.py
