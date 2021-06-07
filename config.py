@@ -27,6 +27,10 @@ pattern = '*Hours.csv' # pattern used to merge files in Sampling.py
 # sampled CSVs & result logs, temporary logs in working directory
 flowfolder      = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
 packetfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
+# folder to store all result logs, temporary logs and sampled CSV for later evaluation
+eflowfolder     = mntd / 'data' / 'CIC-IDS2017' / 'Experiments' / 'flow-sampledCSV'
+epacketfolder   = mntd / 'data' / 'CIC-IDS2017' / 'Experiments' / 'packet-sampledCSV'
+# experiment configuration foldername
 foldername      = '{}_mode{}_vector{}_steps{}_{}'
 # filenames used for logs
 csv_dstat   = 'dstat.csv'
@@ -125,10 +129,16 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
+#file        = [0]
+#vector      = [1,4,5,6]
+#mode        = [1,3,5]
+#steps       = [7]
+
 file        = [0]
 vector      = [1,4,5,6]
 mode        = [1,3,5]
-steps       = [5]
+steps       = [3]
+
 n_PCA       = 4 # number of components for PCA
 PCA_batch   = 10**5 # batchsize used for incremental PCA
 batchsize   = 10**5 # batchsize used for Standard Scaler partial fit (default 10**5)
@@ -140,6 +150,7 @@ splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows 
 maxtrees    = 100 # maximum number of trees
 maxdepth    = None # maximum tree-depth
 maxleaves   = None # maximum number of leafes per tree
+#######################################################################################
 
 #######################################################################################
 # OUTPUTS
