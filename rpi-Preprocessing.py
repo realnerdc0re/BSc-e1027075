@@ -181,7 +181,7 @@ def conversion(dataset,verbose=False):
                 dicttype[features[i]] = 'int32'
         elif (x == 'float64'):
             if (-(2**16)/2 <= maxValues[i] <= (2**16)/2):
-                dicttype[features[i]] = 'float16'
+                dicttype[features[i]] = 'float32' # changed from float16 to float32, since pd.mean does not support float16 properly
             elif (-(2**32)/2 <= maxValues[i] <= (2**32)/2):
                 dicttype[features[i]] = 'float32'
 
@@ -201,6 +201,117 @@ def conversion(dataset,verbose=False):
         if verbose: print('\nconversion\n[TIME]: %.3f' % (end-start),'seconds')
 
     return dataset
+# calculate mean value of given dataset features
+def calcMean(dataset,features,verbose=False,time=False):
+    means = [] # initialize empty list
+    if verbose: print('\n\n'+40*'~'+' FUNCTION: calculateMean '+40*'~'+'\n')
+    print('>>> calulating mean values')
+
+    for feature in features:
+        mean = dataset[feature].mean() # calculate mean of current feature
+        means.append(mean)
+        if verbose: print('\t>> {}\n\t\t< {}'.format(feature,mean))
+
+    return means # returns list of mean values
+# search NaN features and replace with mean value
+def searchNaN(dataset,verbose=False,time=False):
+    features = []
+    # informational output
+    if verbose: print('\n\n'+40*'~'+' FUNCTION: searchNaN '+40*'~'+'\n')
+    print('>>> searching NaNs')
+
+    NaNs = dataset.isna().any()
+    for i in range(0,NaNs.shape[0]):
+        if NaNs.iloc[i] == True:
+            print('\t+ {}'.format(NaNs.index[i]))
+            features.append(NaNs.index[i])
+
+    return features
+# replace NaN feature values with replacement
+def replaceNaN(dataset,name,features,replacement,verbose=False,time=False):
+
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: replacementNaN '+40*'~'+'\n')
+        print('NaN features: {}'.format(features))
+        print('NaN replacement: {}\n'.format(replacement))
+
+    print('>>> replace {} NaNs'.format(name))
+    i = -1
+    for feature in features:
+        i += 1
+        if verbose: print('\t>> {}'.format(feature))
+        dataset[feature] = dataset[feature].fillna(replacement[i])
+    return
+
+# replace NaNs with mean values
+def replacementNaN(dataset,verbose=False,time=False):
+
+    NaNfeatures = []
+    if time: start = timer()
+
+    # informational output
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: replaceNaN '+40*'~')
+        print('\n>>> searching NaNs')
+
+    NaNs = dataset.isna().any()
+    #print('{}\n{}'.format(NaNs,type(NaNs)))
+
+    for i in range(0,NaNs.shape[0]):
+        #print('{}: {}'.format(i,NaNs.iloc[i]))
+        if NaNs.iloc[i] == True:
+            print('\t+ {}'.format(NaNs.index[i]))
+            NaNfeatures.append(NaNs.index[i])
+
+    #print('{}'.format(NaNfeatures)) # features containing NaN values
+    input(':::')
+
+    if verbose: print('>>> replacing NaNs')
+
+    for feature in NaNfeatures: # iterate NaN containing features
+        if verbose: print('\t>> {} ({})'.format(feature,dataset[feature].dtypes))
+
+        if dataset[feature].dtype == 'float16':
+            print('FLOAT16: {}'.format(dataset[feature].dtype))
+
+        # calculate mean
+        print('{}\n{}'.format(dataset[feature],type(dataset[feature])))
+
+        mean = dataset[feature].mean()
+
+        print('replacement mean: {}'.format(mean))
+
+        #dataset[feature] = dataset[feature].replace(np.nan, mean)
+        dataset[feature] = dataset[feature].fillna(mean)
+
+        print('dtypes: {}'.format(dataset[feature].dtypes))
+
+
+        #isNaN = dataset[feature].isnull()
+        #rowNaN = dataset[feature].isnull()
+        #index = []
+        #print('{}\n{}\n'.format(rowNaN,type(rowNaN)))
+        #for i in range(0,len(rowNaN)):
+        #    if rowNaN.iloc[i] == True:
+        #        index.append(i)
+        #    #print('{}'.format(rowNaN.iloc[i]))
+        #input('...')
+        #print('{}:\n{}'.format(feature,index))
+
+        # calculate mean
+        #mean = dataset[feature].mean()
+        #dataset[feature] = dataset[feature].replace(np.nan, mean)
+        # replace NaNs with mean values
+        #print('feature: {}\nrowNaN:\n{}\n\n'.format(feature,dataset[rowNaN]))
+        input('...')
+
+    print('{}'.format(dataset['((sourceTransportPort),forward): modeCount']))
+    print('{}'.format(dataset['((destinationTransportPort),forward): modeCount']))
+
+    input('...')
+
+
+    return # maybe remove
 # replace all Inf values with given replacement
 def cleanInf(dataset,mode,verbose=False,time=False):
 
@@ -359,7 +470,7 @@ def cleanNaN(dataset,replacement,verbose=False,time=False):
         end = timer()
         print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
 
-    return
+    return # maybe remove
 # remove features containing strings from given df
 def cleanString(dataset,verbose=False,time=False):
 
@@ -640,7 +751,7 @@ if __name__ == '__main__':
     if not os.path.exists(cfg.logs):    os.mkdir(cfg.logs)
     if not os.path.exists(modeld):      os.mkdir(modeld)
 
-    if time: 
+    if time:
         if remote: os.system('killall python2')
         else: os.system('killall dstat')
         start = timer()
@@ -687,9 +798,8 @@ if __name__ == '__main__':
 
     for chunk in read_csv(path,chunksize=cfg.chunksize,
     usecols=None,skipinitialspace=True,encoding='utf-8'):
-        chunk = conversion(chunk,False) # convert values into smaller datatypes
-        cleanString(chunk,False,False) # remove string-features
-        cleanNaN(chunk,0,False,False) # remove NaNs
+        chunk = conversion(chunk,False) # convert values into smaller datatypes whenever possible
+        cleanString(chunk,False,False) # remove all string features
         chunksplit = splitDataframe(chunk,0.30,False,False) # split into training & test portion
 
         # accumulate splits
@@ -702,6 +812,15 @@ if __name__ == '__main__':
     del chunksplit
     del chunk
     gc.collect()
+
+    # NaN REPLACEMENT
+    # search NaN containing features in Xtrain & Xtest
+    NaNs = searchNaN(pd.concat([Xtrain,Xtest]),verbose,False)
+    # calculate mean values
+    means = calcMean(pd.concat([Xtrain,Xtest]),NaNs,verbose,False)
+    # replace NaNs
+    replaceNaN(Xtrain,'Xtrain',NaNs,means,verbose,False)
+    replaceNaN(Xtest,'Xtest',NaNs,means,verbose,False)
 
 
     # SCALER FIT
