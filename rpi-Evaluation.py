@@ -41,7 +41,7 @@ experiments_packets = []
 
 # class object containing all necessary experiment data
 class Experiment:
-    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,maxram=0,trees=0):
+    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,maxram=0,trees=0):
         # contains info
         self.fullpath   = fullpath
         self.file       = file
@@ -57,8 +57,8 @@ class Experiment:
         self.report     = report
         self.result     = result
 
-        # chart-values
-
+        # charts
+        self.style      = style # unused, linestyle in graph plots
 
         # specific parameters
         self.runtime    = runtime # runtime for preprocessing and classification in seconds
@@ -98,6 +98,10 @@ def createExperiments(folders,verbose=False):
             # can only be read this way for single digit options
             mode        = int(parts[1][-1])
             vector      = int(parts[2][-1])
+            # set plot style based on sampling technique
+            # https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
+            if sampling == 'flowbased': style='dotted'
+            elif sampling == 'packetbased': style='solid'
 
             # CSV logs full paths
             infocsv     = folder / cfg.csv_info
@@ -116,7 +120,7 @@ def createExperiments(folders,verbose=False):
             steps = int(info['0'].iloc[3])
 
             # create Experiment object
-            tmp = Experiment(path,file,mode,vector,steps,sampling,info,time,dstat,report,result) # create temporary object
+            tmp = Experiment(path,file,mode,vector,steps,sampling,info,time,dstat,report,result,style) # create temporary object
 
             if verbose: # output current experiment information
                 print('\t\t< Attributes:\t{}'.format(parts))
@@ -153,21 +157,21 @@ if __name__ == '__main__':
     plot    = args.plot
 
     # accumulate folders containing experiment data
-    for path in Path(cfg.flowfolder).iterdir():
-        if path.is_dir(): flowfolder.append(path) # perflow sampling
+    for path in Path(cfg.eflowfolder).iterdir():
+        if path.is_dir(): flowfolder.append(path) # add folder to flow-based experiments
     flowfolder.sort()
 
-    for path in Path(cfg.packetfolder).iterdir():
-        if path.is_dir(): packetfolder.append(path) # packet sampling
+    for path in Path(cfg.epacketfolder).iterdir():
+        if path.is_dir(): packetfolder.append(path) # add folder to packet-based experiments
     packetfolder.sort()
 
     # check passed optional arguments and commands
     print('\n'+40*'~'+' SCRIPT: Evaluation.py '+40*'~')
-    print('\nfolders:\n\t{}\tsub-folders: {}\n\t{}\tsub-folders: {}\n\n'.format(cfg.flowfolder,len(flowfolder),cfg.packetfolder,len(packetfolder)))
+    print('\nfolders:\n\t{}\tsub-folders: {}\n\t{}\tsub-folders: {}\n\n'.format(cfg.eflowfolder,len(flowfolder),cfg.epacketfolder,len(packetfolder)))
     if verbose: input('...')
 
     # clean figures directory
-    print('>>> Clear directory')
+    print('>>> Clear directory: {}'.format(cfg.figures))
     for filetype in cfg.types:
         for file in sorted(Path(cfg.figures).glob(filetype)): # iterates over list of files, sorted by name
             Path.unlink(file)
@@ -220,16 +224,16 @@ if __name__ == '__main__':
             exp[n][i].dstat = exp[n][i].dstat[(exp[n][i].dstat['"epoch"'] >= start) & (exp[n][i].dstat['"epoch"'] <= end)]
 
             # convert epoch time to relative
-            exp[n][i].time['epochtime'] = exp[n][i].time['epochtime'].subtract(start)
-            exp[n][i].dstat['"epoch"']  = exp[n][i].dstat['"epoch"'].subtract(start)
+            exp[n][i].time['epochtime'] = exp[n][i].time['epochtime'].subtract(start) # apply on exported timestamps
+            exp[n][i].dstat['"epoch"']  = exp[n][i].dstat['"epoch"'].subtract(start) # apply on dstat table
 
-            # search maximum runtime of all experiments, used for spider chart generation later on
+            # search maximum runtime of every experiments, used for spider chart generation later on
             if (end-start) > maxruntime: maxruntime = (end-start)
 
             # get maximum used RAM
             exp[n][i].maxram = exp[n][i].dstat['"used"'].max()/1024**2
 
-    print('>>> Converting memory values')
+    print('>>> Converting memory-usage values')
     convert = ['"used"','"total"','"cach"','"free"','"used".1','"free".1'] # features to convert (RAM, SWAP)
 
     for n in range(0,len(folders)):
@@ -241,69 +245,68 @@ if __name__ == '__main__':
                     exp[n][i].dstat.at[row,feature]=tmp
 
 
-
     # CPU USAGE
-    print('>>> Creating graphs CPU-usage')
-    count = 0
-    for n in range(0,len(folders)):
-        for i in range (0,len(exp[n])):
+    #print('>>> Creating graphs CPU-usage')
+    #count = 0
+    #for n in range(0,len(folders)):
+    #    for i in range (0,len(exp[n])):
 
-            count += 1
-            ticks   = []
-            labels  = []
+    #        count += 1
+    #        ticks   = []
+    #        labels  = []
 
-            png_file = 'figures/CPU-usage_figure{}.png'
+    #        png_file = 'figures/CPU-usage_figure{}.png'
 
-            # create list of relevant timestamps
-            #for j in range(0,exp[n][i].time['epochtime'].shape[0]): # includes start/end timestamps
-            for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excludes start/end timestamps
-                ticks.append(exp[n][i].time['epochtime'][j])
-                labels.append(exp[n][i].time['segment'][j])
+    #        # create list of relevant timestamps
+    #        #for j in range(0,exp[n][i].time['epochtime'].shape[0]): # includes start/end timestamps
+    #        for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excludes start/end timestamps
+    #            ticks.append(exp[n][i].time['epochtime'][j])
+    #            labels.append(exp[n][i].time['segment'][j])
 
-            # create tuple containing ticks and labels
-            stamps = list(zip(ticks,labels))
-            stamps.sort(key=lambda x: float(x[0]),reverse=False)
-            timestamps  = [stamp[0] for stamp in stamps]
-            timelabels = [stamp[1] for stamp in stamps]
+    #        # create tuple containing ticks and labels
+    #        stamps = list(zip(ticks,labels))
+    #        stamps.sort(key=lambda x: float(x[0]),reverse=False)
+    #        timestamps  = [stamp[0] for stamp in stamps]
+    #        timelabels = [stamp[1] for stamp in stamps]
 
-            # graph title & subtitle
-            title_sampling    = exp[n][i].sampling
-            title_steps       = exp[n][i].steps
-            title_vector      = cfg.vectors[exp[n][i].vector]
-            title_mode        = cfg.samplingmode[exp[n][i].mode]
-            # nicer output for title
-            if exp[n][i].sampling       == 'flowbased':     samplingtype = 'flow-based sampling'
-            elif exp[n][i].sampling     == 'packetbased':   samplingtype = 'packet-based sampling'
+    #        # graph title & subtitle
+    #        title_sampling    = exp[n][i].sampling
+    #        title_steps       = exp[n][i].steps
+    #        title_vector      = cfg.vectors[exp[n][i].vector]
+    #        title_mode        = cfg.samplingmode[exp[n][i].mode]
+    #        # nicer output for title
+    #        if exp[n][i].sampling       == 'flowbased':     samplingtype = 'flow-based sampling'
+    #        elif exp[n][i].sampling     == 'packetbased':   samplingtype = 'packet-based sampling'
 
-            title = '{}\n'.format(samplingtype)
-            subtitle = '({}, n={})\n{}'.format(title_mode,title_steps,title_vector)
+    #        title = '{}\n'.format(samplingtype)
+    #        subtitle = '({}, n={})\n{}'.format(title_mode,title_steps,title_vector)
 
-            fig = plt.figure(figsize=(21.0,9.0))
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"usr"'],color = '#000000',label='CPU python')
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"sys"'],color = '#566573',label='CPU system')
+    #        fig = plt.figure(figsize=(21.0,9.0))
+    #        plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"usr"'],color = '#000000',label='CPU python')
+    #        plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"sys"'],color = '#566573',label='CPU system')
 
-            # plot segments
-            style = 'dotted'
-            color = '#000000'
-            #for j in (range (1,len(labels)-1)):
-            for j in (range (0,len(labels))): # excludes start/end timestamps
-                plt.axvline(x=stamps[j][0],ymin=0,ymax=1,linestyle=style,color=color) # plot vertical lines
+    #        # plot segments
+    #        style = 'dotted'
+    #        color = '#000000'
+    #        #for j in (range (1,len(labels)-1)):
+    #        for j in (range (0,len(labels))): # excludes start/end timestamps
+    #            plt.axvline(x=stamps[j][0],ymin=0,ymax=1,linestyle=style,color=color) # plot vertical lines
 
-            # plot labels
-            plt.xticks(timestamps,timelabels,rotation=80) # create x-axis ticks
-            plt.xlabel('segments', fontsize=14)
-            plt.ylabel('CPU usage',fontsize=14)
-            plt.title(title,ha='center',fontsize=18) # set title
-            plt.suptitle(subtitle,x=0.515,y=0.905,ha='center',fontsize=10) # suptitle position between 0 and 1
-            plt.legend(loc='best')
-            plt.tight_layout() # increase space below x-axis for proper labeling
+    #        # plot labels
+    #        plt.xticks(timestamps,timelabels,rotation=80) # create x-axis ticks
+    #        plt.xlabel('segments', fontsize=14)
+    #        plt.ylabel('CPU usage',fontsize=14)
+    #        plt.title(title,ha='center',fontsize=18) # set title
+    #        plt.suptitle(subtitle,x=0.515,y=0.905,ha='center',fontsize=10) # suptitle position between 0 and 1
+    #        plt.legend(loc='best')
+    #        plt.tight_layout() # increase space below x-axis for proper labeling
 
-            if verbose: print('\t<< {}'.format(png_file.format(count)))
-            plt.savefig(png_file.format(count)) # save plot to file
+    #        if verbose: print('\t<< {}'.format(png_file.format(count)))
+    #        plt.savefig(png_file.format(count)) # save plot to file
 
-            # show/hide plots
-            if (not plot): plt.close(fig) # close fig directly to not show it on script execution
-            else: plt.show() # show single plot
+    #        # show/hide plots
+    #        if (not plot): plt.close(fig) # close fig directly to not show it on script execution
+    #        else: plt.show() # show single plot
 
 
 
@@ -319,9 +322,9 @@ if __name__ == '__main__':
 
             png_file = 'figures/RAM-usage_figure{}.png'
 
-            # create list of relevant timestamps
+            # create list of relevant timestamps and labels
             #for j in range(0,exp[n][i].time['epochtime'].shape[0]):
-            for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excludes start/end timestamps
+            for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excluding start & end timestamps
                 ticks.append(exp[n][i].time['epochtime'][j])
                 labels.append(exp[n][i].time['segment'][j])
 
@@ -337,18 +340,18 @@ if __name__ == '__main__':
             title_vector      = cfg.vectors[exp[n][i].vector]
             title_mode        = cfg.samplingmode[exp[n][i].mode]
             # nicer output for title
-            if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
-            elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based sampling'
+            if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based'
+            elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based'
 
             title = '{}\n'.format(samplingtype)
-            subtitle = '({}, n={})\n{}'.format(title_mode,title_steps,title_vector)
+            subtitle = '{}\n({}, n={})'.format(title_vector,title_mode,title_steps)
 
             # plot graphs
             fig = plt.figure(figsize=(21.0,9.0))
             plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"total"'], color = '#000000',label='RAM total',linewidth=3)
             plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used"'],  color = '#566573',label='RAM used',linewidth=2)
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"cach"'],  color = '#AEB6BF',label='RAM cached',linewidth=2)
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used".1'],color = '#566573',label='SWAP used',linewidth=2)
+            #plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"cach"'],  color = '#AEB6BF',label='RAM cached',linewidth=2)
+            #plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used".1'],color = '#566573',label='SWAP used',linewidth=2)
 
             # plot segments
             style = 'dotted'
@@ -396,6 +399,7 @@ if __name__ == '__main__':
             prec0       = exp[n][i].report['precision'][0]*100
             prec1       = exp[n][i].report['precision'][1]*100
             runtime     = exp[n][i].runtime/maxruntime*100
+            style       = exp[n][i].style
 
             # graph title & subtitle
             title_sampling    = exp[n][i].sampling
@@ -403,13 +407,15 @@ if __name__ == '__main__':
             title_vector      = cfg.vectors[exp[n][i].vector]
             title_mode        = cfg.samplingmode[exp[n][i].mode]
             # nicer output for title
-            if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
-            elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based sampling'
+            if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based'
+            elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based'
 
             title = '{}\n{} ({}, n={})'.format(title_vector,title_sampling,title_mode,title_steps)
 
             # forge polar-compatible values and angles
-            value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+            #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+            value   = [RAM_used,accuracy,recall0,prec0,recall1,prec1,runtime]
+
             N       = len(value) # number of different parameters shown in spider-chart
             value   += value[:1] # close value "circle" for sider-chart
             angles  = [n / float(N) * 2 * pi for n in range(N)]
@@ -417,10 +423,12 @@ if __name__ == '__main__':
 
             fig = plt.figure(figsize=(10.0,10.0))
             ax  = plt.subplot(polar=True)
-            plt.polar(angles,value, linewidth=2, color='#566573')
+            plt.polar(angles,value,linestyle=style,linewidth=2, color='#566573')
 
             # label parameters
-            stats = ['used RAM\n({}%)'.format(int(RAM_used)),'cached RAM\n({}%)'.format(int(RAM_cached)),'CPU usage\n({}%)'.format(int(CPU_max)),'Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+            #stats = ['used RAM\n({}%)'.format(int(RAM_used)),'cached RAM\n({}%)'.format(int(RAM_cached)),'CPU usage\n({}%)'.format(int(CPU_max)),'Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+            stats = ['used RAM\n({}%)'.format(int(RAM_used)),'Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+
             plt.xticks(angles[:-1],stats) # pass angles but last (repetition of first value)
             plt.title(title,ha='center',fontsize=14)
 
@@ -479,6 +487,8 @@ if __name__ == '__main__':
         compare_angles = []
         compare_labels  = []
         compare_colors = []
+        compare_sampling = []
+        compare_style = []
 
         for x in tmp: # iterate over current bundle of experiments
 
@@ -493,13 +503,16 @@ if __name__ == '__main__':
             prec0       = x.report['precision'][0]*100
             prec1       = x.report['precision'][1]*100
             runtime     = x.runtime/maxruntime*100
+            style       = x.style # plot-style
 
             # nicer output for legend
-            if x.sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
-            elif x.sampling   == 'packetbased': samplingtype = 'packet-based sampling'
+            if x.sampling     == 'flowbased':   samplingtype = 'flow-based'
+            elif x.sampling   == 'packetbased': samplingtype = 'packet-based'
 
             # forge polar-compatible values and angles
-            value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+            #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+            value   = [RAM_used,accuracy,recall0,prec0,recall1,prec1,runtime]
+
             N       = len(value) # number of different parameters shown in spider-chart
             value   += value[:1] # close value "circle" for sider-chart
             angles  = [n / float(N) * 2 * pi for n in range(N)]
@@ -518,15 +531,19 @@ if __name__ == '__main__':
             compare_angles.append(angles)
             compare_colors.append(color)
             compare_labels.append(label)
+            compare_style.append(style)
 
         plt.figure(figsize=(10.0,10.0))
         ax = plt.subplot(polar=True)
         width = 2
 
         for c in range(0,len(compare_values)): # create plots
-            plt.polar(compare_angles[c],compare_values[c],linewidth=width,linestyle='dotted',label=compare_labels[c],color=compare_colors[c])
 
-        stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+            plt.polar(compare_angles[c],compare_values[c],linewidth=width,linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
+
+        #stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+        stats = ['used RAM','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+
         plt.xticks(compare_angles[0][:-1],stats)
         ax.set_rlabel_position(60)
         plt.yticks([0,25,50,75,100], color='grey', size=10)
@@ -565,6 +582,7 @@ if __name__ == '__main__':
         compare_angles = []
         compare_labels  = []
         compare_colors = []
+        compare_style = []
 
         for x in tmp: # iterate over current bundle of experiments
 
@@ -579,13 +597,16 @@ if __name__ == '__main__':
             prec0       = x.report['precision'][0]*100
             prec1       = x.report['precision'][1]*100
             runtime     = x.runtime/maxruntime*100
+            style       = x.style # plot-style
 
             # nicer output for legend
-            if x.sampling     == 'flowbased':   samplingtype = 'flow-based sampling'
-            elif x.sampling   == 'packetbased': samplingtype = 'packet-based sampling'
+            if x.sampling     == 'flowbased':   samplingtype = 'flow-based'
+            elif x.sampling   == 'packetbased': samplingtype = 'packet-based'
 
             # forge polar-compatible values and angles
-            value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+            #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+            value   = [RAM_used,accuracy,recall0,prec0,recall1,prec1,runtime]
+
             N       = len(value) # number of different parameters shown in spider-chart
             value   += value[:1] # close value "circle" for sider-chart
             angles  = [n / float(N) * 2 * pi for n in range(N)]
@@ -604,15 +625,17 @@ if __name__ == '__main__':
             compare_angles.append(angles)
             compare_colors.append(color)
             compare_labels.append(label)
+            compare_style.append(style)
 
         plt.figure(figsize=(10.0,10.0))
         ax = plt.subplot(polar=True)
         width = 2
 
         for c in range(0,len(compare_values)): # create plots
-            plt.polar(compare_angles[c],compare_values[c],linewidth=width,linestyle='dotted',label=compare_labels[c],color=compare_colors[c])
+            plt.polar(compare_angles[c],compare_values[c],linewidth=width,linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
 
-        stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+        #stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+        stats = ['used RAM','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
         plt.xticks(compare_angles[0][:-1],stats)
         ax.set_rlabel_position(60)
         plt.yticks([0,25,50,75,100], color='grey', size=10)
