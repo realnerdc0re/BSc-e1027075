@@ -345,8 +345,8 @@ if __name__ == '__main__':
     # PREPROCESSING
     if agm:
         print('>> Encode TCP flags') # manually select function to call tcp encoder
-        #tcpflagEncoder(dataset,'mode(_tcpFlags)',True)
-        tcpflagEncoderDecimal(dataset,'mode(_tcpFlags)',True)
+        tcpflagEncoder(dataset,'mode(_tcpFlags)',True)
+        #tcpflagEncoderDecimal(dataset,'mode(_tcpFlags)',True)
 
     originalsplits = splitDataframe(dataset,0.30,False,False)
     originalXtest = originalsplits[1] # copy of original data including IP addresses
