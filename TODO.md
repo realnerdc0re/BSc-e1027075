@@ -1,7 +1,9 @@
 ## INPROGRESS
 
 ### CODE
-- rpi-flowSampling.py:  implement AGM feature handling
+- use one feature-per-flag encoding instead of textual-binary-decimal encoding for AGM
+- implement check for cfg.chunksize != (0-10) and exit Master.py with info that higher chunksize necessary
+- rpi-flowSampling.py: implement AGM feature handling
     - how to handle mode when only two different values are in one flows feature? How does go-flows handle this for packet-based sampling e.g.?
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
@@ -14,7 +16,6 @@
 #### EVALUATION
 - add classification speed and F1-scores for 0 and 1 (maybe even replace Precision or Recall parameter with F1-scores), remove CPU usage and cached RAM from Spiderchart
 - add model file size as experiment parameter
-- remove CPU usage and RAM cached from graphs and charts, its a useless stat
 - implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
 - develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
 - save PNG for all generated charts in addition to wd/figures into the same folder where the data is actually fetched from
@@ -29,8 +30,12 @@
 - improve legend placement for comparison charts if labels are going to be that long as they are now
 - change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
 
-
 ### THESIS
+- adjust codelines in chapter 05 methodology after final code-changes and extend description when necessary
+- chapter 01 introduction
+- chapter 02 background
+- result & discussion
+
 
 
 ## TODO
@@ -68,6 +73,9 @@
 
 
 ## DONE
+- implement no sampling experiment execution in Master.py when steps == 0!!!!
+    - directly pass merged PCAPs to labeling script and execute Preprocessing for results
+- remove CPU usage and RAM cached from graphs and charts, its a useless stat
 - rpi-Preprocessing.py: implement replacing NaN with feature mean instead of 0!!!!
 - implement timestamp after predictions
 - save model uncompressed to gather file-size that has to be loaded into memory directly from file
