@@ -71,7 +71,8 @@ vectors = {
 3:'AGM_3600s.json', # unused
 4:'CAIA_flowSampling.json',
 5:'CAIA_packetSampling.json',
-6:'AGM_10s.json'
+6:'AGM_10s.json',
+7:'AGM_60s.json'
 }
 #######################################################################################
 # SAMPLING-MODES
@@ -118,9 +119,7 @@ tcpflags = {
 # REMOTE MACHINE
 # username, IP and working directory for the remote machine
 remotewd    = 'BSc-e1027075'
-#remoteuser  = 'dietpi'
-#remoteip    = '10.10.45.55'
-#remoteip    = '192.168.178.29'
+#remoteuser  = 'dietpi'#remoteip    = '10.10.45.55'#remoteip    = '192.168.178.29'
 remoteuser  = 'thesis'
 remoteip    = '10.10.40.209'
 remote      = '{}@{}'.format(remoteuser,remoteip)
@@ -129,15 +128,10 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # EXPERIMENTS
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
-#file        = [0]
-#vector      = [1,4,5,6]
-#mode        = [1,3,5]
-#steps       = [7]
-
 file        = [0]
-vector      = [1,4,5,6]
-mode        = [1,3,5]
-steps       = [3]
+vector      = [5]
+mode        = [5]
+steps       = [0] # 0 to process unsampled PCAP
 
 n_PCA       = 4 # number of components for PCA
 PCA_batch   = 10**5 # batchsize used for incremental PCA
