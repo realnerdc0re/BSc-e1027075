@@ -403,7 +403,33 @@ def tcpflagPreEncoder(dataset,feature,verbose=False):
     if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])); input('...\n'+Style.RESET_ALL)
 
     return
+# encode tcp flags into separate features
+def tcpflagEncoder2(dataset,feature,verbose=False):
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
+        print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
 
+    printdata(dataset,'tcpflagEncoder before flags')
+    #print('{}'.format(dataset[]))
+
+
+    # create features for all possible TCP flags, initialized with 0
+    #flagfeatures = ['tcp ACK','tcp PSH','tcp FIN','tcp RST','tcp SYN','tcp URG','tcp ECE','tcp CWR','tcp NS']
+    flags = ['A','P','F','R','S','U','E','C','N']
+
+    dataset[flags] = 0
+
+    for i in range(0,dataset.shape[0]):
+        cell = dataset[feature][i] # current cell
+
+        if isinstance(cell,list) and len(cell)>0:
+            for j in range(0,len(cell)):
+                for char in cell[j]:
+                    dataset.at[i,char] = 1
+
+
+    printdata(dataset,'tcpflagEncoder added flags')
+    input('::::')
 
 if __name__ == '__main__':
 
@@ -505,9 +531,13 @@ if __name__ == '__main__':
         convertToArray(dataset,features,1,verbose,time)
         if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
 
-        print('>>> Applying flow-based sampling')
-        lambdaflowSampling(dataset,n,features,mode,verbose,time)
-        if verbose: print(cfg.vcolor+'\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
+        if n != 0:
+            print('>>> Applying flow-based sampling')
+            lambdaflowSampling(dataset,n,features,mode,verbose,time)
+            if verbose: print(cfg.vcolor+'\n< Sampled:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
+        else: # skip sampling
+            print('>>> No flow-based sampling, processing original capture')
+
 
 
         # CALCULATIONS
@@ -593,15 +623,18 @@ if __name__ == '__main__':
 
         print('>>> Converting accumulated features') # converts to numpy array
         convertToArray(dataset,features,1,verbose,time)
-        if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[features].head(n=20))), input('...\n'+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[features].head(n=20))); input('...\n'+Style.RESET_ALL)
 
         print('>>> Converting textual features') # converts to list
         convertToArray(dataset,textual,2,verbose,time)
-        if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[textual].head(n=20))), input('...\n'+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[textual].head(n=20))); input('...\n'+Style.RESET_ALL)
 
-        print('>>> Applying flow-based sampling')
-        lambdaflowSampling(dataset,n,features+textual,mode,verbose,time)
-        if verbose: print(cfg.vcolor+'\n< Sampled:\n{}'.format(dataset[features+textual].head(n=20))); input('...\n'+Style.RESET_ALL)
+        if n != 0:
+            print('>>> Applying flow-based sampling')
+            lambdaflowSampling(dataset,n,features+textual,mode,verbose,time)
+            if verbose: print(cfg.vcolor+'\n< Sampled:\n{}'.format(dataset[features+textual].head(n=20))); input('...\n'+Style.RESET_ALL)
+        else:
+            print('>>> No flow-based sampling, processing original capture')
 
         if debug:
             searchNaN(dataset,features,verbose=True,time=False)
