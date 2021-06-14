@@ -125,6 +125,21 @@ def tcpflagEncoder(dataset,feature,verbose=False):
     if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])); input('...\n'+Style.RESET_ALL)
 
     return
+# encode tcp flags into separate features
+def tcpflagEncoder2(dataset,feature,verbose=False):
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
+        print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
+
+    # create features for all possible TCP flags, initialized with 0
+    flags = ['tcp ACK','tcp PSH','tcp FIN','tcp RST','tcp SYN','tcp URG','tcp ECE','tcp CWR','tcp NS']
+    dataset[flags] = 0
+
+    printdata(dataset)
+    input('::::')
+
+
+    return
 # import CSV as pandas dataframe
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     # informational output
@@ -233,152 +248,153 @@ if __name__ == '__main__':
     print ('go-flows: {}'.format(goflowscmd))
     print('labeling: {}\n\n'.format(labelingcmd))
 
-
-    if check: # calculate sampled packet-count for basic result verification
-        print('>>> Calculating packet-count for result verification')
-        totalpacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
-        for word in totalpacketcount.split():
-            if word.isdigit():
-                totalpacketcount = int(word) # total number of packets in pcap
-                totalpackets = np.arange(1,totalpacketcount+1,1)
-                totalsamplecount = len(totalpackets[0::n])
-                print('\t< {}\n\t< {} packets total\n\t< {} packets sampled'.format(capinfoscmd,totalpacketcount,totalsamplecount))
-
-
-    # DROP PAYLOAD from every packet
-    print('>>> Dropping payload: {}'.format(editsnapcmd))
-    os.system(editsnapcmd)
-
-    # CLEAN SPLIT-FOLDER
-    print('>>> Cleaning folder: {}'.format(cleansplitPCAP))
-    os.system(cleansplitPCAP)
-
-    # CREATE SPLIT-FILES
-    print('>>> Splitting PCAP: {}'.format(editsplitcmd))
-    os.system(editsplitcmd)
-
-    # SAMPLING
-    # get a list of all files in split-directory, sort list alphabetically because depending on OS you may won't get a sorted list
-    splitlist = os.listdir(split_folder) 
-    splitlist.sort()
-    splitcount = len(splitlist)
-
-    # various variables to determine necessary packet-skips for sampling on split-file transition
-    packetskip = 0
-    samplepstart = 0
-    nextpacketskip = 0
-    nextsamplepstart = 0
-    scount = 0 # iteration counter
-
-    print('>>> Applying packet sampling')
-    for file in splitlist: # iterate over every splitted file
-
-        scount += 1
-        if ((scount % 100) == 0) or (scount == 1) or (scount == splitcount): # limit informational output to first, every 100 splitfiles and last file
-            print('\t> [{}/{}] {}'.format(scount,splitcount,file))
-
-        # create capinfos command to gather packet count (pcount) of current split-file
-        infosplit = split_folder / file
-        capinfosplitcmd = r'capinfos -M -c {} | grep packets'.format(infosplit)
-        pcount = subprocess.check_output(capinfosplitcmd, shell=True, universal_newlines=True)
-
-        for word in pcount.split():
-            if word.isdigit(): pcount = int(word)
-
-        packetskip = nextpacketskip # skips for current split-file based on last iteration
-        samplepcount = pcount - packetskip # packets to sample in current iteration, considering skips
-
-        # array containing packet-numbers of the current split-file
-        plist = np.arange(1,pcount+1,1)
-        # same array, containing packet-indices
-        plistindex = np.arange(0,pcount,1)
+    if n != 0:
+        if check: # calculate sampled packet-count for basic result verification
+            print('>>> Calculating packet-count for result verification')
+            totalpacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
+            for word in totalpacketcount.split():
+                if word.isdigit():
+                    totalpacketcount = int(word) # total number of packets in pcap
+                    totalpackets = np.arange(1,totalpacketcount+1,1)
+                    totalsamplecount = len(totalpackets[0::n])
+                    print('\t< {}\n\t< {} packets total\n\t< {} packets sampled'.format(capinfoscmd,totalpacketcount,totalsamplecount))
 
 
-        if mode == 5: # every n-th packet, including first packet of the pcap
-            modulo = samplepcount % n
+        # DROP PAYLOAD from every packet
+        print('>>> Dropping payload: {}'.format(editsnapcmd))
+        os.system(editsnapcmd)
 
-            if modulo != 0:
-                # number of packets to skip in next iteration
-                nextpacketskip = n - modulo
-                nextsamplepstart = nextpacketskip
-            else:
-                nextpacketskip = 0
-                nextsamplepstart = 0
+        # CLEAN SPLIT-FOLDER
+        print('>>> Cleaning folder: {}'.format(cleansplitPCAP))
+        os.system(cleansplitPCAP)
 
-            if verbose:
-                print(cfg.vcolor+'\n\n\t'+20*'~'+' {} '.format(file)+20*'~')
-                print('\n\t< {} skipped packets, this iteration'.format(packetskip))
-                print('\t< {} skipped packets, next iteration'.format(nextpacketskip)+Style.RESET_ALL)
+        # CREATE SPLIT-FILES
+        print('>>> Splitting PCAP: {}'.format(editsplitcmd))
+        os.system(editsplitcmd)
 
-            # array already considering packets to skip from last iteration
-            pskip = plist[packetskip:]
-            # index-numbers of packets to sample in current iteration
-            psample = plistindex[packetskip::n]
-            # packet-number of packets to sample in current iteration (readability in verbose)
-            psamplenumber = plist[packetskip::n]
-            # packets to drop in current iteration via editcap
-            pdrop = np.delete(plist,psample.tolist())
+        # SAMPLING
+        # get a list of all files in split-directory, sort list alphabetically because depending on OS you may won't get a sorted list
+        splitlist = os.listdir(split_folder) 
+        splitlist.sort()
+        splitcount = len(splitlist)
 
-            if verbose: # verbose output for improved sampling comprehension
-                print(cfg.vcolor+'\n\t'+10*'~'+' sampling '+10*'~')
-                pprint = packetOutput(plist,10,False) # generates list-styled packet output for better readability
-                print('\n\t< Original, {} packets\n\t< [{} ... {}]'.format(len(plist),str(pprint[0]),str(pprint[1])))
-                pprint = packetOutput(pskip,10,False)
-                print('\n\t< Iteration, {} packets\n\t< [{} ... {}]'.format(len(pskip),str(pprint[0]),str(pprint[1])))
-                pprint = packetOutput(psamplenumber,10,False)
-                print('\n\t< Sampled: {} packets\n\t< [{} ... {}]'.format(len(psamplenumber),str(pprint[0]),str(pprint[1])))
-                pprint = packetOutput(pdrop,10,False)
-                print('\n\t< Dropped: {} packets\n\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+        # various variables to determine necessary packet-skips for sampling on split-file transition
+        packetskip = 0
+        samplepstart = 0
+        nextpacketskip = 0
+        nextsamplepstart = 0
+        scount = 0 # iteration counter
 
-            # flip the list to drop packets via editcap, starting from the end
-            pdrop = np.flip(pdrop)
-            # number of iterations until all packets are dropped
-            iteration = int(len(pdrop)/512)+1
+        print('>>> Applying packet sampling')
+        for file in splitlist: # iterate over every splitted file
 
-            for i in range(0,iteration):
-                # create a slice of 512 packets to remove with editcaps
-                pslice = pdrop[0:512]
-                # remove these 512 packets from droplist for next iteration
-                pdrop = pdrop[512:]
+            scount += 1
+            if ((scount % 100) == 0) or (scount == 1) or (scount == splitcount): # limit informational output to first, every 100 splitfiles and last file
+                print('\t> [{}/{}] {}'.format(scount,splitcount,file))
 
-                if superverbose: # detailed output for dropped packets via editcap
-                    print(cfg.vcolor+'\n\t\t'+10*'~'+' packet removal {}/{} '.format(i+1,iteration)+10*'~')
-                    pprint = packetOutput(pslice,10,False)
-                    print('\n\t\t<< Dropping, {} packets\n\t\t<< [{} ... {}]'.format(len(pslice),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+            # create capinfos command to gather packet count (pcount) of current split-file
+            infosplit = split_folder / file
+            capinfosplitcmd = r'capinfos -M -c {} | grep packets'.format(infosplit)
+            pcount = subprocess.check_output(capinfosplitcmd, shell=True, universal_newlines=True)
 
-                    if i < (iteration-1): # only display remaining packets until last iteration
-                        pprint = packetOutput(pdrop,10,False)
-                        print(cfg.vcolor+'\n\t\t<< Remaining, {} packets\n\t\t<< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
-                # create string containing packet numbers to drop
-                arg = [str(int) for int in pslice]
-                # seperated with whitespaces necessary as editcap argument
-                arg = " ".join(arg)
+            for word in pcount.split():
+                if word.isdigit(): pcount = int(word)
 
-                tmpsplitfile = split_folder / file # split-file in current iteration to process with editcap
-                tmpfile = split_folder / 'tmp.pcap' # temporary file tmp.pcap created with editcap
-                editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg)
-                os.system(editcapcmd)
+            packetskip = nextpacketskip # skips for current split-file based on last iteration
+            samplepcount = pcount - packetskip # packets to sample in current iteration, considering skips
 
-                # replace split-file with sampled temporary file
-                movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
-                os.system(movecmd)
+            # array containing packet-numbers of the current split-file
+            plist = np.arange(1,pcount+1,1)
+            # same array, containing packet-indices
+            plistindex = np.arange(0,pcount,1)
 
 
-    # MERGE split-files
-    print('>>> Merging split-files: {}'.format(mergecapcmd))
-    os.system(mergecapcmd)
+            if mode == 5: # every n-th packet, including first packet of the pcap
+                modulo = samplepcount % n
+
+                if modulo != 0:
+                    # number of packets to skip in next iteration
+                    nextpacketskip = n - modulo
+                    nextsamplepstart = nextpacketskip
+                else:
+                    nextpacketskip = 0
+                    nextsamplepstart = 0
+
+                if verbose:
+                    print(cfg.vcolor+'\n\n\t'+20*'~'+' {} '.format(file)+20*'~')
+                    print('\n\t< {} skipped packets, this iteration'.format(packetskip))
+                    print('\t< {} skipped packets, next iteration'.format(nextpacketskip)+Style.RESET_ALL)
+
+                # array already considering packets to skip from last iteration
+                pskip = plist[packetskip:]
+                # index-numbers of packets to sample in current iteration
+                psample = plistindex[packetskip::n]
+                # packet-number of packets to sample in current iteration (readability in verbose)
+                psamplenumber = plist[packetskip::n]
+                # packets to drop in current iteration via editcap
+                pdrop = np.delete(plist,psample.tolist())
+
+                if verbose: # verbose output for improved sampling comprehension
+                    print(cfg.vcolor+'\n\t'+10*'~'+' sampling '+10*'~')
+                    pprint = packetOutput(plist,10,False) # generates list-styled packet output for better readability
+                    print('\n\t< Original, {} packets\n\t< [{} ... {}]'.format(len(plist),str(pprint[0]),str(pprint[1])))
+                    pprint = packetOutput(pskip,10,False)
+                    print('\n\t< Iteration, {} packets\n\t< [{} ... {}]'.format(len(pskip),str(pprint[0]),str(pprint[1])))
+                    pprint = packetOutput(psamplenumber,10,False)
+                    print('\n\t< Sampled: {} packets\n\t< [{} ... {}]'.format(len(psamplenumber),str(pprint[0]),str(pprint[1])))
+                    pprint = packetOutput(pdrop,10,False)
+                    print('\n\t< Dropped: {} packets\n\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+
+                # flip the list to drop packets via editcap, starting from the end
+                pdrop = np.flip(pdrop)
+                # number of iterations until all packets are dropped
+                iteration = int(len(pdrop)/512)+1
+
+                for i in range(0,iteration):
+                    # create a slice of 512 packets to remove with editcaps
+                    pslice = pdrop[0:512]
+                    # remove these 512 packets from droplist for next iteration
+                    pdrop = pdrop[512:]
+
+                    if superverbose: # detailed output for dropped packets via editcap
+                        print(cfg.vcolor+'\n\t\t'+10*'~'+' packet removal {}/{} '.format(i+1,iteration)+10*'~')
+                        pprint = packetOutput(pslice,10,False)
+                        print('\n\t\t<< Dropping, {} packets\n\t\t<< [{} ... {}]'.format(len(pslice),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+
+                        if i < (iteration-1): # only display remaining packets until last iteration
+                            pprint = packetOutput(pdrop,10,False)
+                            print(cfg.vcolor+'\n\t\t<< Remaining, {} packets\n\t\t<< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+                    # create string containing packet numbers to drop
+                    arg = [str(int) for int in pslice]
+                    # seperated with whitespaces necessary as editcap argument
+                    arg = " ".join(arg)
+
+                    tmpsplitfile = split_folder / file # split-file in current iteration to process with editcap
+                    tmpfile = split_folder / 'tmp.pcap' # temporary file tmp.pcap created with editcap
+                    editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg)
+                    os.system(editcapcmd)
+
+                    # replace split-file with sampled temporary file
+                    movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
+                    os.system(movecmd)
 
 
-    # VERIFICATION
-    if check: # compare sampled packet-count with calculated packet-count for basic verification
-        print('>>> Verifying sampled packet-count')
-        capinfoscmd = r'capinfos -M -c {} | grep packets'.format(pcap_sampled)
-        samplepacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
-        for word in samplepacketcount.split():
-            if word.isdigit():
-                samplepacketcount = int(word)
-                if samplepacketcount == totalsamplecount: print(Fore.GREEN+'\t< {}\n\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification SUCCEEDED'.format(capinfoscmd,samplepacketcount,totalsamplecount)+Style.RESET_ALL)
-                else: print(Fore.RED+'\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification FAILED'.format(samplepacketcount,totalsamplecount)+Style.RESET_ALL)
+        # MERGE split-files
+        print('>>> Merging split-files: {}'.format(mergecapcmd))
+        os.system(mergecapcmd)
+
+
+        # VERIFICATION
+        if check: # compare sampled packet-count with calculated packet-count for basic verification
+            print('>>> Verifying sampled packet-count')
+            capinfoscmd = r'capinfos -M -c {} | grep packets'.format(pcap_sampled)
+            samplepacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
+            for word in samplepacketcount.split():
+                if word.isdigit():
+                    samplepacketcount = int(word)
+                    if samplepacketcount == totalsamplecount: print(Fore.GREEN+'\t< {}\n\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification SUCCEEDED'.format(capinfoscmd,samplepacketcount,totalsamplecount)+Style.RESET_ALL)
+                    else: print(Fore.RED+'\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification FAILED'.format(samplepacketcount,totalsamplecount)+Style.RESET_ALL)
+    else: print('>>> No packet-based sampling, processing original capture')
 
 
     # FLOW-CREATION
