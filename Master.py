@@ -48,10 +48,12 @@ if __name__ == '__main__':
     models  = args.model
     nosamp  = args.nosampling
     samp = True
+    varg = ''
 
     # check passed optional arguments and commands
     print('\n'+40*'~'+' SCRIPT: Master.py '+40*'~')
     if verbose:
+        varg = '-v' # argument to call scripts
         print('\nfiles:\n\t{}\n\nsampling-modes:\n\t{}{}\n\nfeature-vectors:\n\t{}\n'.format(cfg.filenames,cfg.fsamplingmode,cfg.psamplingmode,cfg.vectors))
         print(20*'~'+' configuration '+20*'~')
         print('\n\tfile:\t{}\n\tvector:\t{}\n\tmode:\t{}\n\tstep:\t{}\n\n'.format(cfg.file,cfg.vector,cfg.mode,cfg.steps))
@@ -97,10 +99,10 @@ if __name__ == '__main__':
                     # forge folders & commands based on configuration
                     #folder   = foldername.format(cfg.filenames[file],mode,vector,steps)
                     folder    = cfg.foldername.format(cfg.filenames[file],mode,vector,steps,samplingtype)
-                    sampling = 'python3 rpi-Sampling.py -e {} {} {} {} {}'.format(sarg,mode,file,steps,vector)
+                    sampling = 'python3 rpi-Sampling.py -e {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector)
 
-                    if models: model = 'python3 rpi-Preprocessing.py -e -m {} {} {} {} {} {}'.format(sarg,mode,file,steps,vector,cfg.batchsize)
-                    else: model = 'python3 rpi-Preprocessing.py -e -s {} {} {} {} {} {}'.format(sarg,mode,file,steps,vector,cfg.batchsize)
+                    if models: model = 'python3 rpi-Preprocessing.py -e -m {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
+                    else: model = 'python3 rpi-Preprocessing.py -e -s {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
 
                     if fit: ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # saving model on remote
                     else:   ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -m {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # importing model on remote
