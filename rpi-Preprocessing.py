@@ -204,8 +204,8 @@ def conversion(dataset,verbose=False):
 # calculate mean value of given dataset features
 def calcMean(dataset,features,verbose=False,time=False):
     means = [] # initialize empty list
-    if verbose: print('\n\n'+40*'~'+' FUNCTION: calculateMean '+40*'~'+'\n')
-    print('>>> calulating mean values')
+    if verbose: print('\n\n'+40*'~'+' FUNCTION: calcMean '+40*'~'+'\n')
+    print('>>> calculating mean values')
 
     for feature in features:
         mean = dataset[feature].mean() # calculate mean of current feature
@@ -231,7 +231,7 @@ def searchNaN(dataset,verbose=False,time=False):
 def replaceNaN(dataset,name,features,replacement,verbose=False,time=False):
 
     if verbose:
-        print('\n\n'+40*'~'+' FUNCTION: replacementNaN '+40*'~'+'\n')
+        print('\n\n'+40*'~'+' FUNCTION: replaceNaN '+40*'~'+'\n')
         print('NaN features: {}'.format(features))
         print('NaN replacement: {}\n'.format(replacement))
 
@@ -251,7 +251,7 @@ def replacementNaN(dataset,verbose=False,time=False):
 
     # informational output
     if verbose:
-        print('\n\n'+40*'~'+' FUNCTION: replaceNaN '+40*'~')
+        print('\n\n'+40*'~'+' FUNCTION: replacementNaN '+40*'~')
         print('\n>>> searching NaNs')
 
     NaNs = dataset.isna().any()
@@ -311,7 +311,7 @@ def replacementNaN(dataset,verbose=False,time=False):
     input('...')
 
 
-    return # maybe remove
+    return # maybe remove # unused
 # replace all Inf values with given replacement
 def cleanInf(dataset,mode,verbose=False,time=False):
 
@@ -470,7 +470,7 @@ def cleanNaN(dataset,replacement,verbose=False,time=False):
         end = timer()
         print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
 
-    return # maybe remove
+    return # maybe remove # unused
 # remove features containing strings from given df
 def cleanString(dataset,verbose=False,time=False):
 
@@ -789,7 +789,7 @@ if __name__ == '__main__':
                 csvwriter.writerow([t,'rpi-Preprocessing.py','import CSV','start'])
 
     print('>>> Importing CSV in chunks of {} lines, splitting into Xtrain & Xtest'.format(cfg.chunksize))
-    # initialise empty dataframes
+    # initialise empty dataframes and series
     dataset = pd.DataFrame()
     Xtrain  = pd.DataFrame()
     Xtest   = pd.DataFrame()
@@ -799,14 +799,14 @@ if __name__ == '__main__':
     for chunk in read_csv(path,chunksize=cfg.chunksize,
     usecols=None,skipinitialspace=True,encoding='utf-8'):
         chunk = conversion(chunk,False) # convert values into smaller datatypes whenever possible
-        cleanString(chunk,False,False) # remove all string features
+        cleanString(chunk,False,False) # remove all features with string dtype
         chunksplit = splitDataframe(chunk,0.30,False,False) # split into training & test portion
 
         # accumulate splits
-        Xtrain  = Xtrain.append(chunksplit[0])
-        Xtest   = Xtest.append(chunksplit[1])
-        Ytrain  = Ytrain.append(chunksplit[2])
-        Ytest   = Ytest.append(chunksplit[3])
+        Xtrain = Xtrain.append(chunksplit[0])
+        Xtest  = Xtest.append(chunksplit[1])
+        Ytrain = Ytrain.append(chunksplit[2])
+        Ytest  = Ytest.append(chunksplit[3])
 
     features = list(Xtrain) # used later to initialise empty np arrays via len(features)
     del chunksplit
