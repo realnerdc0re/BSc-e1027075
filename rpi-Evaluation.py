@@ -31,6 +31,17 @@ parser.add_argument('-p','--plot', action='store_true', help = 'output plots')
 args = parser.parse_args()
 
 
+# vector labels
+vector = {
+1:'AGM 10s',
+2:'AGM 60s', # unused
+3:'AGM 3600s', # unused
+4:'CAIA',
+5:'CAIA',
+6:'AGM 10s'
+}
+
+
 # initialise empty lists
 exp                 = []
 flowfolder          = []
@@ -42,7 +53,7 @@ experiments_packets = []
 # class object containing all necessary experiment data
 class Experiment:
     def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,maxram=0,trees=0):
-        # contains info
+        # info
         self.fullpath   = fullpath
         self.file       = file
         self.mode       = mode
@@ -50,7 +61,7 @@ class Experiment:
         self.steps      = steps
         self.sampling   = sampling
 
-        # contains logs
+        # logs
         self.info       = info
         self.time       = time
         self.dstat      = dstat
@@ -58,9 +69,9 @@ class Experiment:
         self.result     = result
 
         # charts
-        self.style      = style # unused, linestyle in graph plots
+        self.style      = style # linestyle in graph plots
 
-        # specific parameters
+        # parameters
         self.runtime    = runtime # runtime for preprocessing and classification in seconds
         self.classtime  = classtime # runtime for classification in seconds
         self.classspeed = classspeed # classification speed in classifications per second
@@ -68,6 +79,8 @@ class Experiment:
         self.parameter  = parameter # parameter including accuracy, runtime ???
         self.maxram     = maxram # maximum value for used RAM
         self.trees      = trees # number of generated RF trees
+        #self.leaves     = leaves # number of leaves
+        #self.depths     = depths # tree depths
 
     def __str__(self):
         return str(self.__class__)+': '+str(self.__dict__)
@@ -142,12 +155,6 @@ def createExperiments(folders,verbose=False):
     # create list to return
     experiments = [experiments_perflow, experiments_packets]
     return experiments
-# preprocess timestamps, ticks, labels
-def preprocessData(folders,verbose=False):
-
-    return
-
-
 
 
 if __name__ == '__main__':
@@ -337,14 +344,15 @@ if __name__ == '__main__':
             # graph title & subtitle
             title_sampling    = exp[n][i].sampling
             title_steps       = exp[n][i].steps
-            title_vector      = cfg.vectors[exp[n][i].vector]
+            #title_vector      = cfg.vectors[exp[n][i].vector]
+            title_vector      = vector[exp[n][i].vector]
             title_mode        = cfg.samplingmode[exp[n][i].mode]
             # nicer output for title
             if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based'
             elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based'
 
-            title = '{}\n'.format(samplingtype)
-            subtitle = '{}\n({}, n={})'.format(title_vector,title_mode,title_steps)
+            title = '{}, {}\n'.format(title_vector,samplingtype)
+            subtitle = '({}, n={})'.format(title_mode,title_steps)
 
             # plot graphs
             fig = plt.figure(figsize=(21.0,9.0))
@@ -364,8 +372,8 @@ if __name__ == '__main__':
             plt.xticks(timestamps,timelabels,rotation=80) # create x-axis ticks
             plt.xlabel('segments', fontsize=14)
             plt.ylabel('memory-usage',fontsize=14)
-            plt.title(title,ha='center',fontsize=18) # set title
-            plt.suptitle(subtitle,x=0.515,y=0.905,ha='center',fontsize=10) # suptitle position between 0 and 1
+            plt.title(title,ha='center',fontsize=16) # set title
+            plt.suptitle(subtitle,x=0.515,y=0.925,ha='center',fontsize=10) # suptitle position between 0 and 1
             plt.legend(loc='best')
             plt.tight_layout() # increase space below x-axis for proper labeling
 
@@ -404,13 +412,17 @@ if __name__ == '__main__':
             # graph title & subtitle
             title_sampling    = exp[n][i].sampling
             title_steps       = exp[n][i].steps
-            title_vector      = cfg.vectors[exp[n][i].vector]
+            title_vector      = vector[exp[n][i].vector]
             title_mode        = cfg.samplingmode[exp[n][i].mode]
             # nicer output for title
             if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based'
             elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based'
 
-            title = '{}\n{} ({}, n={})'.format(title_vector,title_sampling,title_mode,title_steps)
+            title = '{}, {}\n({}, n={})'.format(title_vector,samplingtype,title_mode,title_steps)
+
+            title = '{}, {}\n'.format(title_vector,samplingtype)
+            subtitle = '({}, n={})'.format(title_mode,title_steps)
+
 
             # forge polar-compatible values and angles
             #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
@@ -430,7 +442,10 @@ if __name__ == '__main__':
             stats = ['used RAM\n({}%)'.format(int(RAM_used)),'Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
 
             plt.xticks(angles[:-1],stats) # pass angles but last (repetition of first value)
-            plt.title(title,ha='center',fontsize=14)
+            #plt.title(title,ha='center',fontsize=14)
+
+            plt.title(title,ha='center',fontsize=16) # set title
+            plt.suptitle(subtitle,x=0.515,y=0.93,ha='center',fontsize=10) # suptitle position between 0 and 1
 
             if verbose: print('\t<< {}'.format(png_file.format(count)))
             plt.savefig(png_file.format(count)) # save plot to file
@@ -523,8 +538,10 @@ if __name__ == '__main__':
             tmp_color.remove(color)
 
             # title & label
-            title = 'feature-vector\n{}\n'.format(cfg.vectors[v])
-            label = 'n = {}, {}, {}'.format(x.steps,samplingtype,cfg.samplingmode[x.mode])
+            #title = '{}\n'.format(vector[v])
+            title = '{}, {}\n'.format(vector[x.vector],samplingtype)
+            #subtitle = '({}, n={})'.format(title_mode,title_steps)
+            label = 'n = {}, {}'.format(x.steps,cfg.samplingmode[x.mode])
 
             # create lists for comparison-plot
             compare_values.append(value)
@@ -548,8 +565,8 @@ if __name__ == '__main__':
         ax.set_rlabel_position(60)
         plt.yticks([0,25,50,75,100], color='grey', size=10)
         plt.ylim(0,100)
-        plt.title(title,size='medium') # set title
-        plt.legend()
+        plt.title(title,ha='center',fontsize=16) # set title
+        plt.legend(loc='best')
 
         if verbose: print('\t\t\t< {}'.format(png_file.format(count)))
         plt.savefig(png_file.format(count)) # save plot to file
@@ -617,8 +634,8 @@ if __name__ == '__main__':
             tmp_color.remove(color)
 
             # title & label
-            title = 'sampling-steps\nn = {}'.format(s)
-            label = '{}\n{}\n{}\n{}'.format(x.file,cfg.vectors[x.vector],samplingtype,cfg.samplingmode[x.mode])
+            title = 'n = {}'.format(s)
+            label = '{}, {}, {}'.format(vector[x.vector],samplingtype,cfg.samplingmode[x.mode])
 
             # create lists for comparison-plot
             compare_values.append(value)
@@ -640,7 +657,7 @@ if __name__ == '__main__':
         ax.set_rlabel_position(60)
         plt.yticks([0,25,50,75,100], color='grey', size=10)
         plt.ylim(0,100)
-        plt.title(title,size='medium') # set title
+        plt.title(title,ha='center',fontsize=16) # set title
         plt.legend(loc='best')
 
         if verbose: print('\t\t\t< {}'.format(png_file.format(count)))
