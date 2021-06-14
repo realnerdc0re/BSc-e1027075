@@ -213,6 +213,8 @@ if __name__ == '__main__':
     pcap_split          = split_folder / pcap_split
     pcap_sampled        = sample_folder / pcap_sampled
     csv_sampled_export  = cfg.packetfolder / csv_sampled
+    if n ==0: pcap_sampled = pcap # point to original pcap instead of sampled capture
+
 
     # commands
     goflowsconf     = wd / cfg.vectorfolder / cfg.vectors[j]
