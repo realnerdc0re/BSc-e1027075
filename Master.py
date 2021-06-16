@@ -101,10 +101,14 @@ if __name__ == '__main__':
                     folder    = cfg.foldername.format(cfg.filenames[file],mode,vector,steps,samplingtype)
                     sampling = 'python3 rpi-Sampling.py -e {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector)
 
-                    if models: model = 'python3 rpi-Preprocessing.py -e -m {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
-                    else: model = 'python3 rpi-Preprocessing.py -e -s {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
+                    if models:
+                        model = 'python3 rpi-Preprocessing.py -e -m --local {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
+                        #model = 'python3 rpi-Preprocessing.py -e -m {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
+                    else:
+                        model = 'python3 rpi-Preprocessing.py -e -s --local {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
+                        #model = 'python3 rpi-Preprocessing.py -e -s {} {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector,cfg.batchsize)
 
-                    if fit: ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # saving model on remote
+                    if fit: ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # fit and save model on remote
                     else:   ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -m {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # importing model on remote
 
                     sync   = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
