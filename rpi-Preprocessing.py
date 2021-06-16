@@ -28,8 +28,9 @@ import csv
 import os
 import gc
 import joblib
-
-
+import math
+import importlib
+import matplotlib.pyplot as plt
 import config as cfg # necessary configurations from config.py
 
 # create base-folders if necessary
@@ -52,7 +53,7 @@ parser.add_argument('-v','--verbose', action='store_true', help='output addition
 parser.add_argument('--superverbose', action='store_true', help='output additional dataset related informations')
 parser.add_argument('-m','--model', action='store_true', help='import model')
 parser.add_argument('-s','--save', action='store_true', help='save model')
-#parser.add_argument('-l','--load', action='store_true', help='load preprocessed CSV')
+parser.add_argument('-l','--local', action='store_true', help='used to determine PCA component number on local machine')
 parser.add_argument('-r','--remote', action='store_true', help='execution on remote machine, different method to kill dstat, changing foldername for results')
 # display runtime or export timestamps and dstat-logs
 timegroup = parser.add_mutually_exclusive_group(required=False)
@@ -665,7 +666,7 @@ if __name__ == '__main__':
     save            = args.save
     #load            = args.load
     model           = args.model
-    model           = args.model
+    local           = args.local
     remote          = args.remote
     export          = args.export
     verbose         = args.verbose
@@ -738,11 +739,14 @@ if __name__ == '__main__':
         path    = cfg.flowfolder / foldername / csv_import # sampled CSV directory
         logs    = cfg.flowfolder / foldername / log # logfolder path
         modeld  = cfg.flowfolder / foldername / 'model' # pickle model directory
+        infocsv = cfg.flowfolder / foldername / 'information.csv' # information csv to save PCA component number
     elif packetsampling:
         #foldername = '{}_packetsampled'.format(foldername)
         path    = cfg.packetfolder / foldername / csv_import
         logs    = cfg.packetfolder / foldername / log
         modeld  = cfg.packetfolder / foldername / 'model'
+        infocsv = cfg.packetfolder / foldername / 'information.csv'
+
 
     # set full path to model file after all folder-paths are set up
     if (model or save): modelfile = modeld / modelpkl.format(cfg.filenames[findex])
@@ -841,6 +845,28 @@ if __name__ == '__main__':
         processed += toprocess # increase number of already processed rows
 
 
+    # DETERMINE PCA COMPONENT NUMBER
+    if local:
+        print('>>> Evaluate PCA components')
+        XtrainPCA = Xtrain.copy()
+        XtestPCA  = Xtest.copy()
+        XtrainPCA = scaler.transform(XtrainPCA)
+        XtestPCA  = scaler.transform(XtestPCA)
+
+        pca = PCA().fit(XtrainPCA) # fit data to training portion
+        xi = np.arange(1, XtrainPCA.shape[1]+1, step=1)
+        y = np.cumsum(pca.explained_variance_ratio_)
+        nPCAexact = np.interp(cfg.PCA_var,y,xi) # interpolate based on given datapoints
+        nPCA      = math.ceil(nPCAexact) # use ceil function to round up to the next integer
+        print('\t<< explained variance: {}%\n\t\t< n_components: \u2308{}\u2309 = {}\n'.format(cfg.PCA_var*100,round(nPCAexact,2),nPCA))
+
+        infoPCA = read_csv(infocsv)
+        infoPCA.loc[5] = ['PCA variance',cfg.PCA_var]
+        infoPCA.loc[6] = ['PCA components',nPCA]
+        infoPCA.to_csv(infocsv, index=False)
+        del infoPCA
+
+
     # SPLITTING DATA INTO SMALLER FILES
     if time:
         t = epochtime.time()
@@ -848,7 +874,6 @@ if __name__ == '__main__':
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','split files','start'])
-
 
     print('>>> Splitting data to reduce memory consumption')
     n = Xtrain.shape[0]
@@ -980,7 +1005,10 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','fit PCA','start'])
 
-    print('>>> Applying PCA fit')
+    infoPCA = read_csv(infocsv)
+    n_Xpca = int(infoPCA.loc[6][1]); del infoPCA # save PCA component number as integer
+
+    print('>>> Applying PCA fit with {} components'.format(n_Xpca))
     Xpca = []
     ipca = IncrementalPCA(n_components = n_Xpca, batch_size = cfg.PCA_batch)
 
