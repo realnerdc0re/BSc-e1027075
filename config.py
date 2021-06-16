@@ -129,11 +129,12 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 file        = [0]
-vector      = [5]
-mode        = [5]
-steps       = [0] # 0 to process unsampled PCAP
+vector      = [4]
+mode        = [1]
+steps       = [7] # 0 to process unsampled PCAP
 
-n_PCA       = 4 # number of components for PCA
+n_PCA       = 12 # unused, number is stored in information.csv
+PCA_var     = 0.90 # explained variance to achieve with components
 PCA_batch   = 10**5 # batchsize used for incremental PCA
 batchsize   = 10**5 # batchsize used for Standard Scaler partial fit (default 10**5)
 chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed! default 10**5)
