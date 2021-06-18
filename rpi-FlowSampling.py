@@ -5,7 +5,6 @@ Created on Fri Sep 11 09:25:55 2020
 
 @author: pjr
 """
-
 from pandas import read_csv
 from timeit import default_timer as timer
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
@@ -21,6 +20,7 @@ import os
 import re
 import sys
 import math
+import statistics
 
 import config as cfg # necessary configurations from config.py
 
@@ -344,7 +344,7 @@ def searchNaN(dataset,features,verbose=False,time=False):
 
     return
 # encode post-calculations, takes single element list to apply encoding
-def tcpflagEncoder(dataset,feature,verbose=False):
+def tcpflagEncoderOLD(dataset,feature,verbose=False):
     if verbose: print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
 
     # https://www.keycdn.com/support/tcp-flags
@@ -403,33 +403,39 @@ def tcpflagPreEncoder(dataset,feature,verbose=False):
     if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])); input('...\n'+Style.RESET_ALL)
 
     return
-# encode tcp flags into separate features
-def tcpflagEncoder2(dataset,feature,verbose=False):
-    if verbose:
-        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
-        print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
+# calculates TCP flag features and encode tcp flag modes as seperate feature per flag
+def tcpflagEncoder(dataset,feature,verbose=False):
+    if verbose: print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
+    print(cfg.vcolor+'\npre-encoding: \n{}'.format(dataset[feature]))
 
-    printdata(dataset,'tcpflagEncoder before flags')
-    #print('{}'.format(dataset[]))
+    # distinct: number of unique values, mode: most occuring value, modeCount: count for most occuring value
+    key = ['distinct','mode','modeCount'] # AGM feature functions
 
 
-    # create features for all possible TCP flags, initialized with 0
-    #flagfeatures = ['tcp ACK','tcp PSH','tcp FIN','tcp RST','tcp SYN','tcp URG','tcp ECE','tcp CWR','tcp NS']
+    for word in key:
+        newfeature = '{}: {}'.format(feature,word)
+        # calculate metrics for every new feature
+        if   word == 'distinct':  dataset[newfeature] = dataset[feature].apply(lambda x: len(np.unique(x)))
+        elif word == 'mode':      dataset[newfeature] = dataset[feature].apply(lambda x: [item[0] for item in Counter(x).most_common(1)])
+        elif word == 'modeCount': dataset[newfeature] = dataset[feature].apply(lambda x: [item[1] for item in Counter(x).most_common(1)])
+        print('\n{}\n'.format(dataset[newfeature]))
+
     flags = ['A','P','F','R','S','U','E','C','N']
+    for flag in flags: 
+        # create features for every possible TCP flags, initialized with 0
+        dataset.insert(0,flag,0) # position each flag as first column
 
-    dataset[flags] = 0
-
+    tcpmode = '{}: {}'.format(feature,'mode')
     for i in range(0,dataset.shape[0]):
-        cell = dataset[feature][i] # current cell
+        cell = dataset[tcpmode][i] # select current cell
 
         if isinstance(cell,list) and len(cell)>0:
             for j in range(0,len(cell)):
                 for char in cell[j]:
-                    dataset.at[i,char] = 1
+                    dataset.at[i,char] = 1 # set all occuring mode flags to 1
 
-
-    printdata(dataset,'tcpflagEncoder added flags')
-    input('::::')
+    print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[flags])+Style.RESET_ALL)
+    return
 
 if __name__ == '__main__':
 
@@ -642,10 +648,11 @@ if __name__ == '__main__':
 
 
         # ENCODE tcpFlags & CONVERT to numpy array
-        print('>>> Encoding TCP flags')
-        tcpflagPreEncoder(dataset,'apply(accumulate(_tcpFlags),forward)',verbose=verbose)
+        print('>>> Encoding TCP flags, one feature per flag')
+        tcpflagEncoder(dataset,'apply(accumulate(_tcpFlags),forward)',verbose=verbose)
         textual.remove('apply(accumulate(_tcpFlags),forward)')
-        features.append('apply(accumulate(_tcpFlags),forward)')
+        print('>>> Drop textual TCP flag feature')
+        dataset.drop(columns='apply(accumulate(_tcpFlags),forward)',inplace=True)
 
 
         # CALCULATIONS
