@@ -12,7 +12,6 @@ datasets taken from:
     only reliable way to download the complete set of PCAP-files is using -c to reconnect on read-errors:
     wget -c --timeout=20 --tries=0 <PCAP-URL>
 """
-
 import glob
 import csv
 import os
@@ -146,11 +145,7 @@ if __name__ == '__main__':
     info = pd.DataFrame.from_dict(info,orient='index')
 
     # forge specific foldername
-    #folder = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
     folder = cfg.foldername.format(cfg.filenames[findex],m,j,n,sampling)
-
-    #if flowsampling: folder = '{}_perflowsampled'.format(folder)
-    #elif packetsampling: folder = '{}_packetsampled'.format(folder)
 
     # FILES, PATHS & COMMANDS
     wd = Path.cwd() # working directory
@@ -179,7 +174,6 @@ if __name__ == '__main__':
     if time:            timearg = '--time'
     else:               timearg = ''
 
-
     if time: # start timers
         start = timer()
         t = epochtime.time()
@@ -190,7 +184,6 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow(['epochtime','scriptname','segment','status']) # set labels
                 csvwriter.writerow([t,'rpi-Control.py','','start'])
-
 
     # check passed optional arguments and commands
     print('\n'+40*' '+' FILE: {}'.format(cfg.filenames[findex]))
@@ -208,8 +201,8 @@ if __name__ == '__main__':
     print('\ndstat:\t{}'.format(dstat))
 
 
-    # SAMPLE ALL CAPTURE FILES & MERGE
-    if findex == 0:
+    # SAMPLING
+    if findex == 0: # sample every PCAP, merging at the end
         for fcount in range(1,len(cfg.filenames)): # iterate over all PCAP files
             if flowsampling:
                 samplearg   = '{} {} {} {}'.format(m,fcount,n,j)
@@ -235,11 +228,7 @@ if __name__ == '__main__':
 
         print('>>> Saving information {}'.format(csv_info))
         info.to_csv(csv_info)
-
-
-    # SAMPLE SINGLE CAPTURE FILE
-    else:
-        # forge script execution-command out of given arguments
+    else: # sample single PCAP
         if flowsampling: 
             samplearg   = '{} {} {} {}'.format(m,findex,n,j)
             samplingcmd = 'python3 rpi-FlowSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
@@ -264,7 +253,6 @@ if __name__ == '__main__':
     for file in Path(samplingfolder).glob('*.csv'): # remove csv-files from sampling directory
         Path.unlink(file)
 
-
     if time:
         end = timer()
         t = epochtime.time()
@@ -283,9 +271,6 @@ if __name__ == '__main__':
         mypid = os.getpid() # pid of running script
         pids.remove(mypid)
 
-        #for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
-        #    epochtime.sleep(1)
-
         print('>>> Killing dstat')
         os.kill(pids[0],9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
 
@@ -296,7 +281,6 @@ if __name__ == '__main__':
         for root, dirs, files in os.walk(cfg.logs):
             for filename in files: # iterate over filenames found within the wd logfolder
                 log = cfg.logs / filename # full path for current logfile
-
                 print('\t> Saving {}'.format(filename))
                 os.system(cplogs.format(log,logs))
         print(20*'#')
