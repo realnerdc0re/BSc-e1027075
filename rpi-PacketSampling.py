@@ -5,7 +5,6 @@ Created on Fri Sep 11 09:25:55 2020
 
 @author: pjr
 """
-
 from pandas import read_csv
 from timeit import default_timer as timer
 from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
@@ -104,8 +103,8 @@ def packetOutput(plist,n,verbose):
         if (not time): input(cfg.vcolor+'\n...'+Style.RESET_ALL)
     
     return tmp
-# encode combinations of tcp flags
-def tcpflagEncoder(dataset,feature,verbose=False):
+# encode tcp flags into decimal
+def tcpflagEncoderDecimal(dataset,feature,verbose=False):
 
     if verbose:
         print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
@@ -126,33 +125,42 @@ def tcpflagEncoder(dataset,feature,verbose=False):
 
     return
 # encode tcp flags into separate features
-def tcpflagEncoder2(dataset,feature,verbose=False):
+def tcpflagEncoder(dataset,feature,verbose=False):
     if verbose:
         print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
-        print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
+        print('pre-encoding: \n{}'.format(dataset[feature])+Style.RESET_ALL)
 
-    # create features for all possible TCP flags, initialized with 0
-    flags = ['tcp ACK','tcp PSH','tcp FIN','tcp RST','tcp SYN','tcp URG','tcp ECE','tcp CWR','tcp NS']
-    dataset[flags] = 0
+    # encode TCP flag mode feature
+    flags = ['A','P','F','R','S','U','E','C','N']
+    for flag in flags: # create features for all possible TCP flags, initialized with 0
+        dataset.insert(0,flag,0)
 
-    printdata(dataset)
-    input('::::')
+    for i in range(0,dataset.shape[0]):
+        cell = dataset[feature][i] # current cell
 
+        if isinstance(cell,str) and len(cell)>0:
+            for j in range(0,len(cell)):
+                for char in cell[j]:
+                    dataset.at[i,char] = 1
 
+    if verbose:
+        print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[flags]))
+        print(106*'~'+'\n'+Style.RESET_ALL)
     return
 # import CSV as pandas dataframe
 def importCSV(csvpath,csvusecols=None,verbose=False,encoding='utf-8'):
     # informational output
     if verbose: print('\n\n'+40*'~'+' FUNCTION: importCSV '+40*'~')
-    print('\n>>> Importing {}'.format(csvpath))
+    print('>>> Importing {}'.format(csvpath))
     csvdata = read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding)
     return csvdata
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
-    print('\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading) +40*'~'+'\n')
+    print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading) +40*'~')
     print('< Columns:\n{}\n'.format(dataset.columns))
     print('< Dataset:\n{}\n'.format(dataset))
-    print('{}\n'.format(dataset.describe()))
+    print('{}'.format(dataset.describe()))
+    print(102*'~'+len(heading)*'~'+'\n'+Style.RESET_ALL)
     return
 
 
@@ -310,8 +318,8 @@ if __name__ == '__main__':
             # same array, containing packet-indices
             plistindex = np.arange(0,pcount,1)
 
-
-            if mode == 5: # every n-th packet, including first packet of the pcap
+            # every n-th packet, including first packet of the pcap
+            if mode == 5:
                 modulo = samplepcount % n
 
                 if modulo != 0:
@@ -412,7 +420,7 @@ if __name__ == '__main__':
         tcpflagEncoder(dataset,'mode(_tcpFlags)',verbose=verbose)
 
         print('>>> Dropping features')
-        dropfeatures = ['mode(destinationIPAddress)']
+        dropfeatures = ['mode(destinationIPAddress)','mode(_tcpFlags)']
         for feature in dropfeatures:
             print('\t> {}'.format(feature))
             dataset.drop(columns=feature,inplace=True)
