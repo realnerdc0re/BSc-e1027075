@@ -72,7 +72,7 @@ vectors = {
 4:'CAIA_flowSampling.json',
 5:'CAIA_packetSampling.json',
 6:'AGM_10s.json',
-7:'AGM_60s.json'
+7:'AGM_60s.json' # unused
 }
 #######################################################################################
 # SAMPLING-MODES
@@ -129,9 +129,9 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 file        = [0]
-vector      = [4]
-mode        = [1]
-steps       = [7] # 0 to process unsampled PCAP
+vector      = [1,6]
+mode        = [1,5]
+steps       = [0] # 0 to process unsampled PCAP
 
 n_PCA       = 12 # unused, number is stored in information.csv
 PCA_var     = 0.90 # explained variance to achieve with components
