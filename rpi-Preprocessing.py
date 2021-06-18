@@ -5,7 +5,6 @@ Created on Fri Jan 10 10:32:48 2021
 
 @author: pjr
 """
-
 from pandas import read_csv
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -17,6 +16,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from timeit import default_timer as timer
 from pathlib import Path, PureWindowsPath, PurePosixPath
+from colorama import Fore, Style
 
 import time as epochtime
 import numpy as np
@@ -38,6 +38,7 @@ if not os.path.exists(cfg.logs):            os.mkdir(cfg.logs)
 if not os.path.exists(cfg.fpath):           os.mkdir(cfg.fpath)
 if not os.path.exists(cfg.packetfolder):    os.mkdir(cfg.packetfolder)
 if not os.path.exists(cfg.tmp):             os.mkdir(cfg.tmp)
+
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
@@ -65,11 +66,11 @@ samplegroup.add_argument('-f','--flowsampling', metavar='m', type=int, nargs=1, 
 samplegroup.add_argument('-p','--packetsampling', metavar='m', type=int, nargs=1, choices=cfg.psamplingmode, help='select sampling-mode: {}'.format(cfg.psamplingmode))
 args = parser.parse_args()
 
-
 # starting dstat logging threaded
 def threadFunc(): os.system(dstatcmd.format(cfg.dstat))
 th = threading.Thread(target=threadFunc)
 
+# INFORMATIONAL OUTPUT
 # progress bar signaling time to wait for dstat to write latest logs
 def progressBar(it, prefix="", size=60, file=sys.stdout):
     count = len(it)
@@ -117,12 +118,12 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
 # outputs additional informations only shown in verbose mode
 def verboseprint(dataset):
     #print('\n{}\n'.format(dataset.columns))
-    print('\n{}'.format(dataset.info()))
+    print(cfg.vcolor+'\n{}'.format(dataset.info())+Style.RESET_ALL)
     return
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
-    print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
-    print('\n{}\n'.format(dataset))
+    print(cfg.vcolor+'\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
+    print('\n{}\n'.format(dataset)+Style.RESET_ALL)
 
     if verbose: verboseprint(dataset)
 
@@ -149,13 +150,12 @@ def setTimestamp(infotext,write=False,append=False,export=args.export):
     return
 
 
-# PRE-PROCESSING
+# DATA PRE-PROCESSING
 # convert to smaller datatypes to reduce memory consumption
 def conversion(dataset,verbose=False):
 
     if time: start = timer()
-
-    if verbose: print('\n\n'+40*'~'+' FUNCTION: conversion '+40*'~')
+    if verbose: print(cfg.vcolor+'\n\n'+40*'~'+' FUNCTION: conversion '+40*'~'+Style.RESET_ALL)
 
     features = list(dataset) # get feature labels
     types = dataset.dtypes # get datatype per feature
@@ -169,7 +169,7 @@ def conversion(dataset,verbose=False):
 
     dicttype = {} # store index numbers and target-datatypes
 
-    if verbose: print('>>> searching for 64bit numerical values')
+    if verbose: print(cfg.vcolor+'>>> searching for 64bit numerical values'+Style.RESET_ALL)
     i = -1
     for x in types: # determine int64/float64 features
         i = i + 1
@@ -186,65 +186,64 @@ def conversion(dataset,verbose=False):
             elif (-(2**32)/2 <= maxValues[i] <= (2**32)/2):
                 dicttype[features[i]] = 'float32'
 
-    if verbose: print('>>> converting values')
+    if verbose: print(cfg.vcolor+'>>> converting values'+Style.RESET_ALL)
     dataset = dataset.astype(dicttype,copy=False)
 
     types = dataset.dtypes
     if verbose:
-        print('\n'+20*'~'+' converted '+20*'~')
-        print('\n{}\n'.format(types))
+        print(cfg.vcolor+'\n'+20*'~'+' converted '+20*'~')
+        print(cfg.vcolor+'\n{}\n'.format(types))
         if (not time): input('')
 
     if verbose: printdata(dataset,'after-conversion',True)
 
     if time: 
         end = timer()
-        if verbose: print('\nconversion\n[TIME]: %.3f' % (end-start),'seconds')
+        if verbose: print(cfg.vcolor+'\nconversion\n[TIME]: %.3f' % (end-start),'seconds'+Style.RESET_ALL)
 
     return dataset
 # calculate mean value of given dataset features
 def calcMean(dataset,features,verbose=False,time=False):
     means = [] # initialize empty list
-    if verbose: print('\n\n'+40*'~'+' FUNCTION: calcMean '+40*'~'+'\n')
-    print('>>> calculating mean values')
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: calcMean '+40*'~')
+        print(cfg.vcolor+'\t\t>> Calculating mean values'+Style.RESET_ALL)
 
     for feature in features:
         mean = dataset[feature].mean() # calculate mean of current feature
         means.append(mean)
-        if verbose: print('\t>> {}\n\t\t< {}'.format(feature,mean))
-
-    return means # returns list of mean values
+        if verbose: print(cfg.vcolor+'\t\t\t> {}: {}'.format(feature,format(mean,".2f"))+Style.RESET_ALL)
+    if verbose: print(cfg.vcolor+100*'~'+'\n'+Style.RESET_ALL)
+    return means
 # search NaN features and replace with mean value
 def searchNaN(dataset,verbose=False,time=False):
     features = []
     # informational output
-    if verbose: print('\n\n'+40*'~'+' FUNCTION: searchNaN '+40*'~'+'\n')
-    print('>>> searching NaNs')
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: searchNaN '+40*'~')
+        print('\t\t>> searching NaNs'+Style.RESET_ALL)
 
     NaNs = dataset.isna().any()
     for i in range(0,NaNs.shape[0]):
         if NaNs.iloc[i] == True:
-            print('\t+ {}'.format(NaNs.index[i]))
+            if verbose: print(cfg.vcolor+'\t\t\t+ {}'.format(NaNs.index[i])+Style.RESET_ALL)
             features.append(NaNs.index[i])
-
+    if verbose: print(cfg.vcolor+101*'~'+'\n'+Style.RESET_ALL)
     return features
 # replace NaN feature values with replacement
 def replaceNaN(dataset,name,features,replacement,verbose=False,time=False):
 
     if verbose:
-        print('\n\n'+40*'~'+' FUNCTION: replaceNaN '+40*'~'+'\n')
-        print('NaN features: {}'.format(features))
-        print('NaN replacement: {}\n'.format(replacement))
-
-    print('>>> replace {} NaNs'.format(name))
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: replaceNaN '+40*'~')
+        print(cfg.vcolor+'\t\t>> replace {} NaNs'.format(name)+Style.RESET_ALL)
     i = -1
     for feature in features:
         i += 1
-        if verbose: print('\t>> {}'.format(feature))
+        if verbose: print(cfg.vcolor+'\t\t\t> {}: {}'.format(feature,format(replacement[i],".2f"))+Style.RESET_ALL)
         dataset[feature] = dataset[feature].fillna(replacement[i])
+    if verbose: print(cfg.vcolor+101*'~'+'\n'+Style.RESET_ALL)
     return
-
-# replace NaNs with mean values
+# UNUSED? replace NaNs with mean values
 def replacementNaN(dataset,verbose=False,time=False):
 
     NaNfeatures = []
@@ -817,14 +816,18 @@ if __name__ == '__main__':
     del chunk
     gc.collect()
 
-    # NaN REPLACEMENT
-    # search NaN containing features in Xtrain & Xtest
-    NaNs = searchNaN(pd.concat([Xtrain,Xtest]),verbose,False)
-    # calculate mean values
-    means = calcMean(pd.concat([Xtrain,Xtest]),NaNs,verbose,False)
-    # replace NaNs
-    replaceNaN(Xtrain,'Xtrain',NaNs,means,verbose,False)
-    replaceNaN(Xtest,'Xtest',NaNs,means,verbose,False)
+
+    # NAN REPLACEMENT for Xtrain & Xtest
+    print('>>> Search NaN values')
+    NaNtrain = searchNaN(Xtrain,verbose,False)
+    NaNtest  = searchNaN(Xtest,verbose,False)
+    print('>>> Calcualte NaN mean value replacements')
+    meantrain = calcMean(Xtrain,NaNtrain,verbose,False)
+    meantest = calcMean(Xtest,NaNtest,verbose,False)
+    print('>>> Replace NaN values with feature mean values')
+    replaceNaN(Xtrain,'Xtrain',NaNtrain,meantrain,verbose,False)
+    replaceNaN(Xtest,'Xtest',NaNtest,meantest,verbose,False)
+    del meantrain; del meantest; del NaNtrain; del NaNtest
 
 
     # SCALER FIT
@@ -845,9 +848,9 @@ if __name__ == '__main__':
         processed += toprocess # increase number of already processed rows
 
 
-    # DETERMINE PCA COMPONENT NUMBER
+    # PCA COMPONENT NUMBER to reach explained variance
     if local:
-        print('>>> Evaluate PCA components')
+        print('>>> Determine PCA component number for {}% explained variance'.format(cfg.PCA_var*100))
         XtrainPCA = Xtrain.copy()
         XtestPCA  = Xtest.copy()
         XtrainPCA = scaler.transform(XtrainPCA)
@@ -858,13 +861,13 @@ if __name__ == '__main__':
         y = np.cumsum(pca.explained_variance_ratio_)
         nPCAexact = np.interp(cfg.PCA_var,y,xi) # interpolate based on given datapoints
         nPCA      = math.ceil(nPCAexact) # use ceil function to round up to the next integer
-        print('\t<< explained variance: {}%\n\t\t< n_components: \u2308{}\u2309 = {}\n'.format(cfg.PCA_var*100,round(nPCAexact,2),nPCA))
+        if verbose: print(cfg.vcolor+'< \u2308{}\u2309 = {} PCA components'.format(round(nPCAexact,2),nPCA)+Style.RESET_ALL)
 
         infoPCA = read_csv(infocsv)
         infoPCA.loc[5] = ['PCA variance',cfg.PCA_var]
         infoPCA.loc[6] = ['PCA components',nPCA]
         infoPCA.to_csv(infocsv, index=False)
-        del infoPCA
+        del infoPCA; del nPCAexact; del xi; del y
 
 
     # SPLITTING DATA INTO SMALLER FILES
@@ -893,9 +896,10 @@ if __name__ == '__main__':
         np.save(npsave,npXtrain)
         n -= toprocess # number of rows that need to be processed
         toprocess = min(splitsize, n)# get slice-size for next iteration
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,iteration),npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2)))
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,iteration),npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2))+Style.RESET_ALL)
 
-    iXtrain = np.arange(1,index+1,1) # create array to restore splitted files afterwards
+    # create array to restore splitted files afterwards
+    iXtrain = np.arange(1,index+1,1)
     del Xtrain
     del npXtrain
     gc.collect()
@@ -917,7 +921,7 @@ if __name__ == '__main__':
         np.save(npsave,npXtest)
         n -= toprocess
         toprocess = min(splitsize, n)
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,iteration),npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2)))
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,iteration),npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2))+Style.RESET_ALL)
     iXtest = np.arange(1,index+1,1) # create array to restore splitted files later
     del Xtest
     del npXtest
@@ -927,7 +931,6 @@ if __name__ == '__main__':
     # SCALER TRANSFORM
     if time:
         t = epochtime.time()
-        #print('\nrpi-Preprocessing.py\n\t<<< start: {}'.format(t))
         if export: # write timestamp to csv
             with open(cfg.time,'a') as timecsv:
                 csvwriter = csv.writer(timecsv, delimiter=",")
@@ -940,7 +943,7 @@ if __name__ == '__main__':
         Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
         npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain)) # split-file to load in current iteration
         tmp = np.load(npload).astype(np.float32) # load split-file
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2))+Style.RESET_ALL)
 
         print('\t\t> Transforming')
         n = tmp.shape[0]
@@ -951,8 +954,8 @@ if __name__ == '__main__':
             Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
             n -= size
             size = min(batch,n)
-            if superverbose: print('\n{}\n{} {} {}MB'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
-        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2)))
+            if superverbose: print(cfg.vcolor+'\n{}\n{} {} {}MB'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2))+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2))+Style.RESET_ALL)
         del tmpscaled
 
         print('\t\t> Saving')
@@ -975,7 +978,7 @@ if __name__ == '__main__':
         Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
         npload = cfg.tmp / npy_Xtest.format(index,len(iXtest))
         tmp = np.load(npload).astype(np.float32) # load split-file
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2)))
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2))+Style.RESET_ALL)
 
         print('\t\t> Transforming')
         n = tmp.shape[0]
@@ -986,8 +989,8 @@ if __name__ == '__main__':
             Xtest_scaled = np.append(Xtest_scaled,tmpscaled,axis=0).astype(np.float32)
             n -= size
             size = min(batch,n)
-            if superverbose: print('\n{}\n{} {} {}MB'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
-        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2)))
+            if superverbose: print(cfg.vcolor+'\n{}\n{} {} {}MB'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2))+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2))+Style.RESET_ALL)
         del tmpscaled
 
         print('\t\t> Saving')
@@ -1005,11 +1008,12 @@ if __name__ == '__main__':
                 csvwriter = csv.writer(timecsv, delimiter=",")
                 csvwriter.writerow([t,'rpi-Preprocessing.py','fit PCA','start'])
 
-    infoPCA = read_csv(infocsv)
-    n_Xpca = int(infoPCA.loc[6][1]); del infoPCA # save PCA component number as integer
+    infoPCA = read_csv(infocsv) # read information.csv
+    n_Xpca = int(infoPCA.loc[6][1]) # load PCA component number
+    del infoPCA
 
     print('>>> Applying PCA fit with {} components'.format(n_Xpca))
-    Xpca = []
+    #Xpca = []
     ipca = IncrementalPCA(n_components = n_Xpca, batch_size = cfg.PCA_batch)
 
     for index in iXtrain: # partial fit PCA to Xtrain, iterating over split-files
@@ -1029,15 +1033,15 @@ if __name__ == '__main__':
             print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
             npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain))
             split = np.load(npload).astype(np.float32)
-            if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+            if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
 
             print('\t\t> Transforming')
             split = ipca.transform(split)
-            if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+            if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
 
             print('\t\t> Saving')
             Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32) # append splits to single Xtrain np.array
-        if verbose: print('\n< Xtrain (PCA):\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2)))
+        if verbose: print(cfg.vcolor+'< Xtrain (PCA):\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2))+Style.RESET_ALL)
         del split
 
     if time:
@@ -1054,32 +1058,30 @@ if __name__ == '__main__':
         print('\t[{}/{}] Xtest'.format(index,len(iXtest)))
         npload = cfg.tmp / npy_Xtest.format(index,len(iXtest))
         split = np.load(npload).astype(np.float32)
-        if verbose: print('\n< {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
 
         print('\t\t> Transforming')
         split = ipca.transform(split)
-        if verbose: print('\n < {}\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2)))
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
 
         print('\t\t> Saving')
         Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
-    if verbose: print('\n< Xtest (PCA):\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2)))
+    if verbose: print(cfg.vcolor+'< Xtest (PCA):\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2))+Style.RESET_ALL)
     del split
+    del ipca; 
 
 
     # RANDOM FOREST CLASSIFIER
 
-    # select already fitted modelfile or fit model
-    if model:
+    if model: # select already fitted modelfile or fit model
         if time:
             t = epochtime.time()
             if export: # write timestamp to csv
                 with open(cfg.time,'a') as timecsv:
                     csvwriter = csv.writer(timecsv, delimiter=",")
                     csvwriter.writerow([t,'rpi-Preprocessing.py','import model','start'])
-
         print('>>> Importing model')
         model = joblib.load(modelfile)
-
     else:
         if time:
             t = epochtime.time()
@@ -1114,20 +1116,19 @@ if __name__ == '__main__':
     depths = [t.get_depth() for t in model.estimators_]
     leaves = [t.get_n_leaves() for t in model.estimators_]
 
-
     print('>>> Saving parameters, accuracy-score and feature-importance')
     parameters = model.get_params(deep=True)
     accuracyscore = accuracy_score(Ytest,predictions)
     featureimportance = model.feature_importances_
 
     # output model estimators
-    print('\n\n'+10*'~'+' {}: estimators '.format(model)+10*'~')
-    print('Trees: {}'.format(len(depths)))
+    print(cfg.vcolor+'\n\n'+10*'~'+' {}: estimators '.format(model)+10*'~')
+    print('Trees:\n{}'.format(len(depths)))
     print('Depths:\n{}'.format(depths))
-    print('Leaves:\n{}'.format(leaves))
+    print('Leaves:\n{}'.format(leaves)+Style.RESET_ALL)
 
     # output final results
-    print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
+    print(cfg.vcolor+'\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
     print('\nModel-Parameters:\n{}'.format(parameters))
     print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
     print('\n\nFeature-Importance:\n{}'.format(featureimportance))
@@ -1136,7 +1137,7 @@ if __name__ == '__main__':
     print('r         "0"    "1"')
     print('u  "0":',matrix[0])
     print('e  "1":',matrix[1])
-    print('\n\nClassification-Report:\n\n',report)
+    print('\n\nClassification-Report:\n\n{}'.format(report)+Style.RESET_ALL)
 
 
     if export:
