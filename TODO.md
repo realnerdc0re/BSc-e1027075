@@ -1,22 +1,25 @@
 ## INPROGRESS
 
 ### CODE
-- use one feature-per-flag encoding instead of textual-binary-decimal encoding for AGM
-- implement check for cfg.chunksize != (0-10) and exit Master.py with info that higher chunksize necessary
-- rpi-flowSampling.py: implement AGM feature handling
-    - how to handle mode when only two different values are in one flows feature? How does go-flows handle this for packet-based sampling e.g.?
+- add color hexcodes to framework configuration to access same colors on all scripts
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 - rename scripts and feature-vectors properly and change everything connected accordingly (shittask)
-- implement scapy to do the packet-sampling, using editcap is like a very poor bandaid in comparison and creatues issues for timebased sampling technique implementation
-- once the feature-vectors are agreed on, set packetlimit, flowlimit, vectorlimit correct in config.py
 - config.py: get limits directy from dictionary-entries same way I implemented the sampling-modes
-- RF: random state for creating splits fixed for comparison? Setting parameters to control tree sizes to eventually reduce memory consumption, see scikit-learn documentation.
+
 
 #### EVALUATION
-- add classification speed and F1-scores for 0 and 1 (maybe even replace Precision or Recall parameter with F1-scores), remove CPU usage and cached RAM from Spiderchart
-- add model file size as experiment parameter
-- implement result comparison for server/local machine and remote machine (rpi/VM) as table, saved as CSV
+- inlude loss of instances to classify based on sampling steps for all packet-based modes?
+- limit polar plot y-axis to 100% to create similar plot scales
+- set titles to 'unsampled' when sampling steps are zero
+- add values to single experiment plots for every metric
+    - scale RAM and Runtime to maximum occuring RAM and Runtime values
+
+- for comparison charts:
+    - add legend on top of plot show visual differentiation of flow-based and packet-based plots
+    - add legend for actual plots below spider chart
+
+- add model file size as experiment parameter?
 - develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
 - save PNG for all generated charts in addition to wd/figures into the same folder where the data is actually fetched from
 - group experiment classobjects based on following comparisons (files always Merged?):
@@ -41,11 +44,11 @@
 ## TODO
 
 ### NEXT
-- add AGM feature vectors for packet-sampling, make selection automatic depending on the given arguments --flowsampling/packetsampling argument alltogether
 - rpi-FlowSampling.py: samplingmode 2 & 4 - improvements?
 - use basefolderpaths from config.py also in rpi-Preprocessing, rpi-Sampling, rpi-FlowSampling, rpi-Packetsampling for more convenient customization of paths and way better maintenance possibilities
 
 ### LATER
+- RF: random state for creating splits fixed for comparison? Setting parameters to control tree sizes to eventually reduce memory consumption, see scikit-learn documentation.
 - use pathlib to generate filepaths instead of manual forging (https://docs.python.org/3/library/pathlib.html) for all filepaths (FlowSampling.py, PacketSampling.py)
 - maybe limit nodes/leaves depth/size for RandomForest classification to reduce model size
     - output nodes/leaves depth/sizes in results.csv
@@ -63,6 +66,7 @@
 - implement automatic folder generation on script execution (os.path.exists(folder) and os.makedirs(folder)), do this with a separate python script for the base-folder structure. expand this structure if necessary for multiple test-runs? (important for wd/logs, and first time creation of time.csv if no file exists or if a file already exists on scriptstart outside of Control.py create new file (due to appending time within any other scripts than Control.py...))
 
 ### IMPROVEMENTS
+- implement scapy to do the packet-sampling, using editcap is like a very poor bandaid in comparison and creatues issues for timebased sampling technique implementation
 - user inner classes for class Experiment
 - change replacement in cleanInf similar to cleanNaN via: dataset[column] = dataset[column].replace(np.inf, replacement) (useless, no infs in dataset anyway)
 - create config file to import, containing all necessary file- and folderpaths, paths to executable tools... and import this file instead of making definitions inside every script
@@ -73,6 +77,13 @@
 
 
 ## DONE
+- evaluation: add classification speed and F1-scores for 0 and 1 (maybe even replace Precision or Recall parameter with F1-scores), remove CPU usage and cached RAM from Spiderchart
+- use one feature-per-flag encoding instead of textual-binary-decimal encoding for AGM (flow-based and packet-based sampling)
+- change NaN replacement, separate mean calculation & replacement for Xtrain and Xtest (rpi-Preprocessing.py, starting at line 818)
+- implement n_component determination when executing pre-processing on the local machine
+    - save this number in as parameter in information.csv in every experiment folder (better I guess)
+    - load component number on remote to for incremental PCA
+- implement AGM feature handling in packetSampling.py and flowSampling.py
 - implement no sampling experiment execution in Master.py when steps == 0!!!!
     - directly pass merged PCAPs to labeling script and execute Preprocessing for results
 - remove CPU usage and RAM cached from graphs and charts, its a useless stat
