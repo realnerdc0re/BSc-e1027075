@@ -50,54 +50,48 @@ if __name__ == '__main__':
     samp = True
     varg = ''
 
-    # check passed optional arguments and commands
     print('\n'+40*'~'+' SCRIPT: Master.py '+40*'~')
+    # check passed optional arguments and commands
     if verbose:
-        varg = '-v' # argument to call scripts
-        print('\nfiles:\n\t{}\n\nsampling-modes:\n\t{}{}\n\nfeature-vectors:\n\t{}\n'.format(cfg.filenames,cfg.fsamplingmode,cfg.psamplingmode,cfg.vectors))
-        print(20*'~'+' configuration '+20*'~')
-        print('\n\tfile:\t{}\n\tvector:\t{}\n\tmode:\t{}\n\tstep:\t{}\n\n'.format(cfg.file,cfg.vector,cfg.mode,cfg.steps))
-        print(20*'~'+' arguments '+20*'~')
-        print('\n\tverb:\t{}\n\tfit:\t{}\n\tmodel:\t{}\n\tnosync:\t{}\n\tlocal:\t{}\n\tremote:\t{}\n\n'.format(verbose,fit,models,nosync,local,remote))
-        input('...')
+        varg = '-v' # set argument to call other framework scripts
+        print(cfg.vcolor+'\n'+20*'~'+' configuration & arguments '+20*'~')
+        print('files:\n\t{}\n\nsampling-modes:\n\t{}{}\n\nfeature-vectors:\n\t{}\n'.format(cfg.filenames,cfg.fsamplingmode,cfg.psamplingmode,cfg.vectors))
+        print('\tfile:\t{}\n\tvector:\t{}\n\tmode:\t{}\n\tstep:\t{}'.format(cfg.file,cfg.vector,cfg.mode,cfg.steps))
+        print('\n\tverb:\t{}\n\tfit:\t{}\n\tmodel:\t{}\n\tnosync:\t{}\n\tlocal:\t{}\n\tremote:\t{}'.format(verbose,fit,models,nosync,local,remote))
+        print(67*'~'+Style.RESET_ALL)
 
     # check online-status of remote machine
     if not local:
         ping = os.system('ping -c 1 {} >/dev/null 2>&1'.format(cfg.remoteip)) # ping remote machine
 
         if ping == 0:   print('>>> Status {}: '.format(cfg.remoteip)+Fore.YELLOW+'ONLINE'+Style.RESET_ALL)
-        else:           print('>>> Status {}: '.format(cfg.remoteip)+Fore.RED+'OFFLINE'+Style.RESET_ALL), exit()
+        else:           print('>>> Status {}: '.format(cfg.remoteip)+Fore.RED+'OFFLINE'+Style.RESET_ALL); exit()
 
     # iterate over configurations
     for file in cfg.file:
         for vector in cfg.vector:
-
             # folder selection based on given feature-vector
             if vector < cfg.vectorlimit:
                 basefolder  = cfg.flowfolder
                 sarg        = '-f'
-                #foldername  = '{}_mode{}_vector{}_steps{}_perflowsampled'
                 samplingtype = 'flowbased'
             else:
                 basefolder  = cfg.packetfolder
                 sarg        = '-p'
-                #foldername  = '{}_mode{}_vector{}_steps{}_packetsampled'
                 samplingtype = 'packetbased'
 
             mkdir = "ssh {} 'mkdir -p {}'".format(cfg.remote,basefolder)
 
             for mode in cfg.mode: # iterate over given sampling-modes
 
-                # check plausibility of given configuration, continue on pointless combinations
+                # plausibility check of given configuration, continue on pointless combinations
                 # flow-based feature-vectors and packet-based sampling-modes
                 if vector < cfg.vectorlimit and mode >= cfg.samplinglimit: continue
                 # packet-basefolderbased feature-vectors and flow-based sampling-modes
                 elif vector >= cfg.vectorlimit and mode < cfg.samplinglimit: continue
 
                 for steps in cfg.steps: # iterate over given sampling-steps
-
-                    # forge folders & commands based on configuration
-                    #folder   = foldername.format(cfg.filenames[file],mode,vector,steps)
+                    # forge folders & sampling command based on configuration
                     folder    = cfg.foldername.format(cfg.filenames[file],mode,vector,steps,samplingtype)
                     sampling = 'python3 rpi-Sampling.py -e {} {} {} {} {} {}'.format(varg,sarg,mode,file,steps,vector)
 
