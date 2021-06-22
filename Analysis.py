@@ -5,7 +5,6 @@ Created on Fri Jan 10 10:32:48 2021
 
 @author: pjr
 """
-
 from pandas import read_csv
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -30,7 +29,9 @@ import os
 import gc
 import joblib
 import math
+import importlib
 
+import matplotlib.pyplot as plt
 import config as cfg
 
 
@@ -43,11 +44,13 @@ parser.add_argument('-v','--verbose', action='store_true', help='output addition
 parser.add_argument('--superverbose', action='store_true', help='output additional dataset related informations')
 parser.add_argument('--false', action='store_true', help='output false classified instances')
 parser.add_argument('--pca', action='store_true', help='output false classified instances')
+parser.add_argument('--analysis', action='store_true', help='evaluate PCA component numbers')
 # force PCAP selection
 capturegroup = parser.add_mutually_exclusive_group(required=True)
 capturegroup.add_argument('--merged', action='store_true', help='use compelte dataset merged PCAP')
 capturegroup.add_argument('--friday', action='store_true', help='use Friday-WorkingHours PCAP')
 capturegroup.add_argument('--test', action='store_true', help='use excerpt from Friday-Workinghours PCAP for testing')
+capturegroup.add_argument('--experiment', action='store_true', help='use already created CSV from experiment')
 # force sampling method & mode
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('-f','--flowsampling', action='store_true', help='flow-based vector')
@@ -59,8 +62,6 @@ vectorgroup.add_argument('-c','--caia', action='store_true', help='CAIA vector')
 args = parser.parse_args()
 
 
-
-# import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
 
     if time: start = timer()
@@ -290,57 +291,62 @@ if __name__ == '__main__':
     test           = args.test
     friday         = args.friday
     merged         = args.merged
-    pca            = args.pca
+    pcas           = args.pca
+    analysis       = args.analysis
+    experiment     = args.experiment
 
-    if agm:
+    if agm: # select AGM vector based on arguments
         mode = 'AGM'
         if flowsampling: j = 1
         elif packetsampling: j = 6
-    elif caia:
+    elif caia: # select CAIA vector based on arguments
         mode = '5tuple'
         if flowsampling: j = 4
         elif packetsampling: j = 5
 
-    if test: # SNAPPED TEST PCAP
-        csv_import = cfg.fpath / 'TestPCAPs' / 'Friday-WorkingHours_unlabeled.csv'
-        filename = 'Friday-WorkingHours.pcap'
-        labelname = 'Friday-WorkingHours'
-        file = cfg.fpath / 'TestPCAPs' / filename # file for go-flows
-        label = cfg.fpath / 'TestPCAPs' / labelname # file for labeling script
-        csv   = cfg.fpath / 'TestPCAPs' / 'Friday-WorkingHours.csv'
-    elif friday: # FULL WORKDAY PCAP
-        csv_import = cfg.fpath / 'Friday-WorkingHours_unlabeled.csv'
-        filename = 'Friday-WorkingHours.pcap'
-        labelname = 'Friday-WorkingHours'
-        file = cfg.fpath / filename # file for go-flows
-        label = cfg.fpath / labelname # file for labeling script
-        csv   = cfg.fpath / 'Friday-WorkingHours.csv'
-    elif merged: # FULL WEEK PCAP
-        csv_import = cfg.fpath / 'UnsampledMerged_unlabeled.csv'
-        filename = 'UnsampledMerged.pcap'
-        labelname = 'UnsampledMerged'
-        file = cfg.fpath / filename # file for go-flows
-        label = cfg.fpath / labelname # file for labeling script
-        csv   = cfg.fpath / 'UnsampledMerged.csv'
+    if (not experiment):
+        if test: # SNAPPED TEST PCAP
+            csv_import = cfg.fpath / 'TestPCAPs' / 'Friday-WorkingHours_unlabeled.csv'
+            filename = 'Friday-WorkingHours.pcap'
+            labelname = 'Friday-WorkingHours'
+            file = cfg.fpath / 'TestPCAPs' / filename # file for go-flows
+            label = cfg.fpath / 'TestPCAPs' / labelname # file for labeling script
+            csv   = cfg.fpath / 'TestPCAPs' / 'Friday-WorkingHours.csv'
+        elif friday: # FULL WORKDAY PCAP
+            csv_import = cfg.fpath / 'Friday-WorkingHours_unlabeled.csv'
+            filename = 'Friday-WorkingHours.pcap'
+            labelname = 'Friday-WorkingHours'
+            file = cfg.fpath / filename # file for go-flows
+            label = cfg.fpath / labelname # file for labeling script
+            csv   = cfg.fpath / 'Friday-WorkingHours.csv'
+        elif merged: # FULL WEEK PCAP
+            csv_import = cfg.fpath / 'UnsampledMerged_unlabeled.csv'
+            filename = 'UnsampledMerged.pcap'
+            labelname = 'UnsampledMerged'
+            file = cfg.fpath / filename # file for go-flows
+            label = cfg.fpath / labelname # file for labeling script
+            csv   = cfg.fpath / 'UnsampledMerged.csv'
 
-    goflowsconf = cfg.wd / cfg.vectorfolder / cfg.vectors[j]
-    goflowscmd  = '{} run features {} export csv {} source libpcap {}'.format(cfg.goflowspath,goflowsconf,csv_import,file)
-    labelingcmd = 'python3 {} {} {}'.format(cfg.labelingpath,label,mode)
+        goflowsconf = cfg.wd / cfg.vectorfolder / cfg.vectors[j]
+        goflowscmd  = '{} run features {} export csv {} source libpcap {}'.format(cfg.goflowspath,goflowsconf,csv_import,file)
+        labelingcmd = 'python3 {} {} {}'.format(cfg.labelingpath,label,mode)
 
-    print('agm: {}\ncaia: {}\nflow-based: {}\npacket-based: {}\nverbose: {}\nvector: {}\n'.format(agm,caia,flowsampling,packetsampling,verbose,cfg.vectors[j]))
-    print('goflows: {}\nlabeling: {}\n\n'.format(goflowscmd,labelingcmd))
+        print('agm: {}\ncaia: {}\nflow-based: {}\npacket-based: {}\nverbose: {}\nvector: {}\npca: {}\nanalysis: {}\n'.format(agm,caia,flowsampling,packetsampling,verbose,cfg.vectors[j],pcas,analysis))
+        print('goflows: {}\nlabeling: {}\n\n'.format(goflowscmd,labelingcmd))
 
-    print('>> Execute go-flows: {}'.format(goflowscmd))
-    os.system(goflowscmd)
+        print('>> Execute go-flows: {}'.format(goflowscmd))
+        os.system(goflowscmd)
 
-    print('>> Execute labeling: {}'.format(labelingcmd))
-    os.system(labelingcmd)
+        print('>> Execute labeling: {}'.format(labelingcmd))
+        os.system(labelingcmd)
+    else: csv = cfg.fpath / 'packet-sampledCSV' / 'Merged_mode5_vector6_steps3_packetbased' / 'Merged.csv' # manually set experiment file
 
     print('>> Import CSV: {}'.format(csv))
     dataset = read_csv(csv,usecols=None,skipinitialspace=True,encoding='utf-8')
     if verbose:
         printdata(dataset,'dataset',True)
         print('\n{}'.format(dataset.groupby('Label').size()))
+
 
     # PREPROCESSING
     if agm:
@@ -349,20 +355,21 @@ if __name__ == '__main__':
         #tcpflagEncoderDecimal(dataset,'mode(_tcpFlags)',True)
 
     originalsplits = splitDataframe(dataset,0.30,False,False)
-    originalXtest = originalsplits[1] # copy of original data including IP addresses
+    originalXtrain = originalsplits[0] # copy of original data including IP addresses
+    originalXtest  = originalsplits[1] # copy of original data including IP addresses
 
     print('>> Clean strings')
     cleanString(dataset,True,False)
 
-    print('>> Search NaN features')
-    NaN = searchNaN(dataset,True,False)
 
-    print('>> Calculate mean values')
-    means = calcMean(dataset,NaN,True,False)
+    # ANALYSIS STEPS
+    feature_names = dataset.columns[:-1] # feature names excluding 'Label' to compare feature-importances later on
+    if agm:
+        maxTotalpackets = dataset['packetTotalCount'].max()
+        minTotalpackets = dataset['packetTotalCount'].min()
 
-    print('>> Replace NaN values with mean values')
-    replaceNaN(dataset,'dataset',NaN,means,True,False)
 
+    # SPLIT INTO TRAINING & TEST PORTION
     print('>> Split dataset into Xtrain, Xtest, Ytrain, Ytest')
     splits = splitDataframe(dataset,0.30,False,False)
     Xtrain = splits[0]
@@ -372,6 +379,22 @@ if __name__ == '__main__':
     printdata(Xtrain,'Xtrain original')
     printdata(Xtest,'Xtest original')
 
+
+    # PREPROCESSING
+    print('>> Search NaN features\n\t> Xtrain')
+    NaN = searchNaN(Xtrain,True,False)
+    print('>> Calculate mean values')
+    means = calcMean(Xtrain,NaN,True,False)
+    print('>> Replace NaN values with mean values')
+    replaceNaN(Xtrain,'Xtrain',NaN,means,True,False)
+    print('>> Search NaN features\n\t> Xtest')
+    NaN = searchNaN(Xtest,True,False)
+    print('>> Calculate mean values')
+    means = calcMean(Xtest,NaN,True,False)
+    print('>> Replace NaN values with mean values')
+    replaceNaN(Xtest,'Xtest',NaN,means,True,False)
+
+
     # STANDARDSCALER
     scaler = StandardScaler(copy=False)
     print('>> Standard Scaler fit/transform Xtest')
@@ -379,17 +402,76 @@ if __name__ == '__main__':
     print('>> Standard Scaler transform Xtest')
     Xtest = scaler.transform(Xtest)
     printdata(Xtrain,'Xtrain scaled')
+    print('{} {} {}'.format(Xtrain.shape,Xtrain.dtype,type(Xtrain)))
     printdata(Xtest,'Xtest scaled')
+    print('{} {} {}'.format(Xtest.shape,Xtest.dtype,type(Xtest)))
+
+
+
+    # ANALYSIS EXPLAINED VARIANCE
+    if analysis and pcas:
+        variance = cfg.PCA_var
+        xmax = Xtrain.shape[1] # maximum number of features
+        pca = PCA().fit(Xtrain) # fit data to training portion
+        plt.rcParams["figure.figsize"] = (12,6) # set figure size
+
+        fig, ax = plt.subplots()
+        xi = np.arange(1, xmax+1, step=1)
+        y = np.cumsum(pca.explained_variance_ratio_) # build cumulative sum for explained variance
+
+        plt.ylim(0,1)
+        plt.xlim(0,xmax)
+        plt.plot(xi, y, marker='o', linestyle='--', color='#566573')
+        plt.xlabel('Number of Components')
+        plt.xticks(np.arange(0, xmax+1, step=1)) #change from 0-based array index to 1-based human-readable label
+        plt.ylabel('Cumulative Variance (%)')
+        #plt.title('cumulative variance')
+        plt.axhline(y=variance, color='black', linestyle='solid') # set horizontal line to visualize %-mark
+        ax.grid(axis='x')
+        plt.show()
+
+        xcalc       = np.interp(variance,y,xi) # interpolate based on given datapoints
+        xcomponents = math.ceil(xcalc) # use ceil function to round up to the next integer
+        print('\n< PCA components, interpolated: {}\n< PCA components, selected: {}\n'.format(round(xcalc,2),xcomponents))
+
+
+        # REPLACE PARAMETER IN CONFIGURATION
+        searchstring  = 'n_PCA'
+        replacestring = '{} = {}\n'.format(searchstring,str(xcomponents))
+
+        cfgpath = os.path.abspath(cfg.__file__)
+        print('{}'.format(cfgpath))
+
+        with open(cfgpath, 'r') as file: # open configuration
+            configdata = file.readlines() # read all lines
+
+        for line in range(0,len(configdata)): # iterate all lines
+            if configdata[line][0:len(searchstring)] == searchstring:
+                linechange = line
+                break
+        configdata[linechange] = replacestring
+        with open(cfgpath, 'w') as file:
+            file.writelines(configdata)
+        file.close() #close file
+
 
     # PCA
-    if pca:
-        components = 4
+    if pcas:
+        importlib.reload(cfg) # reload framework configuration to obtain changes
+        components = cfg.n_PCA
+        print('components: {}'.format(components))
+        input('...')
+
         pca = PCA(n_components=components)
-        print('>> PCA fit to Xtrain, n = {}'.format(components))
+        print('>> PCA n = {}'.format(components))
+        print('\t> fit Xtrain')
         pca.fit(Xtrain)
-        print('>> PCA transform Xtrain, Xtest')
+        print('>> PCA transform')
+        print('\t> Xtrain')
         Xtrain = pca.transform(Xtrain)
+        print('\t> Xtest')
         Xtest = pca.transform(Xtest)
+
 
     # PREDICTIONS
     model = RandomForestClassifier()
@@ -398,31 +480,34 @@ if __name__ == '__main__':
 
     print('>> Create predictions')
     predictions = model.predict(Xtest)
+    featureimportance = model.feature_importances_
 
-    if false: # verbose output on false predictions
+    if (false and agm): # verbose output for false predictions
         print('>> Output false predictions')
         falseclassified = originalXtest[Ytest != predictions]
         falsepositives = falseclassified[falseclassified['Attack'] == 'Normal'].copy()
         falsenegatives = falseclassified[falseclassified['Attack'] != 'Normal'].copy()
-
-        # rename feature for better readability
-        renamefeatures = {
-        'sourceIPAddress': 'srcIP',
-        'mode(destinationIPAddress)': 'dstIPmode',
-        'mode(sourceTransportPort)': 'srcPortmode',
-        'mode(destinationTransportPort)': 'dstPortmode',
-        'mode(_tcpFlags)': 'TCPmode',
-        'mode(ipTTL)': 'ipTTLmode',
-        'mode(protocolIdentifier)': 'protocolmode'
-        }
-        falsenegatives.rename(columns=renamefeatures,inplace=True)
-        falsepositives.rename(columns=renamefeatures,inplace=True)
-
         poptions() # output all rows
-        # list for tcpEncode
-        outputlist = ['A','P','F','R','S','U','E','C','N','mode(_tcpFlags)','sourceIPAddress','mode(destinationIPAddress)','mode(sourceTransportPort)','mode(destinationTransportPort)','Attack',]
-        output = [8,7,6,5,4,3,2,1,0,26,25,27,9,11,14,17,20,23,32]
+
+        if agm: # prepare output for AGM vector
+            renamefeatures = {
+                'sourceIPAddress': 'srcIP',
+                'mode(destinationIPAddress)': 'dstIPmode',
+                'mode(sourceTransportPort)': 'srcPortmode',
+                'mode(destinationTransportPort)': 'dstPortmode',
+                'mode(_tcpFlags)': 'TCPmode',
+                'mode(ipTTL)': 'ipTTLmode',
+                'mode(protocolIdentifier)': 'protocolmode'
+                }
+            falsenegatives.rename(columns=renamefeatures,inplace=True)
+            falsepositives.rename(columns=renamefeatures,inplace=True)
+
+            outputlist = ['A','P','F','R','S','U','E','C','N','mode(_tcpFlags)','sourceIPAddress','mode(destinationIPAddress)','mode(sourceTransportPort)','mode(destinationTransportPort)','packetTotalCount','Attack',]
+            output = [8,7,6,5,4,3,2,1,0,26,25,27,9,11,14,17,20,23,31,32]
         # list for tcpEncodeDecimal
+        if caia:
+            outputlist = []
+            output     = []
 
         print('\nFalse negative instances:\n{}'.format(falsenegatives.iloc[:,output])) # all rows, feature-index numbers
         print('\nFalse positive instances:\n{}'.format(falsepositives.iloc[:,output]))
@@ -433,10 +518,27 @@ if __name__ == '__main__':
     matrix = confusion_matrix(Ytest,predictions)
     report = classification_report(Ytest,predictions,digits=5)
 
+
     # RESULTS
     print('\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
     print('\nModel-Parameters:\n{}'.format(parameters))
     print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+
+    if not pcas:
+        print('\n\nFeature-Importance Labels:\n{}\n{} elements, {}'.format(feature_names,len(feature_names),type(feature_names)))
+        print('\nFeature-Importance Overview:')
+        zipped = sorted(zip(feature_names,featureimportance),key=lambda x: x[1],reverse=True) # sort aggregated elements from iterables based on feature-importance value
+        for feature,value in zipped:
+            print('{}%\t{}'.format(format(value*100,".2f"),feature))
+        print('\nFeature-Importance:\n{}\n{} elements, {} {}'.format(featureimportance,len(featureimportance),type(featureimportance),np.sum(featureimportance)))
+
+    if agm:
+        print('\npacketTotalCount, minimum: {}'.format(minTotalpackets))
+        print('packetTotalCount, maximum: {}'.format(maxTotalpackets))
+        #for index,row in dataset.iterrows(): # search
+        #    if row['packetTotalCount'] == maxTotalpackets:
+        #        print('Flow containing maximum packetTotalCount:\n{}'.format(dataset.loc[[index]])) # output dataframe row with highest aggregated packet count
+
     print('\n\nConfusion-Matrix:\n')
     print('t       p r e d i c t')
     print('r         "0"    "1"')
