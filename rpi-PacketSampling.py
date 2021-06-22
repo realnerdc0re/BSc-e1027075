@@ -130,6 +130,9 @@ def tcpflagEncoder(dataset,feature,verbose=False):
         print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
         print('pre-encoding: \n{}'.format(dataset[feature])+Style.RESET_ALL)
 
+    #print(cfg.vcolor+'{}\n{}'.format(dataset['mode(_tcpFlags)'][277734:277754],dataset['sourceIPAddress'][277734:277754])+Style.RESET_ALL)
+
+
     # encode TCP flag mode feature
     flags = ['A','P','F','R','S','U','E','C','N']
     for flag in flags: # create features for all possible TCP flags, initialized with 0
@@ -142,6 +145,9 @@ def tcpflagEncoder(dataset,feature,verbose=False):
             for j in range(0,len(cell)):
                 for char in cell[j]:
                     dataset.at[i,char] = 1
+
+    #print(cfg.vcolor+'{}\n{}'.format(dataset['mode(_tcpFlags)'][277734:277754],dataset['sourceIPAddress'][277734:277754])+Style.RESET_ALL)
+    #input('...')
 
     if verbose:
         print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[flags]))
@@ -424,6 +430,42 @@ if __name__ == '__main__':
         for feature in dropfeatures:
             print('\t> {}'.format(feature))
             dataset.drop(columns=feature,inplace=True)
+
+        print('>>> Sorting features')
+        preordered = [
+            'flowStartMilliseconds',
+            'N',
+            'C',
+            'E',
+            'U',
+            'S',
+            'R',
+            'F',
+            'P',
+            'A',
+            'sourceIPAddress',
+            'distinct(_tcpFlags)',
+            'modeCount(_tcpFlags)',
+            'distinct(sourceTransportPort)',
+            'mode(sourceTransportPort)',
+            'modeCount(sourceTransportPort)',
+            'distinct(destinationTransportPort)',
+            'mode(destinationTransportPort)',
+            'modeCount(destinationTransportPort)',
+            'distinct(protocolIdentifier)',
+            'mode(protocolIdentifier)',
+            'modeCount(protocolIdentifier)',
+            'distinct(ipTTL)',
+            'mode(ipTTL)',
+            'modeCount(ipTTL)',
+            'distinct(octetTotalCount)',
+            'mode(octetTotalCount)',
+            'modeCount(octetTotalCount)',
+            'distinct(destinationIPAddress)',
+            'modeCount(destinationIPAddress)',
+            'packetTotalCount'
+        ]
+        dataset = dataset[preordered]
 
         print('>>> Saving {}'.format(csv_sampled_export))
         dataset.to_csv(csv_sampled_export, index=False)
