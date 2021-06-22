@@ -1,4 +1,11 @@
 ## INPROGRESS
+- REVERSE keeping flowStartMilliseconds in Labeling.py for debugging
+
+- CAIA sort and rename features on packet-based and flow-based sampling for easier comparison
+
+
+- AGM10s: change feature to calculate packetTotalCount from destinationPort to 'apply(accumulate(protocolIdentifier),forward)' to get correct total packet counts.
+- accumulate with goflows returns list with whitespace separation, but it also uses whitespaces for non-occuring e.g. flags. how does that make sense?
 
 ### CODE
 - add color hexcodes to framework configuration to access same colors on all scripts
