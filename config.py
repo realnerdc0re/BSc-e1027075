@@ -129,9 +129,9 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 file        = [0]
-vector      = [1,6]
-mode        = [1,5]
-steps       = [0] # 0 to process unsampled PCAP
+vector      = [4]
+mode        = [4]
+steps       = [7,5,3] # 0 to process unsampled PCAP
 
 n_PCA       = 12 # unused, number is stored in information.csv
 PCA_var     = 0.90 # explained variance to achieve with components
