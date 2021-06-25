@@ -413,12 +413,103 @@ if __name__ == '__main__':
     else: print('>>> No packet-based sampling, processing original capture')
 
 
-    # FLOW-CREATION
-    print('>>> Create flows with go-flows: {}'.format(csv_sampled_export))
+    # FLOW-COLLECTION
+    print('>>> Collect flows with go-flows: {}'.format(csv_sampled_export))
     os.system(goflowscmd)
 
-    # AGM feature-vector post-processing
-    if cfg.vectors[j][0:3] == 'AGM':
+    # CAIA VECTORS
+    if cfg.vectors[j][0:4] == 'CAIA':
+        dataset = importCSV(csv_sampled_export,None,verbose)
+        printdata(dataset,cfg.vectors[j],verbose=False)
+
+        print('>>> Rename features')
+        renamedict = {
+            "apply(packetTotalCount,forward)":                  'count(packetTotalCount,forward)',
+            "apply(octetTotalCount,forward)":                   'count(octetTotalCount,forward)',
+            "apply(tcpSynTotalCount,forward)":                  'count(tcpSynTotalCount,forward)',
+            "apply(tcpAckTotalCount,forward)":                  'count(tcpAckTotalCount,forward)',
+            "apply(tcpFinTotalCount,forward)":                  'count(tcpFinTotalCount,forward)',
+            "apply(_tcpCwrTotalCount,forward)":                 'count(_tcpCwrTotalCount,forward)',
+
+            "apply(min(ipTotalLength),forward)":                'min(ipTotalLength,forward)',
+            "apply(mean(ipTotalLength),forward)":               'mean(ipTotalLength,forward)',
+            "apply(max(ipTotalLength),forward)":                'max(ipTotalLength,forward)',
+            "apply(stdev(ipTotalLength),forward)":              'stdev(ipTotalLength,forward)',
+
+            "apply(min(_interPacketTimeSeconds),forward)":      'min(_interPacketTimeSeconds,forward)',
+            "apply(mean(_interPacketTimeSeconds),forward)":     'mean(_interPacketTimeSeconds,forward)',
+            "apply(max(_interPacketTimeSeconds),forward)":      'max(_interPacketTimeSeconds,forward)',
+            "apply(stdev(_interPacketTimeSeconds),forward)":    'stdev(_interPacketTimeSeconds,forward)',
+
+            "apply(packetTotalCount,backward)":                 'count(packetTotalCount,backward)',
+            "apply(octetTotalCount,backward)":                  'count(octetTotalCount,backward)',
+            "apply(tcpSynTotalCount,backward)":                 'count(tcpSynTotalCount,backward)',
+            "apply(tcpAckTotalCount,backward)":                 'count(tcpAckTotalCount,backward)',
+            "apply(tcpFinTotalCount,backward)":                 'count(tcpFinTotalCount,backward)',
+            "apply(_tcpCwrTotalCount,backward)":                'count(_tcpCwrTotalCount,backward)',
+
+            "apply(min(ipTotalLength),backward)":               'min(ipTotalLength,backward)',
+            "apply(mean(ipTotalLength),backward)":              'mean(ipTotalLength,backward)',
+            "apply(max(ipTotalLength),backward)":               'max(ipTotalLength,backward)',
+            "apply(stdev(ipTotalLength),backward)":             'stdev(ipTotalLength,backward)',
+
+            "apply(min(_interPacketTimeSeconds),backward)":     'min(_interPacketTimeSeconds,backward)',
+            "apply(mean(_interPacketTimeSeconds),backward)":    'mean(_interPacketTimeSeconds,backward)',
+            "apply(max(_interPacketTimeSeconds),backward)":     'max(_interPacketTimeSeconds,backward)',
+            "apply(stdev(_interPacketTimeSeconds),backward)":   'stdev(_interPacketTimeSeconds,backward)'
+        }
+        dataset = dataset.rename(columns=renamedict) # re-name features
+
+        print('>>> Sorting features')
+        preordered = [
+            'flowStartMilliseconds',
+            'sourceIPAddress',
+            'destinationIPAddress',
+            'sourceTransportPort',
+            'destinationTransportPort',
+            'protocolIdentifier',
+
+            'count(packetTotalCount,forward)',
+            'count(octetTotalCount,forward)',
+            'count(tcpSynTotalCount,forward)',
+            'count(tcpAckTotalCount,forward)',
+            'count(tcpFinTotalCount,forward)',
+            'count(_tcpCwrTotalCount,forward)',
+
+            'min(ipTotalLength,forward)',
+            'mean(ipTotalLength,forward)',
+            'max(ipTotalLength,forward)',
+            'stdev(ipTotalLength,forward)',
+
+            'min(_interPacketTimeSeconds,forward)',
+            'mean(_interPacketTimeSeconds,forward)',
+            'max(_interPacketTimeSeconds,forward)',
+            'stdev(_interPacketTimeSeconds,forward)',
+
+            'count(packetTotalCount,backward)',
+            'count(octetTotalCount,backward)',
+            'count(tcpSynTotalCount,backward)',
+            'count(tcpAckTotalCount,backward)',
+            'count(tcpFinTotalCount,backward)',
+            'count(_tcpCwrTotalCount,backward)',
+
+            'min(ipTotalLength,backward)',
+            'mean(ipTotalLength,backward)',
+            'max(ipTotalLength,backward)',
+            'stdev(ipTotalLength,backward)',
+
+            'min(_interPacketTimeSeconds,backward)',
+            'mean(_interPacketTimeSeconds,backward)',
+            'max(_interPacketTimeSeconds,backward)',
+            'stdev(_interPacketTimeSeconds,backward)'
+        ]
+        dataset = dataset[preordered]
+
+        print('>>> Saving {}'.format(csv_sampled_export))
+        dataset.to_csv(csv_sampled_export, index=False)
+
+    # AGM VECTORS
+    elif cfg.vectors[j][0:3] == 'AGM':
         dataset = importCSV(csv_sampled_export,None,verbose)
         printdata(dataset,cfg.vectors[j],verbose=False)
 
