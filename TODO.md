@@ -1,14 +1,9 @@
 ## INPROGRESS
-- REVERSE keeping flowStartMilliseconds in Labeling.py for debugging
-
-- CAIA sort and rename features on packet-based and flow-based sampling for easier comparison
-
-
-- AGM10s: change feature to calculate packetTotalCount from destinationPort to 'apply(accumulate(protocolIdentifier),forward)' to get correct total packet counts.
-- accumulate with goflows returns list with whitespace separation, but it also uses whitespaces for non-occuring e.g. flags. how does that make sense?
+# folder Experiments 02062021: execute remote machine classification for evaluation figures
 
 ### CODE
 - add color hexcodes to framework configuration to access same colors on all scripts
+- CHANGE samplingmode choice: not use limits set in config.py but use acutal feature-vector names instead
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 - rename scripts and feature-vectors properly and change everything connected accordingly (shittask)
@@ -84,6 +79,22 @@
 
 
 ## DONE
+- REVERSE keeping flowStartMilliseconds in Labeling.py for debugging (remove this feature from preordered (list) in flowSampling.py and packetSampling.py for AGM and CAIA or just keep it and remove it in preprocessing)
+- CAIA: sort and rename features on packet-based and flow-based sampling for easier comparison
+- CAIA: compare unsampeld flow-based and packet-based configuration output for possible mistakes in implementation
+    - check all empty cells and replace with 0 for features:
+        + 'count(tcpSynTotalCount,forward)'
+        + 'count(tcpAckTotalCount,forward)'
+        + 'count(tcpFinTotalCount,forward)',
+        + 'count(_tcpCwrTotalCount,forward)'
+        + 'count(octetTotalCount,backward)',
+        + 'count(tcpSynTotalCount,backward)',
+        + 'count(tcpAckTotalCount,backward)',
+        + 'count(tcpFinTotalCount,backward)',
+        + 'count(_tcpCwrTotalCount,backward)',
+    - check 'count(packetTotalCount,backward)', different numbers for flow- and packet-based config?
+- AGM10s: change feature to calculate packetTotalCount from destinationPort to 'apply(accumulate(protocolIdentifier),forward)' to get correct total packet counts.
+- AGM10s: accumulate with goflows returns list with whitespace separation, but it also uses whitespaces for non-occuring e.g. flags. Correct non-TCP flows for correct list generation
 - evaluation: add classification speed and F1-scores for 0 and 1 (maybe even replace Precision or Recall parameter with F1-scores), remove CPU usage and cached RAM from Spiderchart
 - use one feature-per-flag encoding instead of textual-binary-decimal encoding for AGM (flow-based and packet-based sampling)
 - change NaN replacement, separate mean calculation & replacement for Xtrain and Xtest (rpi-Preprocessing.py, starting at line 818)
