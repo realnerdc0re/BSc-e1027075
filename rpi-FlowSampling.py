@@ -873,7 +873,8 @@ def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
 
                 if superverbose: print(cfg.vcolor+'[{}/{}]:\n{}\n{}'.format(i,len(dataset.index),tmp,type(tmp))+Style.RESET_ALL)
 
-                while (tmp.size > 0 and m > 0): # iterate as long as list is not empty and there are still values to sample
+                #while (tmp.size > 0 and m > 0): # iterate as long as list is not empty and there are still values to sample
+                while (len(tmp) > 0 and m > 0): # iterate as long as list is not empty and there are still values to sample
                     psample.extend(tmp[0:m]) # sample m values
                     k = m-1 # number of packets to skip
                     tmp = tmp[m+k:] # remove sampled plus skipped packets
@@ -1019,7 +1020,7 @@ if __name__ == '__main__':
 
 
     # PER-FLOW SAMPLING
-    # CAIA VECTORS
+    # CAIA
     if cfg.vectors[j][0:4] == 'CAIA': # select CAIA based on given JSON configuration
         print('<<< {}'.format(cfg.vectors[j]))
 
@@ -1052,39 +1053,67 @@ if __name__ == '__main__':
             print('>>> No flow-based sampling, processing original capture')
 
 
-
         # CALCULATIONS
         print('>>> Create features & calculate values')
         # totalPacketCounts as CAIA features
+        print('\t>> Calculate packetTotalCount features')
         key = ['forward','backward']
         for word in key:
-            for feature in totalFeatures:
-                if word in feature:
-                    newfeature = '{},{}'.format('packetTotalCount',word)
-                    print('\t> {}'.format(newfeature))
-                    dataset.insert(6,newfeature,0)
-                    dataset[newfeature] = dataset[feature].apply(lambda x: len(x))
-                    break
+            newfeature = '{},{}'.format('packetTotalCount',word)
+            print('\t\t> {}'.format(newfeature))
+            dataset.insert(6,newfeature,0)
+            # manually set feature to gather packet counts from
+            if word   == 'forward':    tmp = 'apply(accumulate(octetTotalCount),forward)'
+            elif word == 'backward':   tmp = 'apply(accumulate(octetTotalCount),backward)'
+            dataset[newfeature] = dataset[tmp].apply(lambda x: 0 if np.isnan(x).all() else len(x))
 
         # calculate min, mean, max & stdev for CAIA features
+        print('\t>> Calculate min, mean, max and stdev features')
         key     = ['min','mean','max','stdev'] # parameters to calculate
         for feature in (ipTotal+interPacket):
             for word in key:
                 newfeature = '{}: {}'.format(feature,word)
-                print('\t> {}'.format(newfeature))
-                dataset.insert(len(dataset.columns),newfeature,0) # initialise new feature after last column
+                print('\t\t> {}'.format(newfeature))
+                dataset.insert(len(dataset.columns),newfeature,float(0)) # initialise new features after last column
 
                 # apply calculations on new features
-                if   word == 'min':   dataset[newfeature] = dataset[feature].apply(lambda x: np.amin(x))
-                elif word == 'mean':  dataset[newfeature] = dataset[feature].apply(lambda x: sum(x)/len(x))
-                elif word == 'max':   dataset[newfeature] = dataset[feature].apply(lambda x: np.amax(x))
-                elif word == 'stdev': dataset[newfeature] = dataset[feature].apply(lambda x: np.std(x))
+                if   word == 'min':   dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else int(np.amin(x)))
+                elif word == 'mean':  dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else sum(x)/len(x))
+                elif word == 'max':   dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else int(np.amax(x)))
+                #elif word == 'stdev': dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else np.std(x))
+                elif word == 'stdev': # calculating variance according to Welford
+                    for i in range (0,len(dataset.index)):
+                        stdev = None
+                        cell = dataset[feature][i] # current cell
 
-        # summarize totalCounts
-        print('>>> Calculate')
+                        if np.isnan(cell).any(): dataset.at[i,newfeature] = stdev
+                        elif len(cell) == 1:     dataset.at[i,newfeature] = 0
+                        else:
+                            # initialize variables
+                            N  = 0
+                            m  = 0
+                            m2 = 0
+
+                            for val in cell:
+                                N       +=1
+                                delta   = val - m
+                                m       = m + delta/N
+                                delta2  = val - m
+                                m2      = m2 +delta*delta2
+                            stdev = math.sqrt(m2/(N-1))
+
+                            dataset.at[i,newfeature] = stdev
+
+                        if superverbose:
+                            print(cfg.vcolor+'\n'+80*'~')
+                            print('[{}]:\nCell: {}, {}\nStdev: {}'.format(i,cell,type(cell),stdev))
+                            print(80*'~'+Style.RESET_ALL); input('')
+
+        # calculate totalCounts
+        print('\t>> Calculate total features')
         for feature in totalFeatures:
-            print('\t> {}:'.format(feature))
-            dataset[feature] = dataset[feature].apply(lambda x: sum(x))
+            print('\t\t> {}'.format(feature))
+            dataset[feature] = dataset[feature].apply(lambda x: 0 if np.isnan(x).any() else sum(x))
 
 
         # DROP, RENAME & SORT
@@ -1094,32 +1123,93 @@ if __name__ == '__main__':
             print('\t> {}'.format(feature))
             dataset.drop(columns=feature,inplace=True)
 
-        # rename features
+        #features = dataset.columns
+        #print('Features before Renaming:\n{}'.format(features))
+        #input('...')
+
         print('>>> Rename features')
-        features = dataset.columns
-        for feature in features:
-            tmp = feature.replace('apply(accumulate','(')
-            print('\t> {} >> {}'.format(feature,tmp))
-            dataset.rename(columns={feature:tmp},inplace=True)
+        renamedict = {
+            "packetTotalCount,forward":                                     'count(packetTotalCount,forward)',
+            "apply(accumulate(octetTotalCount),forward)":                   'count(octetTotalCount,forward)',
+            "apply(accumulate(tcpSynTotalCount),forward)":                  'count(tcpSynTotalCount,forward)',
+            "apply(accumulate(tcpAckTotalCount),forward)":                  'count(tcpAckTotalCount,forward)',
+            "apply(accumulate(tcpFinTotalCount),forward)":                  'count(tcpFinTotalCount,forward)',
+            "apply(accumulate(_tcpCwrTotalCount),forward)":                 'count(_tcpCwrTotalCount,forward)',
 
-        # sort features
-        print('>>> Sort features')
-        features = dataset.columns.tolist() # get list of features
+            'apply(accumulate(ipTotalLength),forward): min':                'min(ipTotalLength,forward)',
+            'apply(accumulate(ipTotalLength),forward): mean':               'mean(ipTotalLength,forward)',
+            'apply(accumulate(ipTotalLength),forward): max':                'max(ipTotalLength,forward)',
+            'apply(accumulate(ipTotalLength),forward): stdev':              'stdev(ipTotalLength,forward)',
+
+            'apply(accumulate(_interPacketTimeSeconds),forward): min':      'min(_interPacketTimeSeconds,forward)',
+            'apply(accumulate(_interPacketTimeSeconds),forward): mean':     'mean(_interPacketTimeSeconds,forward)',
+            'apply(accumulate(_interPacketTimeSeconds),forward): max':      'max(_interPacketTimeSeconds,forward)',
+            'apply(accumulate(_interPacketTimeSeconds),forward): stdev':    'stdev(_interPacketTimeSeconds,forward)',
+
+            "packetTotalCount,backward":                                    'count(packetTotalCount,backward)',
+            "apply(accumulate(octetTotalCount),backward)":                  'count(octetTotalCount,backward)',
+            "apply(accumulate(tcpSynTotalCount),backward)":                 'count(tcpSynTotalCount,backward)',
+            "apply(accumulate(tcpAckTotalCount),backward)":                 'count(tcpAckTotalCount,backward)',
+            "apply(accumulate(tcpFinTotalCount),backward)":                 'count(tcpFinTotalCount,backward)',
+            "apply(accumulate(_tcpCwrTotalCount),backward)":                'count(_tcpCwrTotalCount,backward)',
+
+            'apply(accumulate(ipTotalLength),backward): min':               'min(ipTotalLength,backward)',
+            'apply(accumulate(ipTotalLength),backward): mean':              'mean(ipTotalLength,backward)',
+            'apply(accumulate(ipTotalLength),backward): max':               'max(ipTotalLength,backward)',
+            'apply(accumulate(ipTotalLength),backward): stdev':             'stdev(ipTotalLength,backward)',
+
+            'apply(accumulate(_interPacketTimeSeconds),backward): min':     'min(_interPacketTimeSeconds,backward)',
+            'apply(accumulate(_interPacketTimeSeconds),backward): mean':    'mean(_interPacketTimeSeconds,backward)',
+            'apply(accumulate(_interPacketTimeSeconds),backward): max':     'max(_interPacketTimeSeconds,backward)',
+            'apply(accumulate(_interPacketTimeSeconds),backward): stdev':   'stdev(_interPacketTimeSeconds,backward)'
+        }
+        dataset = dataset.rename(columns=renamedict) # re-name features
+
+        print('>>> Sorting features')
         preordered = [
-        'flowStartMilliseconds',
-        'sourceIPAddress',
-        'destinationIPAddress',
-        'sourceTransportPort',
-        'destinationTransportPort',
-        'protocolIdentifier',
-        'packetTotalCount,forward',
-        'packetTotalCount,backward'
-        ]
-        for feature in preordered: features.remove(feature) # remove preordered features from list
-        features.sort() # sort remaining features
-        dataset = dataset[preordered+features]
+            'flowStartMilliseconds',
+            'sourceIPAddress',
+            'destinationIPAddress',
+            'sourceTransportPort',
+            'destinationTransportPort',
+            'protocolIdentifier',
 
-    # AGM VECTORS
+            'count(packetTotalCount,forward)',
+            'count(octetTotalCount,forward)',
+            'count(tcpSynTotalCount,forward)',
+            'count(tcpAckTotalCount,forward)',
+            'count(tcpFinTotalCount,forward)',
+            'count(_tcpCwrTotalCount,forward)',
+
+            'min(ipTotalLength,forward)',
+            'mean(ipTotalLength,forward)',
+            'max(ipTotalLength,forward)',
+            'stdev(ipTotalLength,forward)',
+
+            'min(_interPacketTimeSeconds,forward)',
+            'mean(_interPacketTimeSeconds,forward)',
+            'max(_interPacketTimeSeconds,forward)',
+            'stdev(_interPacketTimeSeconds,forward)',
+
+            'count(packetTotalCount,backward)',
+            'count(octetTotalCount,backward)',
+            'count(tcpSynTotalCount,backward)',
+            'count(tcpAckTotalCount,backward)',
+            'count(tcpFinTotalCount,backward)',
+            'count(_tcpCwrTotalCount,backward)',
+
+            'min(ipTotalLength,backward)',
+            'mean(ipTotalLength,backward)',
+            'max(ipTotalLength,backward)',
+            'stdev(ipTotalLength,backward)',
+
+            'min(_interPacketTimeSeconds,backward)',
+            'mean(_interPacketTimeSeconds,backward)',
+            'max(_interPacketTimeSeconds,backward)',
+            'stdev(_interPacketTimeSeconds,backward)'
+        ]
+        dataset = dataset[preordered]
+    # AGM
     elif cfg.vectors[j][0:3] == 'AGM': # select AGM based on given JSON configuration
         print('<<< {}'.format(cfg.vectors[j]))
 
