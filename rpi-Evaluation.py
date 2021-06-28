@@ -24,6 +24,10 @@ import matplotlib.pyplot as plt
 # create figures folder if necessary
 if not os.path.exists(cfg.figures): os.mkdir(cfg.figures)
 
+# disable figure warning
+plt.rcParams.update({'figure.max_open_warning': 0})
+
+
 
 # ARGUMENT PARSING
 import argparse
@@ -43,16 +47,17 @@ vector = {
 }
 
 # initialise empty lists
-exp                 = []
-flowfolder          = []
-packetfolder        = []
-experiments_perflow = []
-experiments_packets = []
+exp                   = []
+flowfolder            = []
+packetfolder          = []
+experiments_perflow   = []
+experiments_packets   = []
+experiments_unsampled = []
 
 
 # class object containing all necessary experiment data
 class Experiment:
-    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,maxram=0,trees=0):
+    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',modelsize=0,runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,maxram=0,trees=0,maxleaves=0,maxdepth=0,pca_n=0,pca_var=0):
         # info
         self.fullpath   = fullpath
         self.file       = file
@@ -79,8 +84,11 @@ class Experiment:
         self.parameter  = parameter # parameter including accuracy, runtime ???
         self.maxram     = maxram # maximum value for used RAM
         self.trees      = trees # number of generated RF trees
-        #self.leaves     = leaves # number of leaves
-        #self.depths     = depths # tree depths
+        self.maxleaves  = maxleaves # maximum number of leaves
+        self.maxdepth   = maxdepth # maximum tree depth
+        self.modelsize  = modelsize # size of the pickle model used for classification
+        self.pca_n      = pca_n # number of PCA components to reach explained variance
+        self.pca_var    = pca_var
 
     def __str__(self):
         return str(self.__class__)+': '+str(self.__dict__)
@@ -122,6 +130,10 @@ def createExperiments(folders,verbose=False):
             dstatcsv    = folder / 'logs_model-import_remote' / cfg.csv_dstat
             reportcsv   = folder / 'logs_model-import_remote' / cfg.csv_report
             resultcsv   = folder / 'logs_model-import_remote' / cfg.csv_result
+            # model
+            model       = folder / 'model' / 'Merged_model_remote.pkl'
+            modelsize   = os.path.getsize(model)/1000**2
+
             # import CSV as dafaframe
             info    = read_csv(infocsv,delimiter=',',encoding='utf-8',index_col=0)
             time    = read_csv(timecsv,delimiter=',',encoding='utf-8')
@@ -133,7 +145,7 @@ def createExperiments(folders,verbose=False):
             steps     = int(info['0'].iloc[3])
 
             # create Experiment object
-            tmp = Experiment(path,file,mode,vector,steps,sampling,info,time,dstat,report,result,style) # create temporary object
+            tmp = Experiment(path,file,mode,vector,steps,sampling,info,time,dstat,report,result,style,modelsize) # create temporary object
 
             if verbose: # output current experiment information
                 print('\t\t< Attributes:\t{}'.format(parts))
@@ -148,6 +160,9 @@ def createExperiments(folders,verbose=False):
             # appending Experiment object to list, based on sampling method
             if tmp.sampling   == 'flowbased': experiments_perflow.append(tmp)
             elif tmp.sampling == 'packetbased': experiments_packets.append(tmp)
+
+            # save unsampled experiments for later comparison chart creation
+            if tmp.steps == 0: experiments_unsampled.append(tmp)
 
         print('\t\t< Saving objects')
         #if verbose: input('...')
@@ -223,6 +238,20 @@ if __name__ == '__main__':
     totalmaxram   = 0 # initialize
     maxclassspeed = 0
     maxinstances  = 0
+    maxmodelsize  = 0
+
+    maxf11 = 0
+    maxrecall1 = 0
+
+    minruntime    = 10**8
+    totalminram   = 10**12
+    minclassspeed = 10**8
+    mininstances  = 10**8
+    minmodelsize  = 10**8
+
+    minf11 = 10**8
+    minrecall1 = 10**8
+
     # ITERATE THROUGH ALL EXPERIMENTS
     for n in range(0,len(folders)):
         for i in range (0,len(exp[n])):
@@ -238,13 +267,92 @@ if __name__ == '__main__':
             exp[n][i].time['epochtime'] = exp[n][i].time['epochtime'].subtract(start) # apply on exported timestamps
             exp[n][i].dstat['"epoch"']  = exp[n][i].dstat['"epoch"'].subtract(start) # apply on dstat table
             # get maximum used RAM
-            exp[n][i].maxram = exp[n][i].dstat['"used"'].max()/1024**2
+            exp[n][i].maxram = exp[n][i].dstat['"used"'].max()/1000**2
+            # get maximum tree depth and maximum leaves in Random Forest
+            tmp = exp[n][i].result['summary'][7]
+            exp[n][i].maxdepth = np.fromstring(tmp[1:len(tmp)-1],dtype=int, sep=",").max()
+            tmp = exp[n][i].result['summary'][8]
+            exp[n][i].maxleaves = np.fromstring(tmp[1:len(tmp)-1],dtype=int, sep=",").max()
+            # PCA component number & explained variance
+            exp[n][i].pca_n = int(exp[n][i].info['0'][6])
+            exp[n][i].pca_var = int(float(exp[n][i].info['0'][5])*100)
 
             # calculate various maximum values
             if (end-start) > maxruntime: maxruntime = (end-start)
-            if exp[n][i].dstat['"used"'].max()/1024**2 > totalmaxram: totalmaxram = exp[n][i].dstat['"used"'].max()/1024**2
+            if exp[n][i].dstat['"used"'].max()/1000**2 > totalmaxram: totalmaxram = exp[n][i].dstat['"used"'].max()/1000**2
             if exp[n][i].classspeed > maxclassspeed: maxclassspeed = exp[n][i].classspeed
             if exp[n][i].instances > maxinstances: maxinstances = exp[n][i].instances
+            if exp[n][i].modelsize > maxmodelsize: maxmodelsize = exp[n][i].modelsize
+
+            # calculate various maximum values
+            if (end-start) < minruntime: minruntime = (end-start)
+            if exp[n][i].classspeed < minclassspeed: minclassspeed = exp[n][i].classspeed
+            if exp[n][i].instances < mininstances: mininstances = exp[n][i].instances
+            if exp[n][i].modelsize < minmodelsize: minmodelsize = exp[n][i].modelsize
+
+            if exp[n][i].report['f1-score'][1] < minf11: minf11 = exp[n][i].report['f1-score'][1]
+            if exp[n][i].report['recall'][1] < minrecall1: minrecall1 = exp[n][i].report['recall'][1]
+
+            if exp[n][i].report['f1-score'][1] > maxf11: maxf11 = exp[n][i].report['f1-score'][1]
+            if exp[n][i].report['recall'][1] > maxrecall1: maxrecall1 = exp[n][i].report['recall'][1]
+
+
+    for n in range(0,len(folders)):
+        for i in range (0,len(exp[n])):
+            if exp[n][i].dstat['"used"'].max()/1000**2 < totalminram: totalminram = exp[n][i].dstat['"used"'].max()/1000**2
+
+
+    print('>>> Sort experiments by parameter for later comparison plot')
+    experiments_sorted = []
+    currentparameter = 0
+    # calculate parameter
+    for n in range(0,len(folders)):
+        for i in range (0,len(exp[n])):
+
+            accuracyscore   = float(exp[n][i].result['summary'][2])
+            recall0         = exp[n][i].report['recall'][0]
+            recall1         = exp[n][i].report['recall'][1]
+            precision0      = exp[n][i].report['precision'][0]
+            precision1      = exp[n][i].report['precision'][1]
+            F10             = exp[n][i].report['f1-score'][0]
+            F11             = exp[n][i].report['f1-score'][1]
+            runtime         = exp[n][i].runtime
+            classtime       = exp[n][i].classtime
+            instances       = exp[n][i].report['support'][4]
+            classspeed      = exp[n][i].classspeed
+            maxram          = exp[n][i].maxram
+            file            = exp[n][i].file
+            sampling        = exp[n][i].sampling
+            trees           = exp[n][i].result['summary'][6]
+            maxdepth        = exp[n][i].maxdepth
+            maxleaves       = exp[n][i].maxleaves
+            modelsize       = exp[n][i].modelsize
+            pca_n           = exp[n][i].pca_n
+            pca_var         = exp[n][i].pca_var
+
+            print('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n'.format(maxf11,minf11,maxrecall1,minrecall1,maxruntime,minruntime,maxclassspeed,minclassspeed,totalmaxram,totalminram))
+
+            #exp[n][i].parameter = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*instances/maxinstances
+            #exp[n][i].parameter = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*(instances/maxinstances)
+            exp[n][i].parameter = ((F11-minf11)/(maxf11-minf11) + (recall1-minrecall1)/(maxrecall1-minrecall1))/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*(instances/maxinstances)
+
+            #parameter      = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*instances/maxinstances
+
+
+            #exp[n][i].parameter  = (exp[n][i].report['f1-score'][1]*exp[n][i].report['recall'][1])/(exp[n][i].runtime/maxruntime*exp[n][i].classspeed/maxclassspeed*exp[n][i].maxram/totalmaxram)*exp[n][i].instances/maxinstances
+            experiments_sorted.append(exp[n][i])
+
+
+    #print('{}'.format(experiments_sorted))
+    #for x in experiments_sorted:
+    #    print('{}'.format(x.parameter))
+    #input('...')
+    experiments_sorted.sort(key=lambda x: x.parameter,reverse=True)
+    #print('{}'.format(experiments_sorted))
+    #for x in experiments_sorted:
+    #    print('{}'.format(x.parameter))
+    #input('...')
+
 
     print('>>> Converting memory-usage values')
     convert = ['"used"','"total"','"cach"','"free"','"used".1','"free".1'] # features to convert (RAM, SWAP)
@@ -254,7 +362,7 @@ if __name__ == '__main__':
             rows = exp[n][i].dstat.shape[0]
             for feature in convert:
                 for row in range(0,rows):
-                    tmp = exp[n][i].dstat[feature][row]/1024**2
+                    tmp = exp[n][i].dstat[feature][row]/1000**2
                     exp[n][i].dstat.at[row,feature]=tmp
 
     # CREATE MEMORY USAGE PLOTS
@@ -267,7 +375,7 @@ if __name__ == '__main__':
             ticks   = []
             labels  = []
 
-            png_file = 'figures/RAM-usage_figure{}.png' # template for PNG filename
+            png_file = 'figures/RAM-usage_{}_{}_{}_steps{}.png' # template for PNG filename
 
             # create list of relevant timestamps and labels
             for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excluding start & end timestamps
@@ -297,7 +405,7 @@ if __name__ == '__main__':
             # plot graphs
             fig = plt.figure(figsize=(21.0,9.0))
             plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"total"'], color = '#000000',label='RAM total',linewidth=3)
-            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used"'],  color = '#566573',label='RAM used',linewidth=2)
+            plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used"'],  color = '#9191AA',label='RAM used',linewidth=2)
             #plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"cach"'],  color = '#AEB6BF',label='RAM cached',linewidth=2)
             #plt.plot(exp[n][i].dstat['"epoch"'],exp[n][i].dstat['"used".1'],color = '#566573',label='SWAP used',linewidth=2)
 
@@ -317,8 +425,8 @@ if __name__ == '__main__':
             plt.legend(loc='best')
             plt.tight_layout() # increase space below x-axis for proper labeling
 
-            if verbose: print('\t<< {}'.format(png_file.format(count)))
-            plt.savefig(png_file.format(count)) # save plot to file
+            if verbose: print('\t<< {}'.format(png_file.format(title_vector,title_sampling,title_mode,title_steps)))
+            plt.savefig(png_file.format(title_vector,title_sampling,title_mode,title_steps)) # save plot to file
 
             # show/hide plots
             if (not plot): plt.close(fig) # close fig directly to not show it on script execution
@@ -332,7 +440,7 @@ if __name__ == '__main__':
         #for i in range (0,1): # test loop only one experiment
         for i in range (0,len(exp[n])):
             count += 1
-            png_file = 'figures/spiderchart_{}_{}_figure{}.png'
+            png_file = 'figures/Spiderchart_{}_{}_{}_steps{}.png'
 
             # set plot parameters
             plt.rcParams['xtick.major.pad']=15 # move labes a bit outside of outer circle
@@ -354,6 +462,11 @@ if __name__ == '__main__':
             runtime     = exp[n][i].runtime/maxruntime*100
             speed       = exp[n][i].classspeed/maxclassspeed*100
             style       = 'solid'
+            modelsize   = exp[n][i].modelsize/maxmodelsize*100
+            #instances   = (exp[n][i].report['support'][4] - mininstances)/(maxinstances - mininstances)*100
+            instances   = exp[n][i].report['support'][4]/maxinstances*100
+
+
 
             # graph title & subtitle
             title_sampling    = exp[n][i].sampling
@@ -364,14 +477,16 @@ if __name__ == '__main__':
             if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based'
             elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based'
 
-            title = '{}, {}\n'.format(title_vector,samplingtype)
+            title = '{}, {}\n\n'.format(title_vector,samplingtype)
             if title_steps == 0: subtitle = 'unsampled'
             else:                subtitle = '{}, n={}'.format(title_mode,title_steps)
 
             # VALUES AND LABELS
             # forge polar-compatible values and angles
             value   = [
-                speed,
+                #speed,
+                instances,
+                modelsize,
                 RAM_used,
                 #accuracy,
                 #f10,
@@ -385,7 +500,9 @@ if __name__ == '__main__':
 
             # label parameters
             labels = [
-                'Speed\n({}%)'.format(format(speed,".2f")),
+                #'Speed\n({}%)'.format(format(speed,".2f")),
+                'Instances\n({}%)'.format(format(instances,".2f")),
+                'Modelsize\n({}%)'.format(format(modelsize,".2f")),
                 'RAM\n({}%)'.format(format(RAM_used,".2f")),
                 #'Accuracy\n({}%)'.format(format(accuracy,".2f")),
                 #'F1-score "0"\n({}%)'.format(format(f10,".2f")),
@@ -403,20 +520,23 @@ if __name__ == '__main__':
             angles  += angles[:1] # close angle "circle" for spider-chart
 
             fig = plt.figure(figsize=(10.0,10.0))
+
             ax  = plt.subplot(polar=True)
             ax.set_ylim(0,100) # limit y-values to 100% for similar plots
+            ax.set_rlabel_position(49)
 
-            plt.polar(angles,value,linestyle=style,linewidth=3, color='#566573')
+            plt.yticks([0,25,50,65,75,85,95], color='grey', size=9)
+            plt.polar(angles,value,linestyle=style,linewidth=3, color='#9191AA')
             plt.xticks(angles[:-1],labels) # pass all angles except last (its the repetition of the first value)
             plt.title(title,ha='center',fontsize=16) # set title
-            plt.suptitle(subtitle,x=0.515,y=0.905,ha='center',fontsize=11) # suptitle position between 0 and 1
+            plt.suptitle(subtitle,x=0.515,y=0.965,ha='center',fontsize=11) # suptitle position between 0 and 1
 
             # shrink chart box to enable legend positioning blow plot
             #box = ax.get_position()
             #ax.set_position([box.x0, box.y0,box.width, box.height])
 
-            if verbose: print('\t<< {}'.format(png_file.format(vector[exp[n][i].vector],samplingtype,count)))
-            plt.savefig(png_file.format(vector[exp[n][i].vector],samplingtype,count)) # save plot to file
+            if verbose: print('\t<< {}'.format(png_file.format(vector[exp[n][i].vector],samplingtype)))
+            plt.savefig(png_file.format(vector[exp[n][i].vector],samplingtype,cfg.samplingmode[exp[n][i].mode],exp[n][i].steps)) # save plot to file
 
             # show/hide plots
             if (not plot): plt.close(fig) # close fig directly to not show it on script execution
@@ -441,6 +561,615 @@ if __name__ == '__main__':
     palette.append('#287F1C')
     palette.append('#216918')
 
+    # https://coolors.co/ffae03-e67f0d-fe4e00-e9190f-ff0f80 ORANGE PALETTE
+    paletteorange = []
+    paletteorange.append('#FF0F80')
+    paletteorange.append('#F41448')
+    paletteorange.append('#FE4E00')
+    paletteorange.append('#E67F0D')
+    paletteorange.append('#FFAE03')
+    paletteorange = list(reversed(paletteorange))
+
+    # https://coolors.co/000505-3b3355-5d5d81-bfcde0-fefcfd BLUE PALETTE
+    paletteblue = []
+    paletteblue.append('#1D1D28')
+    paletteblue.append('#37374C')
+    paletteblue.append('#9191AA')
+    paletteblue.append('#C5C5DB')
+    paletteblue = list(reversed(paletteblue)) # plot light colors first
+
+    # https://coolors.co/52d1dc-475b5a-8d8e8e-a3a9aa-bbbbbf GRAY PALETTE
+    palettegray = []
+    palettegray.append('#4F4F5A')
+    #palettegray.append('#5F5F67')
+    palettegray.append('#6E6E74')
+    #palettegray.append('#7E7E81')
+    palettegray.append('#8D8D8E')
+    #palettegray.append('#99999C')
+    #palettegray.append('#A5A5A9')
+    #palettegray.append('#B0B0B4')
+    palettegray.append('#BBBBBE')
+
+    # https://coolors.co/eef0f2-c6c7c4-a2999e-846a6a-353b3c GRAY PALETTE 2
+    # https://coolors.co/8bc95f-44fc54-6cd426-2f911d-346617 GREEN PALETTE
+
+
+
+    # FEATURE-VECTORS COMPARISON PLOTS
+    print('\t<< feature-vectors')
+    for i in range(0,len(vectors)):
+        print('\t\t< {}'.format(cfg.vectors[vectors[i]]))
+
+    count = 0
+    compare = exp.copy() # copy all experiment data
+    for v in vectors: # iterate experiments with similar feature-vector
+        for m in modes: # iterate modes
+            tmp = []
+
+            tmp_color = palette.copy()
+            tmpgray = palettegray.copy()
+            tmpblue = paletteblue.copy()
+            tmporange = paletteorange.copy()
+
+            plt.rcParams['xtick.major.pad'] = 15 # move labes a bit outside of outer 100% circle
+
+            count += 1
+            png_file = 'figures/Spiderchart-Comparison_{}_{}_{}.png'
+
+            for n in range(0,len(folders)): # iterate folders
+                for i in range (0,len(exp[n])):
+                    if exp[n][i].vector == v and exp[n][i].mode == m and exp[n][i].steps > 0:
+                        tmp.append(exp[n][i])
+                    comparemode = exp[n][i].sampling
+
+            for tmpunsampled in experiments_unsampled: # search appropriate unsampled comparison
+                if tmpunsampled.vector == v and len(tmp)>0:
+                    tmp.append(tmpunsampled)
+                    break
+
+            # lists to accumulate values & labels for plots
+            compare_values = []
+            compare_angles = []
+            compare_labels  = []
+            compare_colors = []
+            compare_sampling = []
+            compare_style = []
+            compare_width = []
+
+            for x in tmp: # iterate over current bundle of experiments
+                # relevant values for chart creation
+                CPU_max     = x.dstat['"usr"'].max()
+                RAM_total   = x.dstat['"total"'].max() # total RAM available
+                RAM_used    = x.dstat['"used"'].max()/RAM_total*100
+                RAM_cached  = x.dstat['"cach"'].max()/RAM_total*100
+                accuracy    = float(x.result['summary'][2])*100
+                recall0     = x.report['recall'][0]*100
+                recall1     = x.report['recall'][1]*100
+                prec0       = x.report['precision'][0]*100
+                prec1       = x.report['precision'][1]*100
+                runtime     = x.runtime/maxruntime*100
+                f11         = x.report['f1-score'][1]*100
+                speed       = x.classspeed/maxclassspeed*100
+                modelsize   = x.modelsize/maxmodelsize*100
+
+                # set specific style for unsampled experiments
+                if x.steps==0 and x.sampling=='flowbased': style = 'solid'
+                elif x.steps==0 and x.sampling=='packetbased': style = 'solid'
+                else: style       = x.style # plot-style
+
+                # nicer output for legend
+                if x.sampling     == 'flowbased':   samplingtype = 'flow-based'
+                elif x.sampling   == 'packetbased': samplingtype = 'packet-based'
+
+                # forge polar-compatible values and angles
+                #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+                #value   = [RAM_used,accuracy,recall0,prec0,recall1,prec1,runtime]
+                value   = [
+                    #speed,
+                    modelsize,
+                    RAM_used,
+                    #accuracy,
+                    #f10,
+                    #recall0,
+                    #prec0,
+                    f11,
+                    recall1,
+                    prec1,
+                    runtime
+                ]
+
+                N       = len(value) # number of different parameters shown in spider-chart
+                value   += value[:1] # close value "circle" for sider-chart
+                angles  = [n / float(N) * 2 * pi for n in range(N)]
+                angles  += angles[:1] # close angle "circle" for spider-chart
+
+                # pick (random) color from list
+                if x.steps == 0: color = 'black'
+                else:
+                    #color = random.choice(tmp_color)
+                    #tmp_color.remove(color)
+                    for c in tmpblue:
+                        color = c
+                        tmpblue.remove(color)
+                        break
+
+                # title & label
+                title = '{}, {}\n\n'.format(vector[x.vector],samplingtype)
+                if x.steps > 0: title_mode        = cfg.samplingmode[x.mode]
+                #print(title_mode)
+                #input('title.mode')
+                subtitle = '{}'.format(title_mode)
+                if x.steps == 0:
+                    label = 'unsampled'
+                    #style = (0,(3,1,1,1))
+                    style = (0,(1,1)) # densely dotted
+
+                else:
+                    label = 'n = {}'.format(x.steps)
+                    style = 'solid'
+                #else: label = 'n = {}, {}'.format(x.steps,cfg.samplingmode[x.mode])
+
+                if x.steps == 0: width = 3.5
+                else: width = 2
+
+                # create lists for comparison-plot
+                compare_values.append(value)
+                compare_angles.append(angles)
+                compare_colors.append(color)
+                compare_labels.append(label)
+                compare_style.append(style)
+                compare_width.append(width)
+
+                plt.figure(figsize=(10.0,10.0))
+                ax = plt.subplot(polar=True)
+
+
+                for c in range(0,len(compare_values)): # create plots
+                    plt.polar(compare_angles[c],compare_values[c],linewidth=compare_width[c],linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
+                    #plt.polar(compare_angles[c],compare_values[c],linewidth=compare_width[c],linestyle='solid',label=compare_labels[c],color=compare_colors[c])
+
+                stats = [
+                        #'Speed',
+                        'Model\nSize',
+                        '\nRAM',
+                        #'Accuracy\n({}%)'.format(format(accuracy,".2f")),
+                        #'F1-score "0"\n({}%)'.format(format(f10,".2f")),
+                        #'Recall "0"\n({}%)'.format(format(recall0,".2f")),
+                        #'Precision "0"\n({}%)'.format(format(prec0,".2f")),
+                        'F1-score "1"',
+                        'Recall "1"',
+                        'Precision "1"',
+                        'Runtime'
+                    ]
+
+                plt.xticks(compare_angles[0][:-1],stats)
+                ax.set_rlabel_position(58)
+                plt.yticks([0,25,50,60,75,85,95], color='grey', size=9)
+                plt.ylim(0,100)
+                plt.title(title,ha='center',fontsize=16) # set title
+                plt.suptitle(subtitle,x=0.515,y=0.925,ha='center',fontsize=11) # suptitle position between 0 and 1
+
+
+                # shrink chart box to enable legend positioning below plot
+                box = ax.get_position()
+                ax.set_position([box.x0, box.y0 + box.height * 0.15,box.width, box.height * 0.85])
+
+                # bottom legend
+                bottomlegend = plt.legend(bbox_to_anchor=(0., -0.15, 1, .102), loc='lower left',ncol=2, mode="expand", borderaxespad=0.)
+                ax = plt.gca().add_artist(bottomlegend)
+
+                if verbose: print('\t\t\t< {}'.format(png_file.format(vector[x.vector],samplingtype,title_mode)))
+                plt.savefig(png_file.format(vector[x.vector],samplingtype,title_mode)) # save plot to file
+
+                # show/hide plots
+                if (not plot): plt.close(fig) # close fig directly to not show it on script execution
+                else: plt.show() # show single plot
+
+    compare_values = []
+    compare_angles = []
+    compare_labels  = []
+    compare_colors = []
+    compare_style = []
+    compare_width = []
+
+    tmp_color = palette.copy()
+    tmpgray = palettegray.copy()
+    tmpblue = paletteblue.copy()
+    tmporange = paletteorange.copy()
+
+    print('\t<< Parameter ranking')
+    i = 0
+    for x in experiments_sorted:
+        i +=1
+        if i == 6: break
+
+        print('\t\t< {}'.format(format(x.parameter,".2f")))
+
+        plt.rcParams['xtick.major.pad'] = 15 # move labes a bit outside of outer 100% circle
+        png_file = 'figures/Spiderchart-Comparison_Parameter-Ranking.png'
+
+        # relevant values for chart creation
+        CPU_max     = x.dstat['"usr"'].max()
+        RAM_total   = x.dstat['"total"'].max() # total RAM available
+        RAM_used    = x.dstat['"used"'].max()/RAM_total*100
+        RAM_cached  = x.dstat['"cach"'].max()/RAM_total*100
+        accuracy    = float(x.result['summary'][2])*100
+        recall0     = x.report['recall'][0]*100
+        recall1     = x.report['recall'][1]*100
+        prec0       = x.report['precision'][0]*100
+        prec1       = x.report['precision'][1]*100
+        runtime     = x.runtime/maxruntime*100
+        f11         = x.report['f1-score'][1]*100
+        speed       = x.classspeed/maxclassspeed*100
+        modelsize   = x.modelsize/maxmodelsize*100
+
+        # set specific style for unsampled experiments
+        if x.steps==0 and x.sampling=='flowbased': style = 'solid'
+        elif x.steps==0 and x.sampling=='packetbased': style = 'solid'
+        else: style       = x.style # plot-style
+
+        # nicer output for legend
+        if x.sampling     == 'flowbased':   samplingtype = 'flow-based'
+        elif x.sampling   == 'packetbased': samplingtype = 'packet-based'
+
+        # forge polar-compatible values and angles
+        #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+        #value   = [RAM_used,accuracy,recall0,prec0,recall1,prec1,runtime]
+        value   = [
+            #speed,
+            modelsize,
+            RAM_used,
+            #accuracy,
+            #f10,
+            #recall0,
+            #prec0,
+            f11,
+            recall1,
+            prec1,
+            runtime
+        ]
+
+        N       = len(value) # number of different parameters shown in spider-chart
+        value   += value[:1] # close value "circle" for sider-chart
+        angles  = [n / float(N) * 2 * pi for n in range(N)]
+        angles  += angles[:1] # close angle "circle" for spider-chart
+
+        # pick (random) color from list
+        if x.steps == 0: color = 'black'
+        else:
+            for c in tmporange:
+                color = c
+                tmporange.remove(color)
+                break
+
+        # title & label
+        title = 'Parameter Ranking\n'
+        label = '#{}: {}, {}, n={}'.format(i,vector[x.vector],cfg.samplingmode[x.mode],x.steps)
+
+
+        if x.steps == 0: width = 3.5
+        else: width = 2
+
+        # create lists for comparison-plot
+        compare_values.append(value)
+        compare_angles.append(angles)
+        compare_colors.append(color)
+        compare_labels.append(label)
+        compare_style.append(style)
+        compare_width.append(width)
+
+    plt.figure(figsize=(10.0,10.0))
+    ax = plt.subplot(polar=True)
+
+    for c in range(0,len(compare_values)): # create plots
+        plt.polar(compare_angles[c],compare_values[c],linewidth=compare_width[c],linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
+        #plt.polar(compare_angles[c],compare_values[c],linewidth=compare_width[c],linestyle='solid',label=compare_labels[c],color=compare_colors[c])
+
+    stats = [
+            #'Speed',
+            'Model\nSize',
+            '\nRAM',
+            #'Accuracy\n({}%)'.format(format(accuracy,".2f")),
+            #'F1-score "0"\n({}%)'.format(format(f10,".2f")),
+            #'Recall "0"\n({}%)'.format(format(recall0,".2f")),
+            #'Precision "0"\n({}%)'.format(format(prec0,".2f")),
+            'F1-score "1"',
+            'Recall "1"',
+            'Precision "1"',
+            'Runtime'
+        ]
+
+    plt.xticks(compare_angles[0][:-1],stats)
+    ax.set_rlabel_position(58)
+    plt.yticks([0,25,50,60,75,85,95], color='grey', size=9)
+    plt.ylim(0,100)
+    plt.title(title,ha='center',fontsize=16) # set title
+    #plt.suptitle(subtitle,x=0.515,y=0.925,ha='center',fontsize=11) # suptitle position between 0 and 1
+
+
+    # shrink chart box to enable legend positioning below plot
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.15,box.width, box.height * 0.85])
+
+    # actual legend
+    #legend = plt.legend(loc='best')
+    #ax = plt.gca().add_artist(legend)
+
+    # forge top legend to display different linestyles for flow-based and packet-based sampling
+    flowbased_legend   = Line2D([0],[0], label='flow-based sampling',color='k',linestyle=':')
+    packetbased_legend = Line2D([0],[0], label='packet-based sampling',color='k',linestyle='-')
+    handles, labels = plt.gca().get_legend_handles_labels()
+    handles.extend([flowbased_legend,packetbased_legend])
+
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+    # top legend
+    toplegend = plt.legend(bbox_to_anchor=(0., 1.05, 1, .102), loc='upper left',ncol=2, mode="expand", borderaxespad=0., handles=[flowbased_legend,packetbased_legend])
+    ax = plt.gca().add_artist(toplegend)
+
+    # bottom legend
+    bottomlegend = plt.legend(bbox_to_anchor=(0., -0.15, 1, .102), loc='lower left',ncol=2, mode="expand", borderaxespad=0.)
+    ax = plt.gca().add_artist(bottomlegend)
+
+    if verbose: print('\t\t\t< {}'.format(png_file))
+    plt.savefig(png_file) # save plot to file
+
+    # show/hide plots
+    if (not plot): plt.close(fig) # close fig directly to not show it on script execution
+    else: plt.show() # show single plot
+
+
+    # CREATE TABLE
+    # first column contains different sampling/techniques, vectors & steps
+    columns_list = [
+        'parameter',
+        'parameter2',
+        #'parameter3',
+        'parameter4',
+        #'parameter5',
+        'sampling',
+        'vector',
+        'pattern',
+        'experiment',
+        'accuracy-score',
+        'recall 0',
+        'recall 1',
+        'precision0',
+        'precision1',
+        'F1 0',
+        'F1 1',
+        'runtime (s)',
+        'classification time (s)',
+        'instances',
+        'classification speed (instances/s)',
+        'maxRAM (MB)',
+        'trees',
+        'maxdepth',
+        'maxleaves',
+        'modelsize (MB)',
+        'PCA components',
+        'PCA explained variance (%)'
+        ]
+
+    # initialize empty dataframe with given columns
+    chart = pd.DataFrame(columns=columns_list)
+
+    # fill chart with data, therefore cycle through experiment configurations
+    print('>>> Creating comparison table')
+    count = 0
+    for n in range(0,len(folders)):
+        for i in range (0,len(exp[n])):
+            tmp = exp[n][i] # current experiment
+
+            title = '{}'.format(cfg.samplingmode[tmp.mode])
+            if tmp.steps == 0: steps = 'unsampled'
+            else:              steps = 'n = {}'.format(tmp.steps)
+            featurevector   = vector[tmp.vector]
+            accuracyscore   = float(tmp.result['summary'][2])
+            recall0         = tmp.report['recall'][0]
+            recall1         = tmp.report['recall'][1]
+            precision0      = tmp.report['precision'][0]
+            precision1      = tmp.report['precision'][1]
+            F10             = tmp.report['f1-score'][0]
+            F11             = tmp.report['f1-score'][1]
+            runtime         = tmp.runtime
+            classtime       = tmp.classtime
+            instances       = tmp.report['support'][4]
+            classspeed      = tmp.classspeed
+            maxram          = tmp.maxram
+            file            = tmp.file
+            sampling        = tmp.sampling
+            trees           = tmp.result['summary'][6]
+            maxdepth        = tmp.maxdepth
+            maxleaves       = tmp.maxleaves
+            modelsize       = tmp.modelsize
+            pca_n           = tmp.pca_n
+            pca_var         = tmp.pca_var
+            # various parameters
+            #parameter       = (F11*recall1)/(runtime/maxruntime*classspeed/maxclassspeed*maxram/totalmaxram)*instances/maxinstances
+            #parameter      = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*instances/maxinstances
+            parameter       = tmp.parameter
+            #parameter2      = (F11 + recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)
+            parameter2      = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))
+
+            #parameter3      = (F11 + recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances
+            parameter4      = (F11+recall1+precision1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances
+            #parameter5      = (F11*recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances # maybe add normalized model filesize?
+
+            # filename of saved table
+            savecsv         = 'figures/comparison.csv'
+
+            # better wording for final table
+            if sampling     == 'flowbased':   samplingtype = 'flow-based'
+            elif sampling   == 'packetbased': samplingtype = 'packet-based'
+
+            # create dataframe with current experiments values
+            tmpdf = pd.DataFrame([[parameter,parameter2,parameter4,samplingtype,featurevector,steps,title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,classtime,instances,classspeed,maxram,trees,maxdepth,maxleaves,modelsize,pca_n,pca_var]],columns=columns_list)
+            chart = chart.append(tmpdf) # append current experiment data to final table
+
+    # sort table based on samplingtype and 'experiments'
+    chart = chart.sort_values(by=['vector','sampling'])
+    print('>>> Saving comparison table: {}'.format(savecsv))
+    chart.to_csv(savecsv)
+    if verbose: print('\t<< {}\n{}\n'.format(savecsv,chart))
+
+    exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    print('\t<< Sampling-steps')
+    for i in range(0,len(steps)):
+        print('\t\t< n = {}'.format(steps[i]))
+
+    count = 0
+    for s in steps: # accumulate experiments with similar sampling steps
+        tmp = []
+        tmp_color = palette.copy()
+        count += 1
+        png_file = 'figures/Spiderchart-Comparison_steps_figure{}.png'
+
+        for n in range(0,len(folders)):
+            for i in range (0,len(exp[n])):
+                if exp[n][i].steps == s:
+                    tmp.append(exp[n][i])
+
+        # create lists for comparison-plot
+        compare_values = []
+        compare_angles = []
+        compare_labels  = []
+        compare_colors = []
+        compare_style = []
+
+        # SORT EXPERIMENTS FOR INCREASED LEGEND READABILITY
+        tmp = sorted(tmp, key=lambda x: (x.sampling,x.vector))
+
+        for x in tmp: # iterate over current bundle of experiments
+            # relevant values for chart creation
+            CPU_max     = x.dstat['"usr"'].max()
+            RAM_total   = x.dstat['"total"'].max() # total RAM available
+            RAM_used    = x.dstat['"used"'].max()/RAM_total*100
+            RAM_cached  = x.dstat['"cach"'].max()/RAM_total*100
+            accuracy    = float(x.result['summary'][2])*100
+            recall0     = x.report['recall'][0]*100
+            recall1     = x.report['recall'][1]*100
+            prec0       = x.report['precision'][0]*100
+            prec1       = x.report['precision'][1]*100
+            runtime     = x.runtime/maxruntime*100
+            style       = x.style # plot-style
+            speed       = x.classspeed/maxclassspeed*100
+
+            # nicer output for legend
+            if x.sampling     == 'flowbased':   samplingtype = 'flow-based'
+            elif x.sampling   == 'packetbased': samplingtype = 'packet-based'
+
+            # forge polar-compatible values and angles
+            #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
+            value   = [RAM_used,accuracy,recall0,prec0,recall1,prec1,runtime]
+
+            N       = len(value) # number of different parameters shown in spider-chart
+            value   += value[:1] # close value "circle" for sider-chart
+            angles  = [n / float(N) * 2 * pi for n in range(N)]
+            angles  += angles[:1] # close angle "circle" for spider-chart
+
+            # pick random color from list
+            color = random.choice(tmp_color)
+            tmp_color.remove(color)
+
+            # title & label
+            if s == 0: title = 'unsampled'
+            else:      title = 'n = {}'.format(s)
+            #label = '{}, {}, {}'.format(vector[x.vector],samplingtype,cfg.samplingmode[x.mode])
+            label = '{}, {}'.format(vector[x.vector],cfg.samplingmode[x.mode])
+
+
+            # create lists for comparison-plot
+            compare_values.append(value)
+            compare_angles.append(angles)
+            compare_colors.append(color)
+            compare_labels.append(label)
+            compare_style.append(style)
+
+        plt.figure(figsize=(12.0,12.0))
+        ax = plt.subplot(polar=True)
+        width = 2
+
+        for c in range(0,len(compare_values)): # create plots
+            plt.polar(compare_angles[c],compare_values[c],linewidth=width,linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
+
+        #stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+        stats = ['used RAM','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
+        plt.xticks(compare_angles[0][:-1],stats)
+        ax.set_rlabel_position(58)
+        plt.yticks([0,25,50,75,100], color='grey', size=10)
+        plt.ylim(0,100)
+        plt.title(title,ha='center',fontsize=16) # set title
+
+        # shrink chart box to enable legend positioning below plot
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.15,box.width, box.height * 0.85])
+
+        # actual legend
+        #legend = plt.legend(loc='best')
+        #ax = plt.gca().add_artist(legend)
+
+        # forge top legend to display different linestyles for flow-based and packet-based sampling
+        flowbased_legend   = Line2D([0],[0], label='flow-based sampling',color='k',linestyle=':')
+        packetbased_legend = Line2D([0],[0], label='packet-based sampling',color='k',linestyle='-')
+        handles, labels = plt.gca().get_legend_handles_labels()
+        handles.extend([flowbased_legend,packetbased_legend])
+
+        # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+        # top legend
+        toplegend = plt.legend(bbox_to_anchor=(0., 1.05, 1, .102), loc='upper left',ncol=2, mode="expand", borderaxespad=0., handles=[flowbased_legend,packetbased_legend])
+        ax = plt.gca().add_artist(toplegend)
+
+        # bottom legend
+        bottomlegend = plt.legend(bbox_to_anchor=(0., -0.15, 1, .102), loc='lower left',ncol=2, mode="expand", borderaxespad=0.)
+        ax = plt.gca().add_artist(bottomlegend)
+
+        #plt.legend(loc='best',handles=handles)
+
+        if verbose: print('\t\t\t< {}'.format(png_file.format(count)))
+        plt.savefig(png_file.format(count)) # save plot to file
+
+        # show/hide plots
+        if (not plot): plt.close(fig) # close fig directly to not show it on script execution
+        else: plt.show() # show single plot
+
+
+
+
+
+
+
+
+
+
+
+
 
     # FEATURE-VECTORS BUNDLE
     print('\t<< feature-vectors')
@@ -451,11 +1180,16 @@ if __name__ == '__main__':
     compare = exp.copy() # copy all experiment data
     for v in vectors: # accumulate experiments with similar feature-vector
         tmp = []
+
         tmp_color = palette.copy()
+        tmpgray = palettegray.copy()
+        tmpblue = paletteblue.copy()
+        tmporange = paletteorange.copy()
+
         count += 1
         png_file = 'figures/Spiderchart-Comparison_vectors_figure{}.png'
 
-        for n in range(0,len(folders)):
+        for n in range(0,len(folders)): # iterate folders
             for i in range (0,len(exp[n])):
                 if exp[n][i].vector == v:
                     tmp.append(exp[n][i])
@@ -512,12 +1246,46 @@ if __name__ == '__main__':
             angles  += angles[:1] # close angle "circle" for spider-chart
 
             # pick (random) color from list
-            if x.steps == 0:
-                color = 'black'
-                #tmp_color.remove(color)
+            if x.steps == 0: color = 'black'
             else:
                 color = random.choice(tmp_color)
                 tmp_color.remove(color)
+                if cfg.vectors[v][0:3] == 'AGM' and x.sampling == 'flowbased':
+                    if cfg.samplingmode[x.mode][0:5] == 'every':
+                        color = random.choice(tmporange)
+                        tmporange.remove(color)
+                    elif cfg.samplingmode[x.mode][0:8] == 'sample n':
+                        color = random.choice(tmpblue)
+                        tmpblue.remove(color)
+                    else:
+                        color = random.choice(tmpgray)
+                        tmpgray.remove(color)
+                        style = 'solid'
+                elif cfg.vectors[v][0:3] == 'AGM' and x.sampling == 'packetbased':
+                    if cfg.samplingmode[x.mode][0:5] == 'every':
+                        color = random.choice(tmpblue)
+                        tmpblue.remove(color)
+                    else:
+                        color = random.choice(tmpgray)
+                        tmpgray.remove(color)
+                        style = 'solid'
+                elif cfg.vectors[v][0:4] == 'CAIA' and x.sampling == 'packetbased':
+                    if cfg.samplingmode[x.mode][0:5] == 'every':
+                        color = random.choice(tmporange)
+                        tmporange.remove(color)
+                    else:
+                        color = random.choice(tmpgray)
+                        tmpgray.remove(color)
+                        style = 'solid'
+                elif cfg.vectors[v][0:3] == 'AGM' and x.sampling == 'flowbased':
+                    if cfg.samplingmode[x.mode][0:5] == 'every':
+                        color = random.choice(tmpblue)
+                        tmpblue.remove(color)
+                    else:
+                        color = random.choice(tmpgray)
+                        tmpgray.remove(color)
+                        style = 'solid'
+
 
             # title & label
             title = '{}, {}\n'.format(vector[x.vector],samplingtype)
@@ -525,8 +1293,8 @@ if __name__ == '__main__':
             if x.steps == 0: label = 'unsampled'
             else: label = 'n = {}, {}'.format(x.steps,cfg.samplingmode[x.mode])
 
-            if x.steps == 0: width = 3
-            else: width = 1.5
+            if x.steps == 0: width = 3.5
+            else: width = 2
 
             # create lists for comparison-plot
             compare_values.append(value)
@@ -537,13 +1305,13 @@ if __name__ == '__main__':
             compare_width.append(width)
 
 
-
         plt.figure(figsize=(10.0,10.0))
         ax = plt.subplot(polar=True)
 
 
         for c in range(0,len(compare_values)): # create plots
-            plt.polar(compare_angles[c],compare_values[c],linewidth=compare_width[c],linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
+            #plt.polar(compare_angles[c],compare_values[c],linewidth=compare_width[c],linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
+            plt.polar(compare_angles[c],compare_values[c],linewidth=compare_width[c],linestyle='solid',label=compare_labels[c],color=compare_colors[c])
 
         #stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
         #stats = ['used RAM','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
@@ -606,207 +1374,12 @@ if __name__ == '__main__':
 
 
 
-    print('\t<< Sampling-steps')
-    for i in range(0,len(steps)):
-        print('\t\t< n = {}'.format(steps[i]))
-
-    count = 0
-    for s in steps: # accumulate experiments with similar sampling steps
-        tmp = []
-        tmp_color = palette.copy()
-        count += 1
-        png_file = 'figures/Spiderchart-Comparison_steps_figure{}.png'
-
-        for n in range(0,len(folders)):
-            for i in range (0,len(exp[n])):
-                if exp[n][i].steps == s:
-                    tmp.append(exp[n][i])
-
-        # create lists for comparison-plot
-        compare_values = []
-        compare_angles = []
-        compare_labels  = []
-        compare_colors = []
-        compare_style = []
-
-        # SORT EXPERIMENTS FOR INCREASED LEGEND READABILITY
-        tmp = sorted(tmp, key=lambda x: (x.sampling,x.vector))
-
-        for x in tmp: # iterate over current bundle of experiments
-            # relevant values for chart creation
-            CPU_max     = x.dstat['"usr"'].max()
-            RAM_total   = x.dstat['"total"'].max() # total RAM available
-            RAM_used    = x.dstat['"used"'].max()/RAM_total*100
-            RAM_cached  = x.dstat['"cach"'].max()/RAM_total*100
-            accuracy    = float(x.result['summary'][2])*100
-            recall0     = x.report['recall'][0]*100
-            recall1     = x.report['recall'][1]*100
-            prec0       = x.report['precision'][0]*100
-            prec1       = x.report['precision'][1]*100
-            runtime     = x.runtime/maxruntime*100
-            style       = x.style # plot-style
-            speed       = x.classspeed
-
-            # nicer output for legend
-            if x.sampling     == 'flowbased':   samplingtype = 'flow-based'
-            elif x.sampling   == 'packetbased': samplingtype = 'packet-based'
-
-            # forge polar-compatible values and angles
-            #value   = [RAM_used,RAM_cached,CPU_max,accuracy,recall0,prec0,recall1,prec1,runtime]
-            value   = [RAM_used,accuracy,recall0,prec0,recall1,prec1,runtime]
-
-            N       = len(value) # number of different parameters shown in spider-chart
-            value   += value[:1] # close value "circle" for sider-chart
-            angles  = [n / float(N) * 2 * pi for n in range(N)]
-            angles  += angles[:1] # close angle "circle" for spider-chart
-
-            # pick random color from list
-            color = random.choice(tmp_color)
-            tmp_color.remove(color)
-
-            # title & label
-            if s == 0: title = 'unsampled'
-            else:      title = 'n = {}'.format(s)
-            #label = '{}, {}, {}'.format(vector[x.vector],samplingtype,cfg.samplingmode[x.mode])
-            label = '{}, {}'.format(vector[x.vector],cfg.samplingmode[x.mode])
-
-
-            # create lists for comparison-plot
-            compare_values.append(value)
-            compare_angles.append(angles)
-            compare_colors.append(color)
-            compare_labels.append(label)
-            compare_style.append(style)
-
-        plt.figure(figsize=(12.0,12.0))
-        ax = plt.subplot(polar=True)
-        width = 2
-
-        for c in range(0,len(compare_values)): # create plots
-            plt.polar(compare_angles[c],compare_values[c],linewidth=width,linestyle=compare_style[c],label=compare_labels[c],color=compare_colors[c])
-
-        #stats = ['used RAM','cached RAM','CPU usage','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
-        stats = ['used RAM','Accuracy','Recall\n"0"','Precision\n"0"','Recall\n"1"','Precision\n"1"','Runtime']
-        plt.xticks(compare_angles[0][:-1],stats)
-        ax.set_rlabel_position(60)
-        plt.yticks([0,25,50,75,100], color='grey', size=10)
-        plt.ylim(0,100)
-        plt.title(title,ha='center',fontsize=16) # set title
-
-        # shrink chart box to enable legend positioning below plot
-        box = ax.get_position()
-        ax.set_position([box.x0, box.y0 + box.height * 0.15,box.width, box.height * 0.85])
-
-        # actual legend
-        #legend = plt.legend(loc='best')
-        #ax = plt.gca().add_artist(legend)
-
-        # forge top legend to display different linestyles for flow-based and packet-based sampling
-        flowbased_legend   = Line2D([0],[0], label='flow-based sampling',color='k',linestyle=':')
-        packetbased_legend = Line2D([0],[0], label='packet-based sampling',color='k',linestyle='-')
-        handles, labels = plt.gca().get_legend_handles_labels()
-        handles.extend([flowbased_legend,packetbased_legend])
-
-        # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
-        # top legend
-        toplegend = plt.legend(bbox_to_anchor=(0., 1.05, 1, .102), loc='upper left',ncol=2, mode="expand", borderaxespad=0., handles=[flowbased_legend,packetbased_legend])
-        ax = plt.gca().add_artist(toplegend)
-
-        # bottom legend
-        bottomlegend = plt.legend(bbox_to_anchor=(0., -0.15, 1, .102), loc='lower left',ncol=2, mode="expand", borderaxespad=0.)
-        ax = plt.gca().add_artist(bottomlegend)
-
-        #plt.legend(loc='best',handles=handles)
-
-        if verbose: print('\t\t\t< {}'.format(png_file.format(count)))
-        plt.savefig(png_file.format(count)) # save plot to file
-
-        # show/hide plots
-        if (not plot): plt.close(fig) # close fig directly to not show it on script execution
-        else: plt.show() # show single plot
 
 
 
-    # CREATE TABLE
-    # first column contains different sampling/techniques, vectors & steps
-    columns_list = [
-        'parameter',
-        'parameter2',
-        'parameter3',
-        'parameter4',
-        'parameter5',
-        'sampling',
-        'vector',
-        'pattern',
-        'experiment',
-        'accuracy-score',
-        'recall 0',
-        'recall 1',
-        'precision0',
-        'precision1',
-        'F1 0',
-        'F1 1',
-        'runtime',
-        'classification time',
-        'instances',
-        'classification speed',
-        'maxRAM',
-        'trees'
-        ]
 
-    # initialize empty dataframe with given columns
-    chart = pd.DataFrame(columns=columns_list)
 
-    # fill chart with data, therefore cycle through experiment configurations
-    print('>>> Creating comparison table')
-    count = 0
-    for n in range(0,len(folders)):
-        for i in range (0,len(exp[n])):
-            tmp = exp[n][i] # current experiment
 
-            title = '{}'.format(cfg.samplingmode[tmp.mode])
-            if tmp.steps == 0: steps = 'unsampled'
-            else:              steps = 'n = {}'.format(tmp.steps)
-            featurevector   = vector[tmp.vector]
-            accuracyscore   = float(tmp.result['summary'][2])
-            recall0         = tmp.report['recall'][0]
-            recall1         = tmp.report['recall'][1]
-            precision0      = tmp.report['precision'][0]
-            precision1      = tmp.report['precision'][1]
-            F10             = tmp.report['f1-score'][0]
-            F11             = tmp.report['f1-score'][1]
-            runtime         = tmp.runtime
-            classtime       = tmp.classtime
-            instances       = tmp.report['support'][4]
-            classspeed      = tmp.classspeed
-            maxram          = tmp.maxram
-            file            = tmp.file
-            sampling        = tmp.sampling
-            trees           = tmp.result['summary'][6]
-            parameter       = (F11*recall1)/(runtime/maxruntime*classspeed/maxclassspeed*maxram/totalmaxram)*instances/maxinstances
-            parameter2      = (F11 + recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)
-            parameter3      = (F11 + recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances
-            parameter4      = (F11+recall1+precision1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances
-            parameter5      = (F11*recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances # maybe add normalized model filesize?
-
-            # filename of saved table
-            savecsv         = 'figures/comparison.csv'
-
-            # better wording for final table
-            if sampling     == 'flowbased':   samplingtype = 'flow-based'
-            elif sampling   == 'packetbased': samplingtype = 'packet-based'
-
-            # create dataframe with current experiments values
-            tmpdf = pd.DataFrame([[parameter,parameter2,parameter3,parameter4,parameter5,samplingtype,featurevector,steps,title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,classtime,instances,classspeed,maxram,trees]],columns=columns_list)
-            chart = chart.append(tmpdf) # append current experiment data to final table
-
-    # sort table based on samplingtype and 'experiments'
-    chart = chart.sort_values(by=['vector','sampling'])
-    print('>>> Saving comparison table: {}'.format(savecsv))
-    chart.to_csv(savecsv)
-    if verbose: print('\t<< {}\n{}\n'.format(savecsv,chart))
-
-    exit()
 
 
 
