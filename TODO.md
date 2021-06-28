@@ -1,29 +1,23 @@
 ## INPROGRESS
-# folder Experiments 02062021: execute remote machine classification for evaluation figures
+- re-do flowbased CAIA unsampled, RAM plot looks weird?
 
 ### CODE
-- add color hexcodes to framework configuration to access same colors on all scripts
 - CHANGE samplingmode choice: not use limits set in config.py but use acutal feature-vector names instead
 
 #### SAMPLING, PREPROCESSING, CLASSIFICATION
 - rename scripts and feature-vectors properly and change everything connected accordingly (shittask)
 - config.py: get limits directy from dictionary-entries same way I implemented the sampling-modes
 
-
 #### EVALUATION
-- inlude loss of instances to classify based on sampling steps for all packet-based modes?
-- limit polar plot y-axis to 100% to create similar plot scales
-- set titles to 'unsampled' when sampling steps are zero
-- add values to single experiment plots for every metric
-    - scale RAM and Runtime to maximum occuring RAM and Runtime values
+
+- change model size to instances on comparison and ranking spiderchart plots
+- develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
+    - instead of using f11 and recall1 use degradiation compared to unsampled scores (should even out base-differences on various feature-vectors for the same dataset)
+        - https://www.wikiwand.com/en/Feature_scaling, use best result on same samplingtype, feature-vector and all steps (0,3,5,7) as maximum, min-max scaled all scores based on maximum and minimum values instead of base scores
 
 - for comparison charts:
     - add legend on top of plot show visual differentiation of flow-based and packet-based plots
     - add legend for actual plots below spider chart
-
-- add model file size as experiment parameter?
-- develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
-- save PNG for all generated charts in addition to wd/figures into the same folder where the data is actually fetched from
 - group experiment classobjects based on following comparisons (files always Merged?):
     - same featurevector, same samplingmethod
         - different steps
@@ -31,9 +25,7 @@
         - different featurevector
     - same steps, same featurevectors
         - different samplingmethods
-- improve title & suptitle for spidercharts similar to graphs, maybe do it like graphs with title, suptitle and different sizes normal/bold style
-- improve legend placement for comparison charts if labels are going to be that long as they are now
-- change polar plot to get separate axis for every parameter with separate values? or keep polar as is and use highest usage as 100% comparison?
+
 
 ### THESIS
 - adjust codelines in chapter 05 methodology after final code-changes and extend description when necessary
@@ -79,6 +71,15 @@
 
 
 ## DONE
+- inlude loss of instances to classify in the parameter
+- rp-Evaluation.py: limit polar plot y-axis to 100% to create similar plot scales
+- rp-Evaluation.py: set titles to 'unsampled' when sampling steps are zero
+- rp-Evaluation.py: add values to single experiment plots for every metric
+    - scale RAM and Runtime to maximum occuring RAM and Runtime values
+- rp-Evaluation.py: include following stats in comparison.csv:
+    - modelsize (MB)
+    - max depth
+    - max leaves
 - REVERSE keeping flowStartMilliseconds in Labeling.py for debugging (remove this feature from preordered (list) in flowSampling.py and packetSampling.py for AGM and CAIA or just keep it and remove it in preprocessing)
 - CAIA: sort and rename features on packet-based and flow-based sampling for easier comparison
 - CAIA: compare unsampeld flow-based and packet-based configuration output for possible mistakes in implementation
