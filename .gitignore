@@ -131,6 +131,7 @@ dmypy.json
 # scripts
 *.bup
 *.bup2
+*.bup*
 Labeling.py
 mem-rpi-Preprocessing.py
 PCAPreader.py
