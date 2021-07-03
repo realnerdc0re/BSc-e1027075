@@ -57,7 +57,7 @@ experiments_unsampled = []
 
 # class object containing all necessary experiment data
 class Experiment:
-    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',modelsize=0,runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,maxram=0,trees=0,maxleaves=0,maxdepth=0,pca_n=0,pca_var=0):
+    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',modelsize=0,runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,parameter2=0,parameter3=0,parameter4=0,maxram=0,trees=0,maxleaves=0,maxdepth=0,pca_n=0,pca_var=0):
         # info
         self.fullpath   = fullpath
         self.file       = file
@@ -81,7 +81,10 @@ class Experiment:
         self.classtime  = classtime # runtime for classification in seconds
         self.classspeed = classspeed # classification speed in classifications per second
         self.instances  = instances # number of instances to classify
-        self.parameter  = parameter # parameter including accuracy, runtime ???
+        self.parameter  = parameter # parameter
+        self.parameter2 = parameter2
+        self.parameter3 = parameter3
+        self.parameter4 = parameter4
         self.maxram     = maxram # maximum value for used RAM
         self.trees      = trees # number of generated RF trees
         self.maxleaves  = maxleaves # maximum number of leaves
@@ -252,6 +255,19 @@ if __name__ == '__main__':
     minf11 = 10**8
     minrecall1 = 10**8
 
+    maxf11AGM = 0
+    maxrecall1AGM = 0
+    maxf11CAIA = 0
+    maxrecall1CAIA = 0
+    maxinstancesAGM = 0
+    maxinstancesCAIA = 0
+    minf11AGM = 10**8
+    minrecall1AGM = 10**8
+    minf11CAIA = 10**8
+    minrecall1CAIA = 10**8
+    mininstancesAGM = 10**8
+    mininstancesCAIA = 10**8
+
     # ITERATE THROUGH ALL EXPERIMENTS
     for n in range(0,len(folders)):
         for i in range (0,len(exp[n])):
@@ -260,6 +276,7 @@ if __name__ == '__main__':
             exp[n][i].runtime = end-start # set current experiments runtime
             exp[n][i].classtime = exp[n][i].time['epochtime'].iloc[-1] - exp[n][i].time['epochtime'].iloc[-2] # classification time
             exp[n][i].instances = exp[n][i].report['support'][4]
+            #print('{}'.format(exp[n][i].instances))
             exp[n][i].classspeed = exp[n][i].instances/exp[n][i].classtime # classifications per second
             # dump dstat rows outside of script execution
             exp[n][i].dstat = exp[n][i].dstat[(exp[n][i].dstat['"epoch"'] >= start) & (exp[n][i].dstat['"epoch"'] <= end)]
@@ -275,7 +292,7 @@ if __name__ == '__main__':
             exp[n][i].maxleaves = np.fromstring(tmp[1:len(tmp)-1],dtype=int, sep=",").max()
             # PCA component number & explained variance
             exp[n][i].pca_n = int(exp[n][i].info['0'][6])
-            exp[n][i].pca_var = int(float(exp[n][i].info['0'][5])*100)
+            exp[n][i].pca_var = float(exp[n][i].info['0'][5])
 
             # calculate various maximum values
             if (end-start) > maxruntime: maxruntime = (end-start)
@@ -296,6 +313,21 @@ if __name__ == '__main__':
             if exp[n][i].report['f1-score'][1] > maxf11: maxf11 = exp[n][i].report['f1-score'][1]
             if exp[n][i].report['recall'][1] > maxrecall1: maxrecall1 = exp[n][i].report['recall'][1]
 
+            if exp[n][i].instances < mininstancesCAIA and vector[exp[n][i].vector][0:3] == 'CAI': mininstancesCAIA = exp[n][i].instances
+            if exp[n][i].instances > maxinstancesCAIA and vector[exp[n][i].vector][0:3] == 'CAI': maxinstancesCAIA = exp[n][i].instances
+            if exp[n][i].instances < mininstancesAGM and vector[exp[n][i].vector][0:3] == 'AGM': mininstancesAGM = exp[n][i].instances
+            if exp[n][i].instances > maxinstancesAGM and vector[exp[n][i].vector][0:3] == 'AGM': maxinstancesAGM = exp[n][i].instances
+
+
+            if exp[n][i].report['f1-score'][1] > maxf11AGM and vector[exp[n][i].vector][0:3] == 'AGM': maxf11AGM = exp[n][i].report['f1-score'][1]
+            if exp[n][i].report['f1-score'][1] < minf11AGM and vector[exp[n][i].vector][0:3] == 'AGM': minf11AGM = exp[n][i].report['f1-score'][1]
+            if exp[n][i].report['recall'][1] > maxrecall1AGM and vector[exp[n][i].vector][0:3] == 'AGM': maxrecall1AGM = exp[n][i].report['recall'][1]
+            if exp[n][i].report['recall'][1] < minrecall1AGM and vector[exp[n][i].vector][0:3] == 'AGM': minrecall1AGM = exp[n][i].report['recall'][1]
+
+            if exp[n][i].report['f1-score'][1] > maxf11CAIA and vector[exp[n][i].vector][0:3] == 'CAI': maxf11CAIA = exp[n][i].report['f1-score'][1]
+            if exp[n][i].report['f1-score'][1] < minf11CAIA and vector[exp[n][i].vector][0:3] == 'CAI': minf11CAIA = exp[n][i].report['f1-score'][1]
+            if exp[n][i].report['recall'][1] > maxrecall1CAIA and vector[exp[n][i].vector][0:3] == 'CAI': maxrecall1CAIA = exp[n][i].report['recall'][1]
+            if exp[n][i].report['recall'][1] < minrecall1CAIA and vector[exp[n][i].vector][0:3] == 'CAI': minrecall1CAIA = exp[n][i].report['recall'][1]
 
     for n in range(0,len(folders)):
         for i in range (0,len(exp[n])):
@@ -330,24 +362,63 @@ if __name__ == '__main__':
             pca_n           = exp[n][i].pca_n
             pca_var         = exp[n][i].pca_var
 
-            print('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n'.format(maxf11,minf11,maxrecall1,minrecall1,maxruntime,minruntime,maxclassspeed,minclassspeed,totalmaxram,totalminram))
+            #if vector[exp[n][i].vector][0:3] == 'AGM':
+            #    minf11 = minf11AGM
+            #    maxf11 = maxf11AGM
+            #    minrecall1 = minrecall1AGM
+            #    maxrecall1 = maxrecall1AGM
+            #elif vector[exp[n][i].vector][0:3] == 'CAI':
+            #    minf11 = minf11CAIA
+            #    maxf11 = maxf11CAIA
+            #    minrecall1 = minrecall1CAIA
+            #    maxrecall1 = maxrecall1CAIA
+
+            # min/max scaled values
+            F11scaled           = (F11-minf11)/(maxf11-minf11)
+            recall1scaled       = (recall1-minrecall1)/(maxrecall1-minrecall1)
+            runtimescaled       = (runtime-minruntime)/(maxruntime-minruntime)
+            classspeedscaled    = (classspeed-minclassspeed)/(maxclassspeed-minclassspeed)
+            ramscaled           = (maxram-totalminram)/(totalmaxram-totalminram)
+            instancesscaled     = (instances-mininstances)/(maxinstances-mininstances)
 
             #exp[n][i].parameter = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*instances/maxinstances
             #exp[n][i].parameter = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*(instances/maxinstances)
-            exp[n][i].parameter = ((F11-minf11)/(maxf11-minf11) + (recall1-minrecall1)/(maxrecall1-minrecall1))/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*(instances/maxinstances)
+            #exp[n][i].parameter = ((F11-minf11)/(maxf11-minf11) + (recall1-minrecall1)/(maxrecall1-minrecall1))/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*(instances/maxinstances)
+
+            exp[n][i].parameter  = (F11scaled + recall1scaled)/(runtimescaled + classspeedscaled + ramscaled)
+            exp[n][i].parameter2 = (F11scaled + recall1scaled)/(runtimescaled + classspeedscaled + ramscaled)*instancesscaled
+
+
+            # calculate feature-vector specific min/max scaled values for alternative parameters
+            if vector[exp[n][i].vector][0:3] == 'AGM':
+                F11scaled2           = (F11-minf11AGM)/(maxf11AGM-minf11AGM)
+                recall1scaled2       = (recall1-minrecall1AGM)/(maxrecall1AGM-minrecall1AGM)
+                instancesscaled2     = (instances-mininstancesAGM)/(maxinstancesAGM-mininstancesAGM)
+            elif vector[exp[n][i].vector][0:3] == 'CAI':
+                F11scaled2           = (F11-minf11CAIA)/(maxf11CAIA-minf11CAIA)
+                recall1scaled2       = (recall1-minrecall1CAIA)/(maxrecall1CAIA-minrecall1CAIA)
+                instancesscaled2     = (instances-mininstancesCAIA)/(maxinstancesCAIA-mininstancesCAIA)
+
+            exp[n][i].parameter3 = (F11scaled2 + recall1scaled2)/(runtimescaled + classspeedscaled + ramscaled)*instancesscaled2
+            exp[n][i].parameter4 = (F11scaled2 + recall1scaled2 + instancesscaled2)/(runtimescaled + classspeedscaled + ramscaled)
+
+            #exp[n][i].parameter = (F11 + recall1)/(runtimescaled + classspeedscaled + ramscaled)
 
             #parameter      = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*instances/maxinstances
-
-
             #exp[n][i].parameter  = (exp[n][i].report['f1-score'][1]*exp[n][i].report['recall'][1])/(exp[n][i].runtime/maxruntime*exp[n][i].classspeed/maxclassspeed*exp[n][i].maxram/totalmaxram)*exp[n][i].instances/maxinstances
+
             experiments_sorted.append(exp[n][i])
+
+    print('\n\tF11 max: {}\n\tF11 min: {}\n\n\tRecall1 max: {}\n\tRecall1 min: {}\n\n\tRun-time max: {}\n\tRun-time min: {}\n\n\tClass-speed max: {}\n\tClass-speed min: {}\n\n\tRAM max: {}\n\tRAM min: {}\n'.format(maxf11,minf11,maxrecall1,minrecall1,maxruntime,minruntime,maxclassspeed,minclassspeed,totalmaxram,totalminram))
+    print('\nAGM:\n\tF11 min: {}\n\tF11 max: {}\n\tRecall1 min: {}\n\tRecall1 max: {}\n\tInstances min: {}\n\tInstances max: {}\n'.format(minf11AGM,maxf11AGM,minrecall1AGM,maxrecall1AGM,mininstancesAGM,maxinstancesAGM))
+    print('\nCAIA:\n\tF11 min: {}\n\tF11 max: {}\n\tRecall1 min: {}\n\tRecall1 max: {}\n\tInstances min: {}\n\tInstances max: {}\n'.format(minf11CAIA,maxf11CAIA,minrecall1CAIA,maxrecall1CAIA,mininstancesCAIA,maxinstancesCAIA))
 
 
     #print('{}'.format(experiments_sorted))
     #for x in experiments_sorted:
     #    print('{}'.format(x.parameter))
     #input('...')
-    experiments_sorted.sort(key=lambda x: x.parameter,reverse=True)
+    experiments_sorted.sort(key=lambda x: x.parameter3,reverse=True)
     #print('{}'.format(experiments_sorted))
     #for x in experiments_sorted:
     #    print('{}'.format(x.parameter))
@@ -463,10 +534,12 @@ if __name__ == '__main__':
             speed       = exp[n][i].classspeed/maxclassspeed*100
             style       = 'solid'
             modelsize   = exp[n][i].modelsize/maxmodelsize*100
-            #instances   = (exp[n][i].report['support'][4] - mininstances)/(maxinstances - mininstances)*100
-            instances   = exp[n][i].report['support'][4]/maxinstances*100
 
-
+            # use maximum obtainable instances based on experiments feature-vector
+            if vector[exp[n][i].vector][0:3] == 'AGM':
+                instances   = exp[n][i].report['support'][4]/maxinstancesAGM*100
+            elif vector[exp[n][i].vector][0:3] == 'CAI':
+                instances   = exp[n][i].report['support'][4]/maxinstancesCAIA*100
 
             # graph title & subtitle
             title_sampling    = exp[n][i].sampling
@@ -744,7 +817,7 @@ if __name__ == '__main__':
 
                 plt.xticks(compare_angles[0][:-1],stats)
                 ax.set_rlabel_position(58)
-                plt.yticks([0,25,50,60,75,85,95], color='grey', size=9)
+                plt.yticks([0,25,50,65,75,85,95], color='grey', size=9)
                 plt.ylim(0,100)
                 plt.title(title,ha='center',fontsize=16) # set title
                 plt.suptitle(subtitle,x=0.515,y=0.925,ha='center',fontsize=11) # suptitle position between 0 and 1
@@ -781,9 +854,9 @@ if __name__ == '__main__':
     i = 0
     for x in experiments_sorted:
         i +=1
-        if i == 6: break
+        if i == 7: break
 
-        print('\t\t< {}'.format(format(x.parameter,".2f")))
+        print('\t\t< {}'.format(format(x.parameter3,".2f")))
 
         plt.rcParams['xtick.major.pad'] = 15 # move labes a bit outside of outer 100% circle
         png_file = 'figures/Spiderchart-Comparison_Parameter-Ranking.png'
@@ -804,9 +877,8 @@ if __name__ == '__main__':
         modelsize   = x.modelsize/maxmodelsize*100
 
         # set specific style for unsampled experiments
-        if x.steps==0 and x.sampling=='flowbased': style = 'solid'
-        elif x.steps==0 and x.sampling=='packetbased': style = 'solid'
-        else: style       = x.style # plot-style
+        if x.sampling=='flowbased': style = 'solid'
+        elif x.sampling=='packetbased': style = 'dotted'
 
         # nicer output for legend
         if x.sampling     == 'flowbased':   samplingtype = 'flow-based'
@@ -844,11 +916,17 @@ if __name__ == '__main__':
 
         # title & label
         title = 'Parameter Ranking\n'
-        label = '#{}: {}, {}, n={}'.format(i,vector[x.vector],cfg.samplingmode[x.mode],x.steps)
+        if x.steps > 0: label = '#{}: {}, {}, n={}'.format(i,vector[x.vector],cfg.samplingmode[x.mode],x.steps)
+        else: label = '#{}: {}, unsampled'.format(i,vector[x.vector])
 
 
-        if x.steps == 0: width = 3.5
+        if x.steps == 0: width = 2
         else: width = 2
+
+        if i == 1: width = 3
+        elif i ==2: width = 2.5
+        elif i == 3: width = 2
+        else: width = 1.5
 
         # create lists for comparison-plot
         compare_values.append(value)
@@ -896,8 +974,8 @@ if __name__ == '__main__':
     #ax = plt.gca().add_artist(legend)
 
     # forge top legend to display different linestyles for flow-based and packet-based sampling
-    flowbased_legend   = Line2D([0],[0], label='flow-based sampling',color='k',linestyle=':')
-    packetbased_legend = Line2D([0],[0], label='packet-based sampling',color='k',linestyle='-')
+    flowbased_legend   = Line2D([0],[0], label='flow-based sampling',color='k',linestyle='-')
+    packetbased_legend = Line2D([0],[0], label='packet-based sampling',color='k',linestyle=':')
     handles, labels = plt.gca().get_legend_handles_labels()
     handles.extend([flowbased_legend,packetbased_legend])
 
@@ -923,7 +1001,7 @@ if __name__ == '__main__':
     columns_list = [
         'parameter',
         'parameter2',
-        #'parameter3',
+        'parameter3',
         'parameter4',
         #'parameter5',
         'sampling',
@@ -937,17 +1015,18 @@ if __name__ == '__main__':
         'precision1',
         'F1 0',
         'F1 1',
-        'runtime (s)',
-        'classification time (s)',
+        'run-time\n(s)',
+        'class-time\n(s)',
         'instances',
-        'classification speed (instances/s)',
-        'maxRAM (MB)',
+        'class-speed\n(instances/s)',
+        'maxRAM\n(MB)',
         'trees',
         'maxdepth',
         'maxleaves',
-        'modelsize (MB)',
-        'PCA components',
-        'PCA explained variance (%)'
+        'modelsize\n(MB)',
+        'PCA_n',
+        'PCA_var',
+        'experiment-configuration'
         ]
 
     # initialize empty dataframe with given columns
@@ -989,11 +1068,16 @@ if __name__ == '__main__':
             #parameter      = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*instances/maxinstances
             parameter       = tmp.parameter
             #parameter2      = (F11 + recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)
-            parameter2      = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))
+            #parameter2      = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))
+            parameter2      = tmp.parameter2
+            parameter3      = tmp.parameter3
+            parameter4      = tmp.parameter4
 
             #parameter3      = (F11 + recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances
-            parameter4      = (F11+recall1+precision1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances
+            #parameter4      = (F11+recall1+precision1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances
             #parameter5      = (F11*recall1)/(runtime/maxruntime + classspeed/maxclassspeed + maxram/totalmaxram)*instances/maxinstances # maybe add normalized model filesize?
+
+            experimentconf = '{}, {}: {}, {}'.format(sampling,featurevector,title,steps)
 
             # filename of saved table
             savecsv         = 'figures/comparison.csv'
@@ -1002,9 +1086,24 @@ if __name__ == '__main__':
             if sampling     == 'flowbased':   samplingtype = 'flow-based'
             elif sampling   == 'packetbased': samplingtype = 'packet-based'
 
+            # increase readability for comparison.csv
+            runtime         = format(tmp.runtime,".2f")
+            classtime       = format(tmp.classtime,".2f")
+            classspeed      = format(tmp.classspeed,".2f")
+            instances       = int(tmp.report['support'][4])
+            maxram          = format(tmp.maxram,".2f")
+            modelsize       = format(tmp.modelsize,".2f")
+            parameter       = format(parameter,".2f")
+            parameter2      = format(parameter2,".2f")
+            parameter4      = format(parameter4,".2f")
+            pca_var         = format(tmp.pca_var,".2f")
+
+
             # create dataframe with current experiments values
-            tmpdf = pd.DataFrame([[parameter,parameter2,parameter4,samplingtype,featurevector,steps,title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,classtime,instances,classspeed,maxram,trees,maxdepth,maxleaves,modelsize,pca_n,pca_var]],columns=columns_list)
+            tmpdf = pd.DataFrame([[parameter,parameter2,parameter3,parameter4,samplingtype,featurevector,steps,title,accuracyscore,recall0,recall1,precision0,precision1,F10,F11,runtime,classtime,instances,classspeed,maxram,trees,maxdepth,maxleaves,modelsize,pca_n,pca_var,experimentconf]],columns=columns_list)
+            #if tmp.steps > 0: chart = chart.append(tmpdf) # append current experiment data to final table
             chart = chart.append(tmpdf) # append current experiment data to final table
+
 
     # sort table based on samplingtype and 'experiments'
     chart = chart.sort_values(by=['vector','sampling'])
