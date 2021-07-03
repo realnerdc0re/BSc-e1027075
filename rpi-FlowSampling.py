@@ -97,377 +97,6 @@ def filterFeatures(dataset,keyword,verbose=False,time=False):
             print('\t+ {}'.format(feature))
         else: print('\t- {}'.format(feature))
     return tmp
-
-# OUTDATED
-def tcpflagEncoderOLD(dataset,feature,verbose=False):
-    if verbose: print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
-
-    # https://www.keycdn.com/support/tcp-flags
-    tcpflags = {
-        'A':100000000, # ACK
-        'P': 10000000, # PSH
-        'F':  1000000, # FIN
-        'R':   100000, # RST
-        'S':    10000, # SYN
-        'U':     1000, # URG
-        'E':      100, # ECE
-        'C':       10, # CWR
-        'N':        1  # NS
-    }
-
-    if verbose: print('\npre-encoding: \n{}'.format(dataset[feature])+Style.RESET_ALL)
-
-    for i in range(0,len(dataset.index)):
-        cell = dataset[feature][i] # current cell
-
-        if isinstance(cell,list) and len(cell)>0:
-            value = 0
-            for char in cell[0]:
-                value += cfg.tcpflags[char]
-
-            dataset.at[i,feature] = int(str(value),2) # convert (pseudo) binary to decimal
-            #dataset.at[i,feature] = value # simply use number as decimal
-        elif (len(cell)==0): dataset.at[i,feature] = ''
-
-    if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])+Style.RESET_ALL)
-
-    return
-# OUTDATED
-def tcpflagPreEncoder(dataset,feature,verbose=False):
-
-    if verbose:
-        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagPreEncoder '+40*'~')
-        print('\ntcpFlags: {}\n\npre-encoding: \n{}'.format(cfg.tcpflags,dataset[feature])+Style.RESET_ALL)
-
-    for i in range(0,dataset.shape[0]):
-        cell = dataset[feature][i] # current cell
-
-        if isinstance(cell,list) and len(cell)>0:
-            tmp = np.empty([1,0])
-            for j in range(0,len(cell)):
-                value = 0 # initialise variable
-
-                for char in cell[j]: # iterate through characters contained in current list-item
-                    value += cfg.tcpflags[char] # encode according to tcpflags dict
-
-                dec = int(str(value),2) # convert dual to decimal number
-                tmp = np.append(tmp,dec).astype(int) # append as integer
-
-            dataset.at[i,feature] = tmp # save array
-
-    if verbose: print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[feature])); input('...\n'+Style.RESET_ALL)
-
-    return
-# OUTDATED
-def tcpflagEncoder2(dataset,rowindex,feature,verbose=False):
-    if verbose: print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
-    print(cfg.vcolor+'\npre-encoding: \n{}'.format(dataset[feature]))
-
-
-    # distinct: number of unique values, mode: most occuring value, modeCount: count for most occuring value
-    key = ['distinct','mode','modeCount'] # AGM feature functions
-
-
-    for word in key:
-        newfeature = '{}: {}'.format(feature,word)
-        # calculate metrics for every new feature
-        if   word == 'distinct':  dataset[newfeature] = dataset[feature].apply(lambda x: len(np.unique(x)))
-        elif word == 'mode':      dataset[newfeature] = dataset[feature].apply(lambda x: [item[0] for item in Counter(x).most_common(1)])
-        elif word == 'modeCount': dataset[newfeature] = dataset[feature].apply(lambda x: [item[1] for item in Counter(x).most_common(1)])
-        print('\n{}\n'.format(dataset[newfeature]))
-
-    flags = ['A','P','F','R','S','U','E','C','N']
-    for flag in flags: 
-        # create features for every possible TCP flags, initialized with 0
-        dataset.insert(0,flag,0) # position each flag as first column
-
-    tcpmode = '{}: {}'.format(feature,'mode')
-    for i in range(0,dataset.shape[0]):
-        cell = dataset[tcpmode][i] # select current cell
-
-        if isinstance(cell,list) and len(cell)>0:
-            for j in range(0,len(cell)):
-                for char in cell[j]:
-                    dataset.at[i,char] = 1 # set all occuring mode flags to 1
-
-    print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[flags])+Style.RESET_ALL)
-    return
-# OUTDATED
-def tcpflagCorrection(dataset,feature,rowindex,modeCount,rowindex2,verbose=False):
-    if verbose: print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagCorrection '+40*'~')
-
-    flags = ['A','P','F','R','S','U','E','C','N']
-    for flag in flags:
-        for row in rowindex:
-            dataset.at[row,flag] = 0
-
-    #print('Comparison:\nindexes: {}\nCounts: {}'.format(len(rowindex),len(modeCount)))
-    #input('...')
-
-    modeCountfeature = '{}: modeCount'.format(feature)
-    i = -1
-    for row in rowindex: # containing both non-TCP packets and TCP packets, but non-TCP flags are most occuring value aka mode
-        i += 1
-        dataset.at[row,modeCountfeature] = int(modeCount[i])
-
-    for row in rowindex2: # only containing non-TCP packets
-        dataset.at[row,modeCountfeature] = dataset['packetTotalCount'][row]
-
-    return
-# OUTDATED
-def tcpflagEncoder(dataset,feature,verbose=False):
-    if verbose: print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: tcpflagEncoder '+40*'~')
-    print(cfg.vcolor+'\npre-encoding: \n{}'.format(dataset[feature]))
-
-    # features to calculate
-    distinctfeature = '{}: {}'.format(feature,'distinct')
-    modefeature = '{}: {}'.format(feature,'mode')
-    modeCountfeature = '{}: {}'.format(feature,'modeCount')
-
-    dataset.insert(len(dataset.columns),modefeature,0) # initialise new feature after last column
-    dataset.insert(len(dataset.columns),distinctfeature,0) # initialise new feature after last column
-    dataset.insert(len(dataset.columns),modeCountfeature,0) # initialise new feature after last column
-
-    # initialise flag features
-    flags = ['A','P','F','R','S','U','E','C','N']
-    for flag in flags: 
-        # create features for every possible TCP flags, initialized with 0
-        dataset.insert(0,flag,0) # position each flag as first column
-
-    # seaparate flag combinations into separate flags
-    for row in range(0,len(dataset.index)): # iterate every single row
-        #print(cfg.vcolor+'Pre-Separation:\n{}'.format(dataset[feature][row]))
-        newflags  = [] # initialize list of flags
-        modeflags = []
-        cell  = dataset[feature][row] # current celll
-
-        for item in cell: # iterate every list element
-            for char in item:
-                newflags.append(char)
-
-        dataset.at[row,feature] = newflags # replace original flags with separated flags
-        modes = Counter(dataset[feature][row]).most_common() # get list with tuple for most common elements
-        counterlen = len(modes) # list containing all occuring flags
-
-        #print(cfg.vcolor+'Pre-Calculation:\n{}'.format(dataset[feature][row]))
-
-        # compare occurences if there is more than one flag with same occurence
-        if counterlen == 1: # only one flag occuring
-            modeflags.append(modes[0][0])
-            modecount     = int(modes[0][1])
-            distinctcount = 1
-
-        elif counterlen == 0: # no flag occuring
-            modeflags.append(0)
-            modecount = 0
-            distinctcount = 0
-
-        elif counterlen > 1: # multiple flag occurence
-            tmprange = np.arange(0,counterlen-1) # array containing all indexes to compare
-            for i in tmprange:
-                if modes[i][1] == modes[i+1][1]: # compare 2 flag occurences
-                    modeflags.append(modes[i][0]) # append flag #1
-                    modeflags.append(modes[i+1][0]) # append flag #2
-                    modecount = int(modes[0][1])
-                    distinctcount = len(np.unique(cell))
-                else:
-                    modeflags.append(modes[i][0]) # append flag #1
-                    modecount = int(modes[0][1])
-                    distinctcount = len(np.unique(cell))
-                    break
-
-        #print('\nPre-Encoding:\nTCP flags: {}, {}\n\tmodeCount: {},{}\n\tdistinct: {},{}'.format(modeflags,type(modeflags),modecount,type(modecount),distinctcount,type(distinctcount)))
-
-        dataset.at[row,modeCountfeature] = modecount
-        dataset.at[row,distinctfeature]  = distinctcount # number of distinct elements
-
-        if isinstance(modeflags,list) and len(modeflags)>0:
-            for item in modeflags:
-                #print('\nPost-Encoding:\ncurrent: {}'.format(item))
-
-                if item == 0: continue
-                else:
-                    dataset.at[row,item] = 1 # set all occuring mode flags to 1
-                    #print('flag {}: {}'.format(item,dataset[item][row]))
-            #dataset.at[row,modefeature]      = modeflags
-        #input('...')
-
-        #print(cfg.vcolor+'Post-Encoding:\n{}: {}, {}'.format(dataset[modefeature][row],dataset[modeCountfeature][row],dataset[distinctfeature][row]))
-        #print(cfg.vcolor+'flags::\n{}'.format(dataset.iloc[row,0:8]))
-
-
-            #print('newfeatures:\n{}\n{}'.format(dataset[modefeature][row],dataset[modeCountfeature][row]))
-
-
-
-        #tuplelen   = len(modes[0])
-        #if counterlen == 0:
-        #    print('NO TCP flags: {}'.format(modes))
-        #else:
-        #    print('Modes: {}, Len: {}, {}, {}'.format(modes,counterlen,type(modes),type(modes[0])))
-        #    tmpflag  = []
-        #    tmpcount = []
-        #    j = -1
-        #    for i in range (0,counterlen): # compare all elements
-        #        j += 1
-        #        currentcount = modes[i][1]
-        #        currentflag  = modes[i][0]
-        #        print(tmp)
-        #        if tmpcount[j] < tmp:
-        #            tmpcount.append(currentcount)
-
-
-
-            #type(modes[0][1]
-        #input('Modes')
-
-        # check most common
-
-        #print('New Row: {}'.format(dataset[feature][row]))
-        #input('List')
-    #input('Rows')
-
-
-    # distinct: number of unique values, mode: most occuring value, modeCount: count for most occuring value
-    #key = ['distinct','mode','modeCount'] # AGM feature functions
-
-    #for word in key:
-    #    newfeature = '{}: {}'.format(feature,word)
-    #    # calculate metrics for every new feature
-    #    if   word == 'distinct':  dataset[newfeature] = dataset[feature].apply(lambda x: len(np.unique(x)))
-    #    elif word == 'mode':      dataset[newfeature] = dataset[feature].apply(lambda x: [item[0] for item in Counter(x).most_common(1)])
-    #    elif word == 'modeCount': dataset[newfeature] = dataset[feature].apply(lambda x: [item[1] for item in Counter(x).most_common(1)])
-    #    print('\n{}\n'.format(dataset[newfeature]))
-
-    #flags = ['A','P','F','R','S','U','E','C','N']
-    #for flag in flags: 
-        # create features for every possible TCP flags, initialized with 0
-    #    dataset.insert(0,flag,0) # position each flag as first column
-
-    #tcpmode = '{}: {}'.format(feature,'mode')
-    #for i in range(0,dataset.shape[0]):
-    #    cell = dataset[tcpmode][i] # select current cell
-
-        #if isinstance(cell,list) and len(cell)>0:
-        #    for j in range(0,len(cell)):
-        #        for item in cell:
-        #            dataset.at[i,item] = 1 # set all occuring mode flags to 1
-
-
-        #if isinstance(cell,list) and len(cell)>0:
-        #    for j in range(0,len(cell)):
-        #        for char in cell[j]:
-        #            dataset.at[i,char] = 1 # set all occuring mode flags to 1
-
-    print(cfg.vcolor+'\npost-encoding:\n{}'.format(dataset[flags])+Style.RESET_ALL)
-    return
-# OUTDATED
-def convertToArrayOLD(dataset,features,mode,verbose=False,time=False):
-
-    #print(cfg.vcolor+'{} {}'.format(dataset['apply(accumulate(sourceTransportPort),forward)'][68:88],dataset['sourceIPAddress'][68:88])+Style.RESET_ALL)
-
-    for feature in features: # iterate over given features
-        print('\t> {}'.format(feature))
-
-
-        if mode == 1: # creates numpy array based on numeric feature
-            dataset[feature] = dataset[feature].apply(lambda x: 
-                np.fromstring(x[1:len(x)-1],dtype=int, sep=" ") if type(x) == str 
-                else (np.array([float('nan')]) if pd.isna(x) 
-                else x))
-
-        if mode == 2: # creates list based on textual feature
-            dataset[feature] = dataset[feature].apply(lambda x: x[1:len(x)-1].split())
-
-    #print(cfg.vcolor+'{} {}'.format(dataset['apply(accumulate(sourceTransportPort),forward)'][68:88],dataset['sourceIPAddress'][68:88])+Style.RESET_ALL)
-    #input('...')
-
-
-    return
-# OUTDATED
-def searchnonTCPflows(dataset):
-    nontcpindex = []
-    for i in range(0,len(dataset.index)):
-        x = dataset[i]
-        if x[1:len(x)-1].isspace() == True:
-            nontcpindex.append(i)
-            #print('{}: {}'.format(i,x))
-
-    return nontcpindex
-# OUTDATED
-def searchEmptyRows(dataset,feature,verbose=False,time=False):
-    #for feature in features: # iterate over given features
-    nothingrowindex = []
-    replacerowindex = []
-    replacemodeCount = []
-
-    originalfeature = feature[:-13]
-    #modeCountfeature = '{}: modeCount'.format(originalfeature)
-
-    for i in range(0,len(dataset.index)):
-        if dataset[feature][i] == 1 and len(dataset[originalfeature][i])>0:
-            nothingrowindex.append(i)
-
-    for i in nothingrowindex:
-        modeCount = Counter(dataset[originalfeature][i]).most_common(1)
-        modeCountcontent = [item[0] for item in Counter(dataset[originalfeature][i]).most_common(1)][0]
-        modeCountoccurence = [item[1] for item in Counter(dataset[originalfeature][i]).most_common(1)][0]
-        if (int(modeCountoccurence) < (int(dataset['packetTotalCount'][i]) - len(dataset[originalfeature][i]))):
-            replacerowindex.append(i)
-            newcount = int(dataset['packetTotalCount'][i]) - len(dataset[originalfeature][i])
-            replacemodeCount.append(newcount)
-        #elif (int(modeCountoccurence) == int(dataset['packetTotalCount'][i])): # if non-TCP packets have same occurence
-        #    replacerowindex.append(i)
-        #    newcount = 2*int(dataset['packetTotalCount'][i])
-        #    replacemodeCount.append(newcount)
-    return [nothingrowindex,replacerowindex,replacemodeCount]
-# OUTDATED
-def distinctTCPflags(dataset,feature,rowindex,verbose=False):
-    key = ['distinct'] # AGM feature functions
-    for word in key:
-        distinctfeature = '{}: {}'.format(feature,word)
-        for i in rowindex: # iterate overa ll indexes
-            dataset.at[i,distinctfeature] = int(dataset[distinctfeature][i])+1
-    return
-# OUTDATED
-def fixEmptyList(dataset,features,verbose=False,time=False):
-    for feature in features: # iterate over given features
-        nothingrowindex = []
-        replacerowindex = []
-        replacemodeCount = []
-        originalfeature = feature[:-13]
-        #print('originalfeature: {}\nnothingfeature: {}'.format(originalfeature,feature))
-        for i in range(0,len(dataset.index)):
-            if dataset[feature][i] == 1 and len(dataset[originalfeature][i])>0:
-                nothingrowindex.append(i)
-
-        if verbose:
-            print('{}\n{} rows'.format(nothingrowindex,len(nothingrowindex)))
-            print('feature: {}'.format(originalfeature))
-
-        for i in nothingrowindex:
-            #print('{}'.format(dataset[originalfeature][i]))
-            #if len()
-            modeCount = Counter(dataset[originalfeature][i]).most_common(1)
-            #print('{}: ModeCount complete: {}'.format(i,modeCount))
-            modeCountcontent = [item[0] for item in Counter(dataset[originalfeature][i]).most_common(1)][0]
-            modeCountoccurence = [item[1] for item in Counter(dataset[originalfeature][i]).most_common(1)][0]
-            #print('\nModeCount content: {}\n ModeCount: {}'.format(modeCountcontent,modeCountoccurence))
-            #input('blub2')
-            if (int(modeCountoccurence) < (int(dataset['packetTotalCount'][i]) - len(dataset[originalfeature][i]))):
-                replacerowindex.append(i)
-                currentmodeCount = int(dataset['packetTotalCount'][i]) - len(dataset[originalfeature][i])
-                replacemodeCount.append(currentmodeCount)
-                if verbose:
-                    print('FOUND NOTHING FLAG in row-number: {}\ndata: {}\nTotalPackets: {}\nModeCount: {}\nNothinPackets: {}'.format(i,dataset[originalfeature][i],dataset['packetTotalCount'][i],modeCountoccurence,(dataset['packetTotalCount'][i]-modeCountoccurence)))
-                    print('replaced feature: {}'.format(dataset[originalfeature][i]))
-                dataset.at[i,originalfeature] = []
-                if verbose:
-                    print('replaced feature: {}'.format(dataset[originalfeature][i]))
-                    input('...')
-    return [nothingrowindex,replacerowindex]
-
-
 # converts accumulated per-packet features into np.array
 def convertToArray(dataset,features,mode,verbose=False):
     for feature in features: # iterate over given features
@@ -481,16 +110,7 @@ def convertToArray(dataset,features,mode,verbose=False):
 
         if mode == 2: # creates list based on textual feature
             dataset[feature] = dataset[feature].apply(lambda x: x[1:len(x)-1].split())
-            #dataset.insert(len(dataset.columns),newfeature,0) # initialize new feature with 0
 
-        if mode == 3: # checks if features accumulated packets match the total packet count
-            newlist = []
-            newfeature = '{}: {}'.format(feature,'nothingflag')
-            newlist.append(newfeature)
-            for i in range(0,len(dataset.index)):
-                if len(dataset[feature][i]) == dataset['packetTotalCount'][i]: dataset.at[i,newfeature] = 0
-                else: dataset.at[i,newfeature] = 1 # sets flag in each row not matching total packet count
-            return newlist
     return
 # converts TCP flags (textual feature) into list, considering empty flags (whitespaces) and flows only containing non-TCP packets
 def convertToArrayTCP(dataset,features,mode,verbose=False,superverbose=False):
@@ -711,117 +331,6 @@ def tcpflagEncoderTCP(dataset,feature,verbose=False,superverbose=False):
     print(cfg.vcolor+'\nPost-Encoding:\n{}\n'.format(dataset[flags])+Style.RESET_ALL)
     return
 
-# per-flow sampling using iterations
-def flowSampling(dataset,n,features,mode=0,verbose=False,time=False):
-    tmp = []
-
-    if verbose and not superverbose:
-        print(40*' '+' SAMPLING: {} (n={})'.format(cfg.fsamplingmode[mode],n))
-        print(40*'~'+' FUNCTION: flowSampling '+40*'~')
-
-    # iterate over list of given features
-    for feature in features:
-
-        print('\t> {}'.format(feature))
-
-        # iterate over every single row of the feature
-        for i in range(0,len(dataset.index)):
-            # list to collect packets to sample, has to be reset for every row iteration
-            psample = []
-            
-            if superverbose:
-                print('\n\n'+40*' '+' SAMPLING: {} '.format(cfg.fsamplingmode[mode])+' (n={}).format(n)')
-                print(40*'~'+' FUNCTION: flowSampling: {}, row: {}/{} '.format(feature,(i+1),len(dataset.index))+40*'~')
-                print('\nOriginal:')
-                print(len(dataset[feature][i]))
-                print(dataset[feature][i])
-
-            # mode 0: sample every n-th packet of the flow (including first packet)
-            if mode == 1:
-                dataset.at[i,feature] = dataset[feature][i][0::n]
-                
-                if superverbose:
-                        print('\nSampled:')
-                        print(len(dataset[feature][i]))
-                        print(dataset[feature][i])
-                        input('\n...')
-            
-            # mode 1: sample n packets, skip n packets...
-            elif mode == 2:
-                # copy current cells content for sampling
-                tmp = dataset[feature][i].copy()
-                
-                iteration = int(len(tmp)/(2*n))+1
-    
-                for j in range (0,iteration):
-                    # extend sampling list with first n packets in cell
-                    psample.extend(tmp[0:n])
-                    # remove sampled packets plus packets to skip
-                    tmp = tmp[2*n:]
-                    
-                    if superverbose:
-                        print('\n\n'+10*'~'+' sampling, iteration: {}/{} '.format((j+1),iteration)+10*'~')
-                        print('Sampled:')
-                        print(len(psample))
-                        print(psample)
-                
-                # write sampled packet-list in current cell
-                dataset.at[i,feature] = psample
-                
-                # pauses after every single row iteration
-                #if superverbose: input('\n{SUPERVERBOSE} press ENTER to continue.')
-            
-            # mode 2: sample first n packets of the flow
-            elif mode == 3:
-                dataset.at[i,feature] = dataset[feature][i][0:n]
-                
-                if superverbose:
-                        print('\nSampled:')
-                        print(len(dataset[feature][i]))
-                        print(dataset[feature][i])
-        
-            # mode 3: sample n, skip n-1, sample n-2, skip n-3... packets of the flow
-            elif mode == 4:
-                # copy current cells content for sampling
-                tmp = dataset[feature][i].copy()
-                
-                # counters for sampling
-                m = n
-                k = n
-                # iterate as long as list is not empty and there are still values to sample
-                while (tmp and m > 0):
-                    # sample first m values
-                    psample.extend(tmp[0:m])
-                    # remove first m plus m-1 values from cell
-                    k = m-1
-                    tmp = tmp[m+k:]
-                    # sample k-1 values in the following iteration
-                    m = k-1
-                    
-                    if superverbose:
-                        print('\n\n'+10*'~'+' sampling '+10*'~')
-                        # only output non-empty list
-                        if tmp:
-                            print('\nSliced:')
-                            print(len(tmp))
-                            print(tmp)
-                        print('\nSampled:')
-                        print(len(psample))
-                        print(psample)
-                        
-                        # pauses after every single row iteration
-                        #input('\n{SUPERVERBOSE} press ENTER to continue.')
-
-            else:
-                print('\n[ERROR] invalid sampling-mode selected!')
-                exit()
-
-            #if superverbose and not mode == 1 and not mode == 3: 
-            #       input('\n{VERBOSE} press ENTER to continue.')
-        if superverbose:
-            input('\n...')
-
-    return
 # per-flow sampling using lambda functions
 def lambdaflowSampling(dataset,n,features,mode=0,verbose=False,time=False):
 
@@ -1080,7 +589,6 @@ if __name__ == '__main__':
                 if   word == 'min':   dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else int(np.amin(x)))
                 elif word == 'mean':  dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else sum(x)/len(x))
                 elif word == 'max':   dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else int(np.amax(x)))
-                #elif word == 'stdev': dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else np.std(x))
                 elif word == 'stdev': # calculating variance according to Welford
                     for i in range (0,len(dataset.index)):
                         stdev = None
@@ -1108,6 +616,7 @@ if __name__ == '__main__':
                             print(cfg.vcolor+'\n'+80*'~')
                             print('[{}]:\nCell: {}, {}\nStdev: {}'.format(i,cell,type(cell),stdev))
                             print(80*'~'+Style.RESET_ALL); input('')
+                #elif word == 'stdev': dataset[newfeature] = dataset[feature].apply(lambda x: None if np.isnan(x).any() else np.std(x))
 
         # calculate totalCounts
         print('\t>> Calculate total features')
@@ -1228,9 +737,8 @@ if __name__ == '__main__':
         convertToArray(dataset,features,1,verbose)
         if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[features].head(n=20))); input('...\n'+Style.RESET_ALL)
 
-        print('\t> {}'.format('packetTotalCount')) # gather total packets for each flow
         dataset.insert(len(dataset.columns),'packetTotalCount',0) # initialise new feature after last column
-        dataset['packetTotalCount'] = dataset['apply(accumulate(protocolIdentifier),forward)'].apply(lambda x: len(x)) # obtain packetTotalCount via IP protocol numbers feature
+        dataset['packetTotalCount'] = dataset['apply(accumulate(protocolIdentifier),forward)'].apply(lambda x: len(x)) # obtain packetTotalCount via IP protocol numbers feature before sampling
 
         print('>>> Converting destinationIPAddress feature') # converts textual feature to list
         convertToArray(dataset,['apply(accumulate(destinationIPAddress),forward)'],2,verbose)
@@ -1250,8 +758,8 @@ if __name__ == '__main__':
             searchNaN(dataset,features,verbose=True,time=False)
             print(cfg.vcolor+'Dtypes:\n{}'.format(dataset.dtypes)); input('...\n'+Style.RESET_ALL)
 
-
-        # ENCODE tcpFlags & CONVERT to numpy array
+        # CALCULATIONS
+        # encode tcpFlags & convert to numpy array
         print('>>> Encoding TCP flags as one feature per flag')
         tcpflagEncoderTCP(dataset,'apply(accumulate(_tcpFlags),forward)',verbose,superverbose)
         textual.remove('apply(accumulate(_tcpFlags),forward)')
@@ -1262,12 +770,12 @@ if __name__ == '__main__':
             print('\t> {}'.format(feature))
             dataset.drop(columns=feature,inplace=True)
 
-
-        # CALCULATIONS
         # distinct: number of unique values, mode: most occuring value, modeCount: count for most occuring value
         print('>>> Create features & calculate values')
+        print('\t> {}'.format('packetTotalCount')) # gather total packet count after sampling
+        dataset['packetTotalCount'] = dataset['apply(accumulate(protocolIdentifier),forward)'].apply(lambda x: len(x)) # obtain packetTotalCount via IP protocol numbers feature
 
-        key     = ['distinct','mode','modeCount'] # AGM feature functions
+        key = ['distinct','mode','modeCount'] # AGM feature functions
         for feature in (features): # numpy array features
             for word in key:
                 newfeature = '{}: {}'.format(feature,word)
