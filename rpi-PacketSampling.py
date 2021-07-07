@@ -19,6 +19,7 @@ import os
 import sys
 
 
+
 import config as cfg # necessary configurations from config.py
 
 # create base-folders if necessary
@@ -42,6 +43,8 @@ parser.add_argument('-v','--verbose', action='store_true', help='output addition
 parser.add_argument('--superverbose', action='store_true', help='output additional informations, including loop iteration output')
 parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
 parser.add_argument('-c','--check', action='store_true', help='check if number of sampled packets is correct')
+parser.add_argument('-s','--seed', metavar='s', type=int, nargs=1, help='set seed for np random generator')
+
 args = parser.parse_args()
 
 
@@ -181,7 +184,12 @@ if __name__ == '__main__':
     superverbose    = args.superverbose
     time            = args.time
     check           = args.check
+    seed            = args.seed
     if superverbose: verbose = True
+    if seed:
+        seed = True
+        s = args.seed[0] # seed number
+    else: seed = False
 
     split   = args.split[0] # split size for editcap splits
     findex  = args.file[0] # file-index
@@ -235,7 +243,7 @@ if __name__ == '__main__':
     goflowscmd      = '{} run features {} export csv {} source libpcap {}'.format(cfg.goflowspath,goflowsconf,csv_sampled_export,pcap_sampled)
     labelingcmd     = 'python3 {} {} {}'.format(cfg.labelingpath,cfg.packetfolder/cfg.filenames[findex],labelmode)
 
-    cleansplitPCAP  = 'rm {}/*'.format(cfg.fpath/'splitPCAP')
+    cleansplitPCAP  = 'rm {}'.format(cfg.fpath/'splitPCAP'/'*')
     editsplitcmd    = 'editcap -c {} {} {}'.format(split,pcap_snap,pcap_split)
     capinfoscmd     = r'capinfos -M -c {} | grep packets'.format(pcap)
     editsnapcmd     = 'editcap -s 127 {} {}'.format(pcap,pcap_snap)
@@ -247,7 +255,7 @@ if __name__ == '__main__':
     print('\n\n'+40*' '+' FILE: {}'.format(cfg.filenames[findex]))
     print(40*'~'+' SCRIPT: rpi-PacketSampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--check".format(verbose,superverbose,time,check))
+    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--check\n{}\t--seed".format(verbose,superverbose,time,check,seed))
     print('\n{}, n = {}, split = {}'.format(cfg.psamplingmode[mode],n,split))
     print('\n'+20*'~'+' paths '+20*'~')
     print('\nJSON:\t{}'.format(goflowsconf))
@@ -295,6 +303,7 @@ if __name__ == '__main__':
         splitcount = len(splitlist)
 
         # various variables to determine necessary packet-skips for sampling on split-file transition
+        skipflag = 0 
         packetskip = 0
         samplepstart = 0
         nextpacketskip = 0
@@ -320,11 +329,11 @@ if __name__ == '__main__':
             samplepcount = pcount - packetskip # packets to sample in current iteration, considering skips
 
             # array containing packet-numbers of the current split-file
-            plist = np.arange(1,pcount+1,1)
+            plist = np.arange(1,pcount+1,1) # used to drop packets with editcap
             # same array, containing packet-indices
             plistindex = np.arange(0,pcount,1)
 
-            # every n-th packet, including first packet of the pcap
+            # every n-th packet, including the first packet of the pcap
             if mode == 5:
                 modulo = samplepcount % n
 
@@ -394,6 +403,132 @@ if __name__ == '__main__':
                     movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
                     os.system(movecmd)
 
+            # random n out of N packets
+            if mode == 6:
+                nn = n*n # N
+
+                if verbose:
+                    pprint = packetOutput(plist,10,False)
+                    print(cfg.vcolor+'\n'+20*'~'+' n out of N Sampling (n = {}, N = {}), file {}/{} '.format(n,nn,scount,splitcount)+20*'~')
+                    print(cfg.vcolor+'<<< Original, {} packets\n\t< [{} ... {}]'.format(len(plist),str(pprint[0]),str(pprint[1])))
+
+                if skipflag == 1: # if packets needs to be considered from previous iteration
+                    currentskip = np.append(tmpnext,skipnext)
+                    currentskip = np.sort(currentskip)
+                    slicestart = len(currentskip)
+                    if verbose:
+                        print('\n<<< Remainder from file {}/{}:'.format(scount-1,splitcount))
+                        print('\t<< Sampled: {}, {} packets'.format(tmpnext,len(tmpnext)))
+                        print('\t<< Skipped: {}, {} packets'.format(currentskip,len(currentskip)))
+                else: slicestart = 0 # initialize slicestart
+
+                # remainder for the current iteration
+                modulo = (len(plist)-slicestart) % nn # considering already processed packets from last splitfile
+
+                pdrop = plist.copy() # list of packets to drop
+                pkeep = np.empty(0,dtype=int) # empty list of packets to keep
+
+                if skipflag == 1: # consider packet processing from previous iteration
+                    for value in tmpnext:
+                        pdrop = np.delete(pdrop,np.where(pdrop==value)) # remove sampled packets
+                    pkeep = np.append(pkeep,tmpnext) # append sampled packets
+
+
+                iteration = int((len(plist)-slicestart)/nn)+1 # iterations to process the whole splitfile
+                if modulo == 0: iteration -= 1
+
+                for i in range(0,iteration):
+                    if seed: np.random.seed(s) # can be used for a deterministic "random" draw
+
+                    sliceend   = slicestart + nn
+                    currentslice = plist[slicestart:sliceend] # create slice of N packets
+                    slicestart += nn # update start of the slice for the next iteration
+
+                    # special treatment for remainder in the very last iteration of the current file
+                    if modulo > 0 and i == (iteration-1):
+                        skipflag = 1
+
+                        nextpackets = nn- modulo # number packets to consider from the next splitfile
+                        skipnext = np.arange(1,nextpackets+1)
+                        for number in range(1,nextpackets+1):
+                            currentslice = np.append(currentslice,number) # append those packet numbers to current slice
+
+                        # draw n packets out of the current slice with length N
+                        # replace=False to avoid drawing duplicate packets
+                        tmp = np.random.choice(currentslice,size=n,replace=False) # at this point array eventually contains packets from current and next splitfile
+                        tmp = np.sort(tmp) # sort packets to drop to increase readability
+                        tmpnext = tmp.copy() # array that is going to contain all sampled packets of the next splitfile
+
+                        for value in tmp: # iterate packet sampled packet numbers
+                            if value < currentslice[0]: # packets from next splitfile
+                                tmp = np.delete(tmp,np.where(tmp==value)) # array that contains all sampled packets from the current splitfile
+                                skipnext = np.delete(skipnext,np.where(skipnext==value))
+                            else: # packerts from current splitfile
+                                tmpnext = np.delete(tmpnext,np.where(tmpnext==value))
+
+                        pkeep = np.append(pkeep,tmp) # append sampled packets, again just necessary for verbose readability
+
+                        for value in tmp:
+                            pdrop = np.delete(pdrop,np.where(pdrop==value)) # drop sampled packet-numbers from array
+                    # all iterations except last
+                    else:
+                        skipflag = 0
+                        tmp = np.random.choice(currentslice,size=n,replace=False) # draw n packets out of N length slice, replace=False for no duplicate draws
+                        tmp = np.sort(tmp) # sort packets to drop to increase readability
+
+                        pkeep = np.append(pkeep,tmp) # append sampled packets, again just necessary for verbose readability
+
+                        for value in tmp:
+                            pdrop = np.delete(pdrop,np.where(pdrop==value)) # drop sampled packet-numbers from array
+
+                    if verbose:
+                        if (i < 2) or (i >= iteration-2): # only output first and last 2 iterations
+                            print(cfg.vcolor+'\n\t[{}/{}]:'.format(i+1,iteration))
+                            pprint = packetOutput(currentslice,10,False) # generates list-styled packet output for better readability
+                            print(cfg.vcolor+'\t\t<< Current, {} packets\n\t\t\t< [{} ... {}]'.format(len(currentslice),str(pprint[0]),str(pprint[1])))
+                            print('\t\t<< Sampled:\n\t\t\t< {}'.format(tmp))
+                            if i == 0:
+                                print('\t\t<< Keep, {} packets\n\t\t\t< {}'.format(len(pkeep),pkeep))
+                            elif i == iteration-1:
+                                print('\t\t<< Next, {} packets\n\t\t\t< {}'.format(len(tmpnext),tmpnext))
+                                pprint = packetOutput(pkeep,n,False) # generates list-styled packet output for better readability
+                                print(cfg.vcolor+'\t\t<< Keep, {} packets\n\t\t\t< [{} ... {}]'.format(len(pkeep),str(pprint[0]),str(pprint[1])))
+                            else:
+                                pprint = packetOutput(pkeep,n,False) # generates list-styled packet output for better readability
+                                print(cfg.vcolor+'\t\t<< Keep, {} packets\n\t\t\t< [{} ... {}]'.format(len(pkeep),str(pprint[0]),str(pprint[1])))
+                            pprint = packetOutput(pdrop,20,False) # generates list-styled packet output for better readability
+                            print(cfg.vcolor+'\t\t<< Drop, {} packets\n\t\t\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+
+                    if i == (iteration-1): # drop packets at the end of the last iteration
+                        if verbose: print(cfg.vcolor+'\n<<< Drop packets from current splitfile'+Style.RESET_ALL)
+
+                        pdrop = np.flip(pdrop) # reverse array to start dropping packets from the end
+                        editcapiteration = int(len(pdrop)/512)+1 # considering the limitation of 512 packets per editcap execution
+                        for i in range(0,editcapiteration):
+                            removeslice = pdrop[0:512] # 512 packet slice to remove with editcap
+                            pdrop = pdrop[512:] # removed packets from array containing packets to drop
+
+                            arg = [str(int) for int in removeslice] # forge argument for editcap
+                            arg = " ".join(arg)
+
+                            if False: print(cfg.vcolor+'\t\t<< editcap argument:\n{}'.format(arg)); input('')
+
+                            tmpsplitfile = split_folder / file # split-file in current iteration to process with editcap
+                            tmpfile = split_folder / 'tmp.pcap' # temporary file tmp.pcap created with editcap
+                            editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg)
+                            os.system(editcapcmd)
+
+                            # replace split-file with sampled temporary file
+                            movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
+                            os.system(movecmd)
+
+                        if verbose:
+                            print(cfg.vcolor+90*'~'+Style.RESET_ALL)
+                            if superverbose: input('')
+
+
+
+
 
         # MERGE split-files
         print('>>> Merging split-files: {}'.format(mergecapcmd))
@@ -411,7 +546,6 @@ if __name__ == '__main__':
                     if samplepacketcount == totalsamplecount: print(Fore.GREEN+'\t< {}\n\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification SUCCEEDED'.format(capinfoscmd,samplepacketcount,totalsamplecount)+Style.RESET_ALL)
                     else: print(Fore.RED+'\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification FAILED'.format(samplepacketcount,totalsamplecount)+Style.RESET_ALL)
     else: print('>>> No packet-based sampling, processing original capture')
-
 
     # FLOW-COLLECTION
     print('>>> Collect flows with go-flows: {}'.format(csv_sampled_export))
