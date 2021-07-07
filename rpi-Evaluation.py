@@ -385,9 +385,6 @@ if __name__ == '__main__':
             #exp[n][i].parameter = (F11 + recall1)/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*(instances/maxinstances)
             #exp[n][i].parameter = ((F11-minf11)/(maxf11-minf11) + (recall1-minrecall1)/(maxrecall1-minrecall1))/((runtime-minruntime)/(maxruntime-minruntime) + (classspeed-minclassspeed)/(maxclassspeed-minclassspeed) + (maxram-totalminram)/(totalmaxram-totalminram))*(instances/maxinstances)
 
-            exp[n][i].parameter  = (F11scaled + recall1scaled)/(runtimescaled + classspeedscaled + ramscaled)
-            exp[n][i].parameter2 = (F11scaled + recall1scaled)/(runtimescaled + classspeedscaled + ramscaled)*instancesscaled
-
 
             # calculate feature-vector specific min/max scaled values for alternative parameters
             if vector[exp[n][i].vector][0:3] == 'AGM':
@@ -399,6 +396,9 @@ if __name__ == '__main__':
                 recall1scaled2       = (recall1-minrecall1CAIA)/(maxrecall1CAIA-minrecall1CAIA)
                 instancesscaled2     = (instances-mininstancesCAIA)/(maxinstancesCAIA-mininstancesCAIA)
 
+
+            exp[n][i].parameter  = (F11scaled + recall1scaled)/(runtimescaled + classspeedscaled + ramscaled)
+            exp[n][i].parameter2 = (F11scaled + recall1scaled)/(runtimescaled + classspeedscaled + ramscaled)*instancesscaled2
             exp[n][i].parameter3 = (F11scaled2 + recall1scaled2)/(runtimescaled + classspeedscaled + ramscaled)*instancesscaled2
             exp[n][i].parameter4 = (F11scaled2 + recall1scaled2 + instancesscaled2)/(runtimescaled + classspeedscaled + ramscaled)
 
