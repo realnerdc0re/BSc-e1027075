@@ -203,10 +203,10 @@ def conversion(dataset,verbose=False):
 
     return dataset
 # calculate mean value of given dataset features
-def calcMean(dataset,features,verbose=False,time=False):
+def calcMean(dataset,name,features,verbose=False,time=False):
     means = [] # initialize empty list
     if verbose:
-        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: calcMean '+40*'~')
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: calcMean, {} '.format(name)+40*'~')
         print(cfg.vcolor+'\t\t>> Calculating mean values'+Style.RESET_ALL)
 
     for feature in features:
@@ -216,33 +216,50 @@ def calcMean(dataset,features,verbose=False,time=False):
     if verbose: print(cfg.vcolor+100*'~'+'\n'+Style.RESET_ALL)
     return means
 # search NaN features and replace with mean value
-def searchNaN(dataset,verbose=False,time=False):
+def searchNaN(dataset,name,verbose=False,time=False):
     features = []
     # informational output
     if verbose:
-        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: searchNaN '+40*'~')
-        print('\t\t>> searching NaNs'+Style.RESET_ALL)
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: searchNaN, {}'.format(name)+40*'~')
+        print('\t\t>> Searching NaN features'+Style.RESET_ALL)
 
     NaNs = dataset.isna().any()
     for i in range(0,NaNs.shape[0]):
         if NaNs.iloc[i] == True:
             if verbose: print(cfg.vcolor+'\t\t\t+ {}'.format(NaNs.index[i])+Style.RESET_ALL)
             features.append(NaNs.index[i])
+
+    # get exact NaNs row index numbers for debugging
+    if verbose:
+        print(cfg.vcolor+'\t\t>> Searching index numbers')
+        NaNdf = dataset.isnull() # creates dataframe containing False/True values for NaNs in each cell
+        for feature in features:
+            index = NaNdf[feature].loc[lambda x: x==True].index # get actual df row index numbers for NaNs per feature
+            print('\t\t\t> {}'.format(feature))
+            if len(index) > 0: # if NaN values are found
+                for row in index:
+                    print('\t\t\t\t+ {}:\t{}'.format(row,dataset[feature][row]))
     if verbose: print(cfg.vcolor+101*'~'+'\n'+Style.RESET_ALL)
+
     return features
-# replace NaN feature values with replacement
+# replace NaN values with replacement, replacement has same length as passed features
 def replaceNaN(dataset,name,features,replacement,verbose=False,time=False):
 
     if verbose:
-        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: replaceNaN '+40*'~')
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: replaceNaN, {} '.format(name)+40*'~')
         print(cfg.vcolor+'\t\t>> replace {} NaNs'.format(name)+Style.RESET_ALL)
     i = -1
     for feature in features:
         i += 1
-        if verbose: print(cfg.vcolor+'\t\t\t> {}: {}'.format(feature,format(replacement[i],".2f"))+Style.RESET_ALL)
+        if verbose:
+            print(cfg.vcolor+'\t\t\t> {}: {}'.format(feature,format(replacement[i],".2f"))+Style.RESET_ALL)
+        # NaN replacement with passed replacement value
         dataset[feature] = dataset[feature].fillna(replacement[i])
     if verbose: print(cfg.vcolor+101*'~'+'\n'+Style.RESET_ALL)
     return
+
+
+
 # UNUSED? replace NaNs with mean values
 def replacementNaN(dataset,verbose=False,time=False):
 
@@ -819,11 +836,11 @@ if __name__ == '__main__':
 
     # NAN REPLACEMENT for Xtrain & Xtest
     print('>>> Search NaN values')
-    NaNtrain = searchNaN(Xtrain,verbose,False)
-    NaNtest  = searchNaN(Xtest,verbose,False)
-    print('>>> Calcualte NaN mean value replacements')
-    meantrain = calcMean(Xtrain,NaNtrain,verbose,False)
-    meantest = calcMean(Xtest,NaNtest,verbose,False)
+    NaNtrain = searchNaN(Xtrain,'Xtrain',verbose,False)
+    NaNtest  = searchNaN(Xtest,'Xtest',verbose,False)
+    print('>>> Calculate NaN mean value replacements')
+    meantrain = calcMean(Xtrain,'Xtrain',NaNtrain,verbose,False)
+    meantest  = calcMean(Xtest,'Xtest',NaNtest,verbose,False)
     print('>>> Replace NaN values with feature mean values')
     replaceNaN(Xtrain,'Xtrain',NaNtrain,meantrain,verbose,False)
     replaceNaN(Xtest,'Xtest',NaNtest,meantest,verbose,False)
