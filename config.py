@@ -72,7 +72,8 @@ vectors = {
 4:'CAIA_flowSampling.json',
 5:'CAIA_packetSampling.json',
 6:'AGM_10s.json',
-7:'AGM_60s.json' # unused
+7:'AGM_60s.json', # unused
+8:'AGM_3600s.json' # unused
 }
 #######################################################################################
 # SAMPLING-MODES
@@ -80,12 +81,13 @@ vectors = {
 fsamplingmode = {
 1:'every n-th packet',
 2:'sample & skip n packets',
-3:'sample first n packets of a flow',
+3:'first n packets',
 4:'sample n, skip n-1, sample n-2 ...'
 }
 psamplingmode = {
 5:'every n-th packet',
-6:'time-based' # unused
+6:'random n out of N',
+7: 'timebased' # unused
 }
 # merge dictionaries for easier addressing later on
 samplingmode = fsamplingmode.copy()
@@ -119,7 +121,9 @@ tcpflags = {
 # REMOTE MACHINE
 # username, IP and working directory for the remote machine
 remotewd    = 'BSc-e1027075'
-#remoteuser  = 'dietpi'#remoteip    = '10.10.45.55'#remoteip    = '192.168.178.29'
+#remoteuser  = 'dietpi'
+#remoteip    = '10.10.45.55'
+#remoteip    = '192.168.178.29'
 remoteuser  = 'thesis'
 remoteip    = '10.10.40.209'
 remote      = '{}@{}'.format(remoteuser,remoteip)
@@ -129,12 +133,12 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 file        = [0]
-vector      = [4]
-mode        = [4]
-steps       = [7,5,3] # 0 to process unsampled PCAP
+vector      = [5]
+mode        = [6]
+steps       = [3,5,7] # 0 to process unsampled PCAP
 
 n_PCA       = 12 # unused, number is stored in information.csv
-PCA_var     = 0.90 # explained variance to achieve with components
+PCA_var     = 0.90 # explained variance to achieve with PCA components
 PCA_batch   = 10**5 # batchsize used for incremental PCA
 batchsize   = 10**5 # batchsize used for Standard Scaler partial fit (default 10**5)
 chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed! default 10**5)
