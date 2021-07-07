@@ -87,7 +87,7 @@ if __name__ == '__main__':
                 # plausibility check of given configuration, continue on pointless combinations
                 # flow-based feature-vectors and packet-based sampling-modes
                 if vector < cfg.vectorlimit and mode >= cfg.samplinglimit: continue
-                # packet-basefolderbased feature-vectors and flow-based sampling-modes
+                # packet-based feature-vectors and flow-based sampling-modes
                 elif vector >= cfg.vectorlimit and mode < cfg.samplinglimit: continue
 
                 for steps in cfg.steps: # iterate over given sampling-steps
@@ -105,9 +105,9 @@ if __name__ == '__main__':
                     if fit: ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -s {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # fit and save model on remote
                     else:   ssh = "ssh {} 'cd {} && python3 -u rpi-Preprocessing.py -e -r -m {} {} {} {} {} {}'".format(cfg.remote,cfg.remotewd,sarg,mode,file,steps,vector,cfg.batchsize) # importing model on remote
 
-                    sync   = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder)
-                    csync  = r'rsync -avz --progress {}/{} {}:{}'.format(cfg.wd,cfg.configuration,cfg.remote,cfg.remoteconf)
-                    resync = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder)
+                    sync   = r'rsync -avz --progress {}/{}/ {}:{}/{}/'.format(basefolder,folder,cfg.remote,basefolder,folder) # sync to remote
+                    csync  = r'rsync -avz --progress {}/{} {}:{}'.format(cfg.wd,cfg.configuration,cfg.remote,cfg.remoteconf)  # sync configuration
+                    resync = r'rsync -avz --progress {}:{}/{}/ {}/{}/'.format(cfg.remote,basefolder,folder,basefolder,folder) # sync to local
 
                     if (not remote): # LOCAL
                         if nosamp:
