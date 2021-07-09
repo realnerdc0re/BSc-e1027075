@@ -86,8 +86,9 @@ fsamplingmode = {
 }
 psamplingmode = {
 5:'every n-th packet',
-6:'random n out of N',
-7: 'timebased' # unused
+6:'n out of N',
+7:'probability',
+8: 'timebased' # unused
 }
 # merge dictionaries for easier addressing later on
 samplingmode = fsamplingmode.copy()
@@ -133,9 +134,10 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 # batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
 file        = [0]
-vector      = [5]
-mode        = [6]
-steps       = [3,5,7] # 0 to process unsampled PCAP
+vector      = [6]
+mode        = [7]
+steps       = [7] # 0 to process unsampled PCAP
+seed        = 1000 # seed number used for random sampling
 
 n_PCA       = 12 # unused, number is stored in information.csv
 PCA_var     = 0.90 # explained variance to achieve with PCA components
