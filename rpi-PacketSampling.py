@@ -17,7 +17,7 @@ import csv
 import subprocess
 import os
 import sys
-
+import math
 
 
 import config as cfg # necessary configurations from config.py
@@ -188,8 +188,13 @@ if __name__ == '__main__':
     if superverbose: verbose = True
     if seed:
         seed = True
-        s = args.seed[0] # seed number
-    else: seed = False
+        s = args.seed[0] # passed seed number
+    else:
+        seed = False
+        s = cfg.seed # use seed number from configuration
+
+    # create generator object with seed s
+    rng = np.random.default_rng(s)
 
     split   = args.split[0] # split size for editcap splits
     findex  = args.file[0] # file-index
@@ -403,7 +408,7 @@ if __name__ == '__main__':
                     movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
                     os.system(movecmd)
 
-            # random n out of N packets
+            # n out of N packets
             if mode == 6:
                 nn = n*n # N
 
@@ -438,7 +443,6 @@ if __name__ == '__main__':
                 if modulo == 0: iteration -= 1
 
                 for i in range(0,iteration):
-                    if seed: np.random.seed(s) # can be used for a deterministic "random" draw
 
                     sliceend   = slicestart + nn
                     currentslice = plist[slicestart:sliceend] # create slice of N packets
@@ -455,7 +459,7 @@ if __name__ == '__main__':
 
                         # draw n packets out of the current slice with length N
                         # replace=False to avoid drawing duplicate packets
-                        tmp = np.random.choice(currentslice,size=n,replace=False) # at this point array eventually contains packets from current and next splitfile
+                        tmp = rng.choice(currentslice,size=n,replace=False) # at this point array eventually contains packets from current and next splitfile
                         tmp = np.sort(tmp) # sort packets to drop to increase readability
                         tmpnext = tmp.copy() # array that is going to contain all sampled packets of the next splitfile
 
@@ -473,7 +477,7 @@ if __name__ == '__main__':
                     # all iterations except last
                     else:
                         skipflag = 0
-                        tmp = np.random.choice(currentslice,size=n,replace=False) # draw n packets out of N length slice, replace=False for no duplicate draws
+                        tmp = rng.choice(currentslice,size=n,replace=False) # draw n packets out of N length slice, replace=False for no duplicate draws
                         tmp = np.sort(tmp) # sort packets to drop to increase readability
 
                         pkeep = np.append(pkeep,tmp) # append sampled packets, again just necessary for verbose readability
@@ -526,8 +530,57 @@ if __name__ == '__main__':
                             print(cfg.vcolor+90*'~'+Style.RESET_ALL)
                             if superverbose: input('')
 
+            # probability 1/n
+            if mode == 7:
+                packets = math.ceil(samplepcount/n)
+                sample = rng.choice(plist,size=packets,replace=False) # draw n packets out of the whole file
+                sample = np.sort(sample)
+                pdrop = plist.copy() # list of packets to drop
+                for value in sample:
+                    pdrop = np.delete(pdrop,np.where(pdrop==value))
 
+                if verbose:
+                    pprint = packetOutput(plist,15,False)
+                    print(cfg.vcolor+'\n'+20*'~'+' Probability 1/n Sampling (n = {}), file {}/{} '.format(n,scount,splitcount)+20*'~')
+                    print(cfg.vcolor+'<<< Original, {} packets\n\t< [{} ... {}]'.format(len(plist),str(pprint[0]),str(pprint[1])))
 
+                    pprint = packetOutput(sample,15,False) # generates list-styled packet output for better readability
+                    print(cfg.vcolor+'\n\t<< Sampled, {} packets\n\t\t< [{} ... {}]'.format(len(sample),str(pprint[0]),str(pprint[1])))
+                    pprint = packetOutput(pdrop,15,False) # generates list-styled packet output for better readability
+                    print(cfg.vcolor+'\t<< Drop, {} packets\n\t\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+
+                pdrop = np.flip(np.sort(pdrop))
+                iteration = int(len(pdrop)/512)+1
+                for i in range(0,iteration):
+                    # create a slice of 512 packets to remove with editcaps
+                    pslice = pdrop[0:512]
+                    # remove these 512 packets from droplist for next iteration
+                    pdrop = pdrop[512:]
+
+                    if verbose:
+                        if (i < 2) or (i >= iteration-2): # only output first and last 2 iterations
+                            print(cfg.vcolor+'\n\t[{}/{}]:'.format(i+1,iteration))
+                            pprint = packetOutput(pslice,15,False) # generates list-styled packet output for better readability
+                            print(cfg.vcolor+'\t\t<< Dropping, {} packets\n\t\t\t< [{} ... {}]'.format(len(pslice),str(pprint[0]),str(pprint[1])))
+                            if i < (iteration-1): # only display remaining packets until last iteration
+                                pprint = packetOutput(pdrop,15,False) # generates list-styled packet output for better readability
+                                print(cfg.vcolor+'\n\t\t<< Remaining, {} packets\n\t\t\t< [{} ... {}]'.format(len(pdrop),str(pprint[0]),str(pprint[1]))+Style.RESET_ALL)
+
+                    # create string containing packet numbers to drop
+                    arg = [str(int) for int in pslice]
+                    # seperated with whitespaces necessary as editcap argument
+                    arg = " ".join(arg)
+
+                    tmpsplitfile = split_folder / file # split-file in current iteration to process with editcap
+                    tmpfile = split_folder / 'tmp.pcap' # temporary file tmp.pcap created with editcap
+                    editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg)
+                    os.system(editcapcmd)
+
+                    # replace split-file with sampled temporary file
+                    movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
+                    os.system(movecmd)
+
+                if verbose: print(cfg.vcolor+90*'~'+Style.RESET_ALL); input('')
 
 
         # MERGE split-files
