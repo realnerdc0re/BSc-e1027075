@@ -136,6 +136,7 @@ Labeling.py
 mem-rpi-Preprocessing.py
 PCAPreader.py
 # folders
+.vscode/*
 CIC-IDS2017/*
 tmp/*
 csv/*
