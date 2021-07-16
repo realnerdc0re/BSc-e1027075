@@ -25,36 +25,36 @@ pattern = '*Hours.csv' # pattern used to merge files in Sampling.py
 #######################################################################################
 # FOLDERS, FILES & LOGS
 # sampled CSVs & result logs, temporary logs in working directory
-flowfolder      = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
-packetfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
-# folder to store all result logs, temporary logs and sampled CSV for later evaluation
-eflowfolder     = mntd / 'data' / 'CIC-IDS2017' / 'Experiments' / 'flow-sampledCSV'
-epacketfolder   = mntd / 'data' / 'CIC-IDS2017' / 'Experiments' / 'packet-sampledCSV'
+flowfolder    = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'flow-sampledCSV'
+packetfolder  = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'packet-sampledCSV'
+# folder containing results, logs, temporary logs and sampled CSV for later evaluation
+eflowfolder   = mntd / 'data' / 'CIC-IDS2017' / 'Experiments' / 'flow-sampledCSV'
+epacketfolder = mntd / 'data' / 'CIC-IDS2017' / 'Experiments' / 'packet-sampledCSV'
 # experiment configuration foldername
-foldername      = '{}_mode{}_vector{}_steps{}_{}'
-# filenames used for logs
+foldername    = '{}_mode{}_vector{}_steps{}_{}'
+# logfiles
 csv_dstat   = 'dstat.csv'
 csv_time    = 'time.csv'
 csv_result  = 'result.csv'
 csv_report  = 'report.csv'
 csv_info    = 'information.csv'
 # working directory folders
-tmp     = wd / 'tmp'
-logs    = wd / 'logs'
-figures = wd / 'figures'
-# full path to wd logs
-time    = logs / csv_time
-dstat   = logs / csv_dstat
-result  = logs / csv_result
-report  = logs / csv_report
-# pickle-model files
+tmp         = wd / 'tmp'
+logs        = wd / 'logs'
+figures     = wd / 'figures'
+# full path to wd logfiles
+time        = logs / csv_time
+dstat       = logs / csv_dstat
+result      = logs / csv_result
+report      = logs / csv_report
+# pickle-model
 model_remote    = '{}_model_remote.pkl'
 model_local     = '{}_model_local.pkl'
-# framework configuration file
-configuration = 'config.py'
+# framework configuration
+configuration   = 'config.py'
 #######################################################################################
 # TOOLS
-# path to executable for go-flows and labeling-script
+# path to executables
 goflowspath     = hd / 'Git' / 'go-flows' / 'go-flows'
 labelingpath    = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
 #######################################################################################
@@ -67,30 +67,30 @@ labelingpath    = mntd / 'data' / 'BSc-e1027075' / 'Labeling.py'
 vectorfolder = 'go-flows-configurations'
 vectors = {
 1:'AGM_10s_flowbased.json',
-2:'AGM_60s.json', # unused
-3:'AGM_3600s.json', # unused
+2:'AGM_60s.json',                       # unused
+3:'AGM_3600s.json',                     # unused
 4:'CAIA_flowSampling.json',
 5:'CAIA_packetSampling.json',
 6:'AGM_10s.json',
-7:'AGM_60s.json', # unused
-8:'AGM_3600s.json' # unused
+7:'AGM_60s.json',                       # unused
+8:'AGM_3600s.json'                      # unused
 }
 #######################################################################################
 # SAMPLING-MODES
 # modes available for perflow- and packetsampling
 fsamplingmode = {
 1:'every n-th packet',
-2:'sample & skip n packets',
+2:'sample & skip n packets',            # unused
 3:'first n packets',
-4:'sample n, skip n-1, sample n-2 ...'
+4:'sample n, skip n-1, sample n-2 ...'  # unused
 }
 psamplingmode = {
 5:'every n-th packet',
-6:'n out of N',
+6:'n out of N',                         # unused
 7:'probability',
-8: 'timebased' # unused
+8: 'timebased'                          # unused
 }
-# merge dictionaries for easier addressing later on
+# dictionary used for automated execution
 samplingmode = fsamplingmode.copy()
 samplingmode.update(psamplingmode)
 #######################################################################################
@@ -109,36 +109,40 @@ packetlimit     = 4
 #######################################################################################
 # REMOTE MACHINE
 # username, IP and working directory for the remote machine
+# LXC container
 remotewd    = 'BSc-e1027075'
-#remoteuser  = 'dietpi'
-#remoteip    = '10.10.45.55'
-#remoteip    = '192.168.178.29'
 remoteuser  = 'thesis'
 remoteip    = '10.10.40.209'
 remote      = '{}@{}'.format(remoteuser,remoteip)
 remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 #######################################################################################
 # EXPERIMENTS
-# batchsize for preprocessing
 # files, feature-vectors, sampling-modes & sampling-steps to process
-file        = [3]
-vector      = [5]
-mode        = [5]
-steps       = [0] # 0 to process unsampled PCAP
+file        = [5]  # 0 to process all all workday files, 1 to 5 for workdays
+vector      = [6]  # determines used go-flows specification file specified above
+mode        = [7]  # determines applied sampling mode specified above
+steps       = [10]  # value for n, 0 to process unsampled PCAP
 seed        = 1000 # seed number used for random sampling
-
-n_PCA       = 12 # unused, number is stored in information.csv
-PCA_var     = 0.90 # explained variance to achieve with PCA components
-PCA_batch   = 10**5 # batchsize used for incremental PCA
-batchsize   = 10**5 # batchsize used for Standard Scaler partial fit (default 10**5)
-chunksize   = 10**5 # read CSV in chunks (reading line-by-line not allowed! default 10**5)
-split       = 5000 # used for packetsampling, determines number of packets in editcap splits
-splitsize   = 25*10**4 # to not exceed rpi RAM size, split files into 250k rows per file (default 25*10**4)
 #######################################################################################
-# MODEL ESTIMATORS
-maxtrees    = 100 # maximum number of trees
-maxdepth    = None # maximum tree-depth
-maxleaves   = None # maximum number of leafes per tree
+# SCRIPTS
+# Principal Component Analysis
+n_PCA       = 12       # unused
+PCA_var     = 0.90     # explained variance to achieve with PCA components
+PCA_batch   = 10**5    # batchsize used for incremental PCA
+# StandardScaler
+batchsize   = 10**5    # batchsize used for partial fit (default 10**5)
+# CSV import
+chunksize   = 10**5    # lines per chunks (default 10**5)
+# Sampling
+split       = 5000     # number of packets per splitfile created with editcap
+# Classification
+splitsize   = 25*10**4 # number of lines (flows) per file (default 25*10**4)
+#######################################################################################
+# RANDOM FORST CLASSIFIER
+# estimators
+maxtrees    = 100      # maximum number of trees
+maxdepth    = None     # maximum tree-depth
+maxleaves   = None     # maximum number of leafes per tree
 #######################################################################################
 
 #######################################################################################
@@ -147,7 +151,17 @@ maxleaves   = None # maximum number of leafes per tree
 # EVALUATION
 types = ['*.png','*.csv'] # used to clean figures folder when before processing data
 #######################################################################################
-# INFORMATIONAL OUTPUT
-# color used for verbose output
-vcolor = Fore.WHITE
+# COLORS
+# uses terminal color palette, options are:
+# BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE
+vcolor = Fore.GREEN
+#######################################################################################
+
+
+#######################################################################################
+# REMOTE MACHINE
+# raspberry pi zero
+#remoteuser  = 'dietpi'
+#remoteip    = '10.10.45.55'
+#remoteip    = '192.168.178.29'
 #######################################################################################
