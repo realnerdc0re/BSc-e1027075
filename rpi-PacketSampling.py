@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     cleansplitPCAP  = 'rm {}'.format(cfg.fpath/'splitPCAP'/'*')
     editsplitcmd    = 'editcap -c {} {} {}'.format(split,pcap_snap,pcap_split)
-    capinfoscmd     = r'capinfos -M -c {} | grep packets'.format(pcap)
+    capcmd          = r'capinfos -M -c {} | grep packets'.format(pcap)
     editsnapcmd     = 'editcap -s 127 {} {}'.format(pcap,pcap_snap)
     mergecapcmd     = 'mergecap -F pcap {}/* -w {}'.format(split_folder,pcap_sampled)
 
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     print('\nlogs:\t{}'.format(cfg.logs))
     print('times:\t{}'.format(cfg.time))
     print('\n'+20*'~'+' commands '+20*'~')
-    print('\npacket-count: {}'.format(capinfoscmd))
+    print('\npacket-count: {}'.format(capcmd))
     print('drop payload: {}'.format(editsnapcmd))
     print('clear folder: {}'.format(cleansplitPCAP))
     print('split PCAP: {}'.format(editsplitcmd))
@@ -280,13 +280,13 @@ if __name__ == '__main__':
     if n != 0:
         if check: # calculate sampled packet-count for basic result verification
             print('>>> Calculating packet-count for result verification')
-            totalpacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
+            totalpacketcount = subprocess.check_output(capcmd, shell=True, universal_newlines=True)
             for word in totalpacketcount.split():
                 if word.isdigit():
                     totalpacketcount = int(word) # total number of packets in pcap
                     totalpackets = np.arange(1,totalpacketcount+1,1)
                     totalsamplecount = len(totalpackets[0::n])
-                    print('\t< {}\n\t< {} packets total\n\t< {} packets sampled'.format(capinfoscmd,totalpacketcount,totalsamplecount))
+                    print('\t< {}\n\t< {} packets total\n\t< {} packets sampled'.format(capcmd,totalpacketcount,totalsamplecount))
 
 
         # DROP PAYLOAD from every packet
@@ -355,12 +355,12 @@ if __name__ == '__main__':
                     print('\n\t< {} skipped packets, this iteration'.format(packetskip))
                     print('\t< {} skipped packets, next iteration'.format(nextpacketskip)+Style.RESET_ALL)
 
-                # array already considering packets to skip from last iteration
+                # array already considering packets to skip from last iteration (verbose output)
                 pskip = plist[packetskip:]
+                # packet-number of packets to sample in current iteration (verbose output)
+                psamplenumber = plist[packetskip::n]
                 # index-numbers of packets to sample in current iteration
                 psample = plistindex[packetskip::n]
-                # packet-number of packets to sample in current iteration (readability in verbose)
-                psamplenumber = plist[packetskip::n]
                 # packets to drop in current iteration via editcap
                 pdrop = np.delete(plist,psample.tolist())
 
@@ -377,9 +377,7 @@ if __name__ == '__main__':
 
                 # flip the list to drop packets via editcap, starting from the end
                 pdrop = np.flip(pdrop)
-                # number of iterations until all packets are dropped
                 iteration = int(len(pdrop)/512)+1
-
                 for i in range(0,iteration):
                     # create a slice of 512 packets to remove with editcaps
                     pslice = pdrop[0:512]
@@ -533,7 +531,8 @@ if __name__ == '__main__':
             # probability 1/n
             if mode == 7:
                 packets = math.ceil(samplepcount/n)
-                sample = rng.choice(plist,size=packets,replace=False) # draw n packets out of the whole file
+                # draw n packets out of the whole file
+                sample = rng.choice(plist,size=packets,replace=False)
                 sample = np.sort(sample)
                 pdrop = plist.copy() # list of packets to drop
                 for value in sample:
@@ -571,8 +570,8 @@ if __name__ == '__main__':
                     # seperated with whitespaces necessary as editcap argument
                     arg = " ".join(arg)
 
-                    tmpsplitfile = split_folder / file # split-file in current iteration to process with editcap
-                    tmpfile = split_folder / 'tmp.pcap' # temporary file tmp.pcap created with editcap
+                    tmpsplitfile = split_folder / file # current iteration split-file
+                    tmpfile = split_folder / 'tmp.pcap' # temporary file created with editcap
                     editcapcmd = 'editcap {} {} {}'.format(tmpsplitfile,tmpfile,arg)
                     os.system(editcapcmd)
 
@@ -580,7 +579,9 @@ if __name__ == '__main__':
                     movecmd = r'mv {} {} > NUL'.format(tmpfile,tmpsplitfile)
                     os.system(movecmd)
 
-                if verbose: print(cfg.vcolor+90*'~'+Style.RESET_ALL); input('')
+                if verbose:
+                    print(cfg.vcolor+90*'~'+Style.RESET_ALL)
+                    if superverbose: input('')
 
 
         # MERGE split-files
@@ -591,12 +592,12 @@ if __name__ == '__main__':
         # VERIFICATION
         if check: # compare sampled packet-count with calculated packet-count for basic verification
             print('>>> Verifying sampled packet-count')
-            capinfoscmd = r'capinfos -M -c {} | grep packets'.format(pcap_sampled)
-            samplepacketcount = subprocess.check_output(capinfoscmd, shell=True, universal_newlines=True)
+            capcmd = r'capinfos -M -c {} | grep packets'.format(pcap_sampled)
+            samplepacketcount = subprocess.check_output(capcmd, shell=True, universal_newlines=True)
             for word in samplepacketcount.split():
                 if word.isdigit():
                     samplepacketcount = int(word)
-                    if samplepacketcount == totalsamplecount: print(Fore.GREEN+'\t< {}\n\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification SUCCEEDED'.format(capinfoscmd,samplepacketcount,totalsamplecount)+Style.RESET_ALL)
+                    if samplepacketcount == totalsamplecount: print(Fore.GREEN+'\t< {}\n\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification SUCCEEDED'.format(capcmd,samplepacketcount,totalsamplecount)+Style.RESET_ALL)
                     else: print(Fore.RED+'\t< {} packets sampled\n\t< {} packets calculated\n\t< Verification FAILED'.format(samplepacketcount,totalsamplecount)+Style.RESET_ALL)
     else: print('>>> No packet-based sampling, processing original capture')
 
