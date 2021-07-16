@@ -87,7 +87,7 @@ def perpacketFeatures(dataset,keyword,verbose=False,time=False):
 
     return tmp
 # returns list of features based on keyword
-def filterFeatures(dataset,keyword,verbose=False,time=False):
+def filterFeatures(dataset,keyword,verbose=False):
     features = dataset.columns
     tmp = []
 
@@ -535,19 +535,19 @@ if __name__ == '__main__':
 
         keyword = 'apply(accumulate'
         print('>>> Identifying accumulated features')
-        features = filterFeatures(dataset,keyword,verbose,time)
+        features = filterFeatures(dataset,keyword,verbose)
 
         keyword = 'TotalCount'
         print('>>> Identifying features containing: {}'.format(keyword))
-        totalFeatures = filterFeatures(dataset,keyword,verbose,time)
+        totalFeatures = filterFeatures(dataset,keyword,verbose)
 
         keyword = 'ipTotal'
         print('>>> Identifying features containing: {}'.format(keyword))
-        ipTotal = filterFeatures(dataset,keyword,verbose,time)
+        ipTotal = filterFeatures(dataset,keyword,verbose)
 
         keyword = 'interPacket'
         print('>>> Identifying features containing: {}'.format(keyword))
-        interPacket = filterFeatures(dataset,keyword,verbose,time)
+        interPacket = filterFeatures(dataset,keyword,verbose)
         if verbose: print(cfg.vcolor+'\n< Original:\n{}\n'.format(dataset[features].head(n=20))+Style.RESET_ALL)
 
         print('>>> Converting accumulated values')
@@ -723,11 +723,11 @@ if __name__ == '__main__':
         print('<<< {}'.format(cfg.vectors[j]))
 
         print('>>> Identifying accumulated features')
-        keyword = 'apply(accumulate'; features = filterFeatures(dataset,keyword,verbose,time)
+        keyword = 'apply(accumulate'; features = filterFeatures(dataset,keyword,verbose)
 
-        print('>>> Identifying textual feature') # basically manual selection via keywords
-        keyword = '_tcp'; textual = filterFeatures(dataset,keyword,verbose,time)
-        keyword = 'destinationIP'; textual += filterFeatures(dataset,keyword,verbose,time)
+        print('>>> Identifying textual feature')
+        keyword = '_tcp'; textual=filterFeatures(dataset,keyword,verbose)
+        keyword = 'destinationIP'; textual+=filterFeatures(dataset,keyword,verbose)
 
         for element in textual:
             try: features.remove(element) # remove texutal features from numeric
@@ -743,7 +743,7 @@ if __name__ == '__main__':
         print('>>> Converting destinationIPAddress feature') # converts textual feature to list
         convertToArray(dataset,['apply(accumulate(destinationIPAddress),forward)'],2,verbose)
 
-        print('>>> Converting _tcpFlags feature') # converts textual feature (including whitespaces as non-TCP flag) to list
+        print('>>> Converting _tcpFlags feature') # converts TCP flags, considering weird whitespaces
         convertToArrayTCP(dataset,'apply(accumulate(_tcpFlags),forward)',2,verbose,superverbose)
 
         if verbose: print(cfg.vcolor+'\n< Converted:\n{}'.format(dataset[textual].head(n=20))); input('...\n'+Style.RESET_ALL)
