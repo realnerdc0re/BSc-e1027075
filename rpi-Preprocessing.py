@@ -747,7 +747,6 @@ if __name__ == '__main__':
         sampling        = 'packetbased'
 
     # forge foldername to import CSV based on arguments
-    foldername = '{}_mode{}_vector{}_steps{}'.format(cfg.filenames[findex],m,j,n)
     foldername = cfg.foldername.format(cfg.filenames[findex],m,j,n,sampling)
 
     if flowsampling:
@@ -755,7 +754,7 @@ if __name__ == '__main__':
         path    = cfg.flowfolder / foldername / csv_import # sampled CSV directory
         logs    = cfg.flowfolder / foldername / log # logfolder path
         modeld  = cfg.flowfolder / foldername / 'model' # pickle model directory
-        infocsv = cfg.flowfolder / foldername / 'information.csv' # information csv to save PCA component number
+        infocsv = cfg.flowfolder / foldername / 'information.csv' # PCA information
     elif packetsampling:
         #foldername = '{}_packetsampled'.format(foldername)
         path    = cfg.packetfolder / foldername / csv_import
@@ -869,9 +868,9 @@ if __name__ == '__main__':
     if local:
         print('>>> Determine PCA component number for {}% explained variance'.format(cfg.PCA_var*100))
         XtrainPCA = Xtrain.copy()
-        XtestPCA  = Xtest.copy()
+        #XtestPCA  = Xtest.copy()
         XtrainPCA = scaler.transform(XtrainPCA)
-        XtestPCA  = scaler.transform(XtestPCA)
+        #XtestPCA  = scaler.transform(XtestPCA)
 
         pca = PCA().fit(XtrainPCA) # fit data to training portion
         xi = np.arange(1, XtrainPCA.shape[1]+1, step=1)
@@ -880,11 +879,12 @@ if __name__ == '__main__':
         nPCA      = math.ceil(nPCAexact) # use ceil function to round up to the next integer
         if verbose: print(cfg.vcolor+'< \u2308{}\u2309 = {} PCA components'.format(round(nPCAexact,2),nPCA)+Style.RESET_ALL)
 
-        infoPCA = read_csv(infocsv)
+        infoPCA = read_csv(infocsv) # open information.csv
         infoPCA.loc[5] = ['PCA variance',cfg.PCA_var]
         infoPCA.loc[6] = ['PCA components',nPCA]
-        infoPCA.to_csv(infocsv, index=False)
-        del infoPCA; del nPCAexact; del xi; del y
+        infoPCA.to_csv(infocsv, index=False) # save info
+        del XtrainPCA; del infoPCA; del nPCAexact; del xi; del y
+
 
 
     # SPLITTING DATA INTO SMALLER FILES
