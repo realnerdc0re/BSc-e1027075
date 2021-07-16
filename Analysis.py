@@ -889,12 +889,12 @@ if __name__ == '__main__':
     print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
 
     if not pcas:
-        print('\n\nFeature-Importance Labels:\n{}\n{} elements, {}'.format(feature_names,len(feature_names),type(feature_names)))
+        print(cfg.vcolor+'\n\nFeature-Importance Labels:\n{}\n{} elements, {}'.format(feature_names,len(feature_names),type(feature_names)))
         print('\nFeature-Importance Overview:')
         zipped = sorted(zip(feature_names,featureimportance),key=lambda x: x[1],reverse=True) # sort aggregated elements from iterables based on feature-importance value
         for feature,value in zipped:
             print('{}%\t{}'.format(format(value*100,".2f"),feature))
-        print('\nFeature-Importance:\n{}\n{} elements, {} {}'.format(featureimportance,len(featureimportance),type(featureimportance),np.sum(featureimportance)))
+        print('\nFeature-Importance:\n{}\n{} elements, {} {}'.format(featureimportance,len(featureimportance),type(featureimportance),np.sum(featureimportance))+Style.RESET_ALL)
 
     if agm:
         print('\npacketTotalCount, minimum: {}'.format(minTotalpackets))
