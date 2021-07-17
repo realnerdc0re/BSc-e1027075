@@ -859,7 +859,7 @@ if __name__ == '__main__':
     n = Xtrain.shape[0] # total number of rows
     processed = 0
     while processed < n: # iterating until done
-        toprocess = min(batch, n-processed) # number of rows to process in current iteration
+        toprocess = min(batch, n-processed) # number of rows to process
         scaler.partial_fit(Xtrain[processed:processed+toprocess])
         processed += toprocess # increase number of already processed rows
 
@@ -868,9 +868,7 @@ if __name__ == '__main__':
     if local:
         print('>>> Determine PCA component number for {}% explained variance'.format(cfg.PCA_var*100))
         XtrainPCA = Xtrain.copy()
-        #XtestPCA  = Xtest.copy()
         XtrainPCA = scaler.transform(XtrainPCA)
-        #XtestPCA  = scaler.transform(XtestPCA)
 
         pca = PCA().fit(XtrainPCA) # fit data to training portion
         xi = np.arange(1, XtrainPCA.shape[1]+1, step=1)
@@ -884,7 +882,6 @@ if __name__ == '__main__':
         infoPCA.loc[6] = ['PCA components',nPCA]
         infoPCA.to_csv(infocsv, index=False) # save info
         del XtrainPCA; del infoPCA; del nPCAexact; del xi; del y
-
 
 
     # SPLITTING DATA INTO SMALLER FILES
@@ -1030,7 +1027,6 @@ if __name__ == '__main__':
     del infoPCA
 
     print('>>> Applying PCA fit with {} components'.format(n_Xpca))
-    #Xpca = []
     ipca = IncrementalPCA(n_components = n_Xpca, batch_size = cfg.PCA_batch)
 
     for index in iXtrain: # partial fit PCA to Xtrain, iterating over split-files
@@ -1083,9 +1079,9 @@ if __name__ == '__main__':
 
         print('\t\t> Saving')
         Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
-    if verbose: print(cfg.vcolor+'< Xtest (PCA):\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2))+Style.RESET_ALL)
     del split
     del ipca; 
+    if verbose: print(cfg.vcolor+'< Xtest (PCA):\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2))+Style.RESET_ALL)
 
 
     # RANDOM FOREST CLASSIFIER
