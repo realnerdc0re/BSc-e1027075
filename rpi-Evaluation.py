@@ -446,7 +446,9 @@ if __name__ == '__main__':
             ticks   = []
             labels  = []
 
-            png_file = 'figures/RAM-usage_{}_{}_{}_steps{}.png' # template for PNG filename
+            #png_file = 'figures/RAM-usage_{}_{}_{}_steps{}.png' # template for PNG filename
+            png_file = 'figures/RAM-usage_{}_{}_{}_steps{}.pdf' # template for PDF filename (PDF is easier to include in LaTeX!)
+
 
             # create list of relevant timestamps and labels
             for j in range(1,exp[n][i].time['epochtime'].shape[0]-1): # excluding start & end timestamps
@@ -511,7 +513,9 @@ if __name__ == '__main__':
         #for i in range (0,1): # test loop only one experiment
         for i in range (0,len(exp[n])):
             count += 1
-            png_file = 'figures/Spiderchart_{}_{}_{}_steps{}.png'
+            #png_file = 'figures/Spiderchart_{}_{}_{}_steps{}.png'
+            png_file = 'figures/Spiderchart_{}_{}_{}_steps{}.pdf'
+
 
             # set plot parameters
             plt.rcParams['xtick.major.pad']=15 # move labes a bit outside of outer circle
@@ -687,7 +691,9 @@ if __name__ == '__main__':
             plt.rcParams['xtick.major.pad'] = 15 # move labes a bit outside of outer 100% circle
 
             count += 1
-            png_file = 'figures/Spiderchart-Comparison_{}_{}_{}.png'
+            #png_file = 'figures/Spiderchart-Comparison_{}_{}_{}.png'
+            png_file = 'figures/Spiderchart-Comparison_{}_{}_{}.pdf'
+
 
             for n in range(0,len(folders)): # iterate folders
                 for i in range (0,len(exp[n])):
@@ -859,7 +865,9 @@ if __name__ == '__main__':
         print('\t\t< {}'.format(format(x.parameter3,".2f")))
 
         plt.rcParams['xtick.major.pad'] = 15 # move labes a bit outside of outer 100% circle
-        png_file = 'figures/Spiderchart-Comparison_Parameter-Ranking.png'
+        #png_file = 'figures/Spiderchart-Comparison_Parameter-Ranking.png'
+        png_file = 'figures/Spiderchart-Comparison_Parameter-Ranking.pdf'
+
 
         # relevant values for chart creation
         CPU_max     = x.dstat['"usr"'].max()
