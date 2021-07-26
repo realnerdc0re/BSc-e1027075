@@ -96,12 +96,12 @@ samplingmode.update(psamplingmode)
 #######################################################################################
 # TRESHOLD, change details here
 # numbers marks specific limits used for plausibility on specific
-# argument combinations to guarantee automated execution
-vectorlimit     = 5
-samplinglimit   = 5
-modelimit       = 4 # used to determine choice for samplingmodes in evaluation
-flowlimit       = 4 # used to set mode to 'AGM' or '5tuple' for Labeling.py
-packetlimit     = 4
+# argument combinations to guarantee correct automated execution
+vectorlimit     = 5 # used to make experiment plausibility check in Master.py
+samplinglimit   = 5 # used to make experiment plausibility check in Master.py
+modelimit       = 4 # unused
+flowlimit       = 4 # used to set labeling mode in FlowSampling.py
+packetlimit     = 4 # used to set labeling mode in PacketSampling.py
 #######################################################################################
 
 #######################################################################################
@@ -118,10 +118,10 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 #######################################################################################
 # EXPERIMENTS
 # files, feature-vectors, sampling-modes & sampling-steps to process
-file        = [5]  # 0 to process all all workday files, 1 to 5 for workdays
-vector      = [6]  # determines used go-flows specification file specified above
+file        = [0]  # 0 to process all all workday files, 1 to 5 for workdays
+vector      = [5,6]  # determines used go-flows specification file specified above
 mode        = [7]  # determines applied sampling mode specified above
-steps       = [10]  # value for n, 0 to process unsampled PCAP
+steps       = [5,10]  # value for n, 0 to process unsampled PCAP
 seed        = 1000 # seed number used for random sampling
 #######################################################################################
 # SCRIPTS
@@ -149,7 +149,7 @@ maxleaves   = None     # maximum number of leafes per tree
 # OUTPUTS
 #######################################################################################
 # EVALUATION
-types = ['*.png','*.csv'] # used to clean figures folder when before processing data
+types = ['*.png','*.csv','*.pdf'] # used to clean figures folder when before processing data
 #######################################################################################
 # COLORS
 # uses terminal color palette, options are:
