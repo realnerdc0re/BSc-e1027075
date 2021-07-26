@@ -12,6 +12,7 @@
 
 
 ### CODE
+- check makefile syntax for private usage
 - CHANGE samplingmode choice: not use limits set in config.py but use acutal feature-vector names instead
 - NaN replacement AGM still questionable
     - implemented NaN row detection within searchNaN function, all occuring NaN flows should be kind of neglible...
@@ -43,8 +44,12 @@
 
 
 ### THESIS
-- chapter 05 methodology:
-    - Preprocessing.py diagram: dstat logging missing
+
+- prediction time per instance based on sampling? refer to Asadi et al figure 2 (the more complex the tree the more time per instance)
+    - also chapter 6 discussion points out that the necessary feature vector preprocessing is very difficult to to study cuz based on implementation extraction algorithm.
+
+- change all figures from PNG to PDF (Cropped)
+    - also increase line width by +1 for everything to improve printing results?
 
 - mention in detail the fails tied to model export/import on the Raspberry Pi Zero
     - maybe redo the experiments to gather the exact error message:
@@ -112,6 +117,8 @@
 
 
 ## DONE
+- chapter 05 methodology:
+    - Preprocessing.py diagram: dstat logging missing
 - change comparison.csv column order:
     - parameter
     - vector
