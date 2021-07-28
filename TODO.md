@@ -1,19 +1,12 @@
 ## INPROGRESS
-- implement probabilistic sampling for packet-based sampling and maybe also flow-based sampling: https://towardsdatascience.com/probability-sampling-with-python-8c977ad78664
-    - random sampling
-    - n out of N sampling (similar to how Cisco routers do it)
-        - right now I do n, N = n²
-        - maybe do n = 1 +sqrt(N)?
-        - https://sflow.org/packetSamplingBasics/
-        - https://sflow.org/
-        - https://openlab-mu-internal.web.cern.ch/03_documents/3_technical_documents/technical_reports/2007/rj-mm_samplingreport.pdf
-        - https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/netflow/configuration/12-2sr/nf-12-2sr-book/nf-detct-analy-thrts.html
-    - will deliver worse performance but results are still interesting
+
 
 
 ### CODE
 - check makefile syntax for private usage
-- CHANGE samplingmode choice: not use limits set in config.py but use acutal feature-vector names instead
+
+- samplingmode choice: not use limits set in config.py but use acutal feature-vector names instead
+
 - NaN replacement AGM still questionable
     - implemented NaN row detection within searchNaN function, all occuring NaN flows should be kind of neglible...
 
@@ -24,23 +17,15 @@
     - rpi-PacketSampling.py ==> PacketbasedSampling.py
     - rpi-Sampling.py       ==> SamplingControl.py
     - rpi-Evaluation.py     ==> Evaluation.py
-- config.py: get limits directy from dictionary-entries same way I implemented the sampling-modes
+
+- config.py: get limits directly from dictionary-entries same way I implemented the sampling-modes
+
 
 #### EVALUATION
-- change model size to instances on comparison and ranking spiderchart plots
+
 - develop meaningful parameter, involving accuracy, resourece-usage and maybe runtime to express tradeoff between accuracy and resources for different sampling methods
     - instead of using f11 and recall1 use degradiation compared to best score for same... (should even out base-differences on various feature-vectors for the same dataset)
         - https://www.wikiwand.com/en/Feature_scaling, use best result on same feature-vector and all modes, steps (0,3,5,7) as maximum, min-max scaled all scores based on maximum and minimum values instead of base scores
-- for comparison charts:
-    - add legend on top of plot show visual differentiation of flow-based and packet-based plots
-    - add legend for actual plots below spider chart
-- group experiment classobjects based on following comparisons (files always Merged?):
-    - same featurevector, same samplingmethod
-        - different steps
-    - same steps, same samplingmethods
-        - different featurevector
-    - same steps, same featurevectors
-        - different samplingmethods
 
 
 ### THESIS
@@ -48,37 +33,32 @@
 - prediction time per instance based on sampling? refer to Asadi et al figure 2 (the more complex the tree the more time per instance)
     - also chapter 6 discussion points out that the necessary feature vector preprocessing is very difficult to to study cuz based on implementation extraction algorithm.
 
-- change all figures from PNG to PDF (Cropped)
-    - also increase line width by +1 for everything to improve printing results?
-
 - mention in detail the fails tied to model export/import on the Raspberry Pi Zero
     - maybe redo the experiments to gather the exact error message:
         - with a fitted model created on:
             - Ubuntu 20.10 (64bit)
             - Debian 32bit
+
 - describe why steps done like splitting files and downgrading datatypes were necessary to get the classification going on the Raspberry Pi Zero
 
 - upload thesis to SVN when following topics are written:
     - experiment description: 
         - list,legend or table that describes all used experiment configurations e.g. with roman letters
-        - use those letter-shortcuts for the flow-charts
+        - use those letter-shortcuts for the charts
     - metric descriptions
 
 - mention implemented, but not used sampling methods like sample n, skip n-1, sample n-2...
+
 - adjust codelines in chapter 05 methodology after final code-changes and extend description when necessary
-- chapter 01 introduction
+
 - chapter 02 background
     - search for basic machine learning ressource requirements/usage and don't focus on anomaly detection
         - processing
         - classification tasks
         - flow export
-- result & discussion
 
 ### DEFENSIO
-- simplify the framework diagrams, these can also be placed in the thesis introduction:
-    - group functions
-    - simplify
-- keep detailed diagrams in chapter methodology
+
 
 
 ## TODO
@@ -117,8 +97,35 @@
 
 
 ## DONE
+- simplify the framework diagrams, these can also be placed in the thesis introduction:
+    - group functions
+    - simplify
+- keep detailed diagrams in chapter methodology
+- implement probabilistic sampling for packet-based sampling and maybe also flow-based sampling: https://towardsdatascience.com/probability-sampling-with-python-8c977ad78664
+    - random sampling
+    - n out of N sampling (similar to how Cisco routers do it, unused but implemented)
+        - right now I do n, N = n²
+        - maybe do n = 1 +sqrt(N)?
+        - https://sflow.org/packetSamplingBasics/
+        - https://sflow.org/
+        - https://openlab-mu-internal.web.cern.ch/03_documents/3_technical_documents/technical_reports/2007/rj-mm_samplingreport.pdf
+        - https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/netflow/configuration/12-2sr/nf-12-2sr-book/nf-detct-analy-thrts.html
+    - will deliver worse performance but results are still interesting
+- chapter 07 result & discussion
+- chapter 01 introduction
+- change all figures from PNG to PDF (Cropped)
 - chapter 05 methodology:
     - Preprocessing.py diagram: dstat logging missing
+- for comparison charts:
+    - add legend on top of plot show visual differentiation of flow-based and packet-based plots
+    - add legend for actual plots below spider chart
+- group experiment classobjects based on following comparisons (files always Merged?):
+    - same featurevector, same samplingmethod
+        - different steps
+    - same steps, same samplingmethods
+        - different featurevector
+    - same steps, same featurevectors
+        - different samplingmethods
 - change comparison.csv column order:
     - parameter
     - vector
