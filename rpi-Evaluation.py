@@ -27,6 +27,35 @@ if not os.path.exists(cfg.figures): os.mkdir(cfg.figures)
 # disable figure warning
 plt.rcParams.update({'figure.max_open_warning': 0})
 
+# dict to create roman letter numbers
+IDroman = {
+1:'I',
+2:'II',
+3:'III',
+4:'IV',
+5:'V',
+6:'VI',
+7:'VII',
+8:'VIII',
+9:'IX',
+10:'X',
+11:'XI',
+12:'XII',
+13:'XIII',
+14:'XIV',
+15:'XV',
+16:'XVI',
+17:'XVII',
+18:'XVIII',
+19:'XIX',
+20:'XX',
+21:'XXI',
+22:'XXII',
+23:'XXIII',
+24:'XXIV',
+25:'XXV',
+26:'XXVI'
+}
 
 
 # ARGUMENT PARSING
@@ -57,7 +86,7 @@ experiments_unsampled = []
 
 # class object containing all necessary experiment data
 class Experiment:
-    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',modelsize=0,runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,parameter2=0,parameter3=0,parameter4=0,maxram=0,trees=0,maxleaves=0,maxdepth=0,pca_n=0,pca_var=0):
+    def __init__(self,fullpath,file,mode,vector,steps,sampling,info,time,dstat,report,result,style='solid',modelsize=0,idnumber=0,runtime=0,classtime=0,classspeed=0,instances=0,parameter=0,parameter2=0,parameter3=0,parameter4=0,maxram=0,trees=0,maxleaves=0,maxdepth=0,pca_n=0,pca_var=0):
         # info
         self.fullpath   = fullpath
         self.file       = file
@@ -65,6 +94,7 @@ class Experiment:
         self.vector     = vector
         self.steps      = steps
         self.sampling   = sampling
+        self.idnumber   = idnumber
 
         # logs
         self.info       = info
@@ -95,15 +125,23 @@ class Experiment:
 
     def __str__(self):
         return str(self.__class__)+': '+str(self.__dict__)
+
+    def update(self, property, value):
+        setattr(self, property, value)
+
+
 # extract information from folders, create object for each experiment containing sampling information and logs as df
 def createExperiments(folders,verbose=False):
 
+    idnumber = 0 # number used for experiment ID
     for item in folders: # list of folders containing the actual experiment folders
 
         print('\t>> Reading sub-folders')
         for folder in item: # iterating over sub-folders
+            idnumber += 1
 
             foldername = folder.parts[-1] # returns the current foldername
+
 
             if verbose: # output current experiment folders
                 print('\t\t< Fullpath:\t{}'.format(folder))
@@ -114,14 +152,19 @@ def createExperiments(folders,verbose=False):
                     print('\t\t\t[{}]: {}'.format(i, folder.parents[i]))
 
             parts = foldername.split('_') # splits foldername to gather experiment data
-
+            #print(parts)
+            #input('...')
             # set class properties based on foldername
             path        = folder
             file        = parts[0]
             sampling    = parts[4]
             # can only be read this way for single digit options
+            #print(int(parts[4][-1]))
             mode        = int(parts[1][-1])
+            #print(mode)
+            #input(...)
             vector      = int(parts[2][-1])
+            #steps       = int(parts[3][-1])
             # set plot style based on sampling technique
             # https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
             if sampling == 'flowbased': style='dotted'
@@ -147,8 +190,14 @@ def createExperiments(folders,verbose=False):
             # get sampling-steps from imported info
             steps     = int(info['0'].iloc[3])
 
+            #print(parts)
+            #print(mode)
+            #print(vector)
+            #print(steps)
+            #input('...')
+
             # create Experiment object
-            tmp = Experiment(path,file,mode,vector,steps,sampling,info,time,dstat,report,result,style,modelsize) # create temporary object
+            tmp = Experiment(path,file,mode,vector,steps,sampling,info,time,dstat,report,result,style,modelsize,idnumber) # create temporary object
 
             if verbose: # output current experiment information
                 print('\t\t< Attributes:\t{}'.format(parts))
@@ -174,6 +223,31 @@ def createExperiments(folders,verbose=False):
     experiments = [experiments_perflow, experiments_packets]
     return experiments
 
+# creates experiment ID numbers according to the order of comparison.csv
+def createIDs(folders):
+
+    AGMexp  = []
+    CAIAexp = []
+
+    for n in range(0,len(folders)):
+        for i in range (0,len(exp[n])):
+            if exp[n][i].vector == 1 or exp[n][i].vector == 6:
+                AGMexp.append(exp[n][i])
+            elif exp[n][i].vector == 4 or exp[n][i].vector == 5:
+                CAIAexp.append(exp[n][i])
+
+    tmpid = 0
+    print('>>> Creating experiment ID numbers.')
+    for experiment in AGMexp:
+        tmpid += 1
+        experiment.update('idnumber',tmpid)
+        if verbose: print('\t>> {}:\n\t\ttechnique: {}\n\t\tmode:{}\n\t\tsteps: {}\n\t\t< ID: {}'.format(cfg.vectors[experiment.vector][0:7],experiment.sampling,cfg.samplingmode[experiment.mode],experiment.steps,tmpid))
+    for experiment in CAIAexp:
+        tmpid += 1
+        experiment.update('idnumber',tmpid)
+        if verbose: print('\t>> {}:\n\t\ttechnique: {}\n\t\tmode:{}\n\t\tsteps: {}\n\t\t< ID: {}'.format(cfg.vectors[experiment.vector][0:4],experiment.sampling,cfg.samplingmode[experiment.mode],experiment.steps,tmpid))
+
+    return
 
 if __name__ == '__main__':
 
@@ -207,13 +281,20 @@ if __name__ == '__main__':
     folders = [flowfolder,packetfolder] # list for different sampling-categories
     exp = createExperiments(folders,verbose) # save returned experiment objects for further processing
 
+
+    createIDs(folders)
+
     # extract basic information for all experiments
     print('>>> Accumulate informations')
     vectors = []
     steps   = []
     modes   = []
+
+
     for n in range(0,len(folders)):
         for i in range (0,len(exp[n])):
+            #print('ID: {}\nVector: {}\nMode: \nSteps: {}\n'.format(exp[n][i].idnumber,exp[n][i].vector,exp[n][i].mode,exp[n][i].steps))
+            #input('...')
             v = exp[n][i].vector
             s = exp[n][i].steps
             m = exp[n][i].mode
@@ -490,11 +571,11 @@ if __name__ == '__main__':
                 plt.axvline(x=stamps[j][0],ymin=0,ymax=1,linestyle=style,color=color) # plot vertical lines
 
             # plot labels
-            plt.xticks(timestamps,timelabels,rotation=80) # create x-axis ticks
-            plt.xlabel('segments', fontsize=14)
-            plt.ylabel('memory-usage',fontsize=14)
-            plt.title(title,ha='center',fontsize=16) # set title
-            plt.suptitle(subtitle,x=0.515,y=0.925,ha='center',fontsize=10) # suptitle position between 0 and 1
+            plt.xticks(timestamps,timelabels,rotation=80,fontsize=16) # create x-axis ticks
+            #plt.xlabel('segments', fontsize=14)
+            #plt.ylabel('memory-usage',fontsize=14)
+            #plt.title(title,ha='center',fontsize=16) # set title
+            #plt.suptitle(subtitle,x=0.515,y=0.925,ha='center',fontsize=10) # suptitle position between 0 and 1
             plt.legend(loc='best')
             plt.tight_layout() # increase space below x-axis for proper labeling
 
@@ -518,7 +599,7 @@ if __name__ == '__main__':
 
 
             # set plot parameters
-            plt.rcParams['xtick.major.pad']=15 # move labes a bit outside of outer circle
+            plt.rcParams['xtick.major.pad']=30 # move labes a bit outside of outer circle
             #plt.rcParams['axes.titlepad']=-5
             #plt.rcParams['xtick.labelsize']=15
 
@@ -554,7 +635,8 @@ if __name__ == '__main__':
             if exp[n][i].sampling     == 'flowbased':   samplingtype = 'flow-based'
             elif exp[n][i].sampling   == 'packetbased': samplingtype = 'packet-based'
 
-            title = '{}, {}\n\n'.format(title_vector,samplingtype)
+            #title = '{}, {}\n\n'.format(title_vector,samplingtype)
+            title = IDroman[exp[n][i].idnumber]
             if title_steps == 0: subtitle = 'unsampled'
             else:                subtitle = '{}, n={}'.format(title_mode,title_steps)
 
@@ -562,7 +644,7 @@ if __name__ == '__main__':
             # forge polar-compatible values and angles
             value   = [
                 #speed,
-                instances,
+                #instances,
                 modelsize,
                 RAM_used,
                 #accuracy,
@@ -576,19 +658,26 @@ if __name__ == '__main__':
                 ]
 
             # label parameters
+            #tmptr = '$_{(38.562\%)}$'
+            #rt = str(runtime)
+            #tmptr = f"${{_{str(runtime)}\%}}$"ma
             labels = [
                 #'Speed\n({}%)'.format(format(speed,".2f")),
-                'Instances\n({}%)'.format(format(instances,".2f")),
-                'Modelsize\n({}%)'.format(format(modelsize,".2f")),
-                'RAM\n({}%)'.format(format(RAM_used,".2f")),
+                #'Inst.\n{}%'.format(format(instances,".1f")),
+                'model\n{}%'.format(format(modelsize,".1f")),
+                'mem\n{}%'.format(format(RAM_used,".1f")),
                 #'Accuracy\n({}%)'.format(format(accuracy,".2f")),
                 #'F1-score "0"\n({}%)'.format(format(f10,".2f")),
                 #'Recall "0"\n({}%)'.format(format(recall0,".2f")),
                 #'Precision "0"\n({}%)'.format(format(prec0,".2f")),
-                'F1-score "1"\n({}%)'.format(format(f11,".2f")),
-                'Recall "1"\n({}%)'.format(format(recall1,".2f")),
-                'Precision "1"\n({}%)'.format(format(prec1,".2f")),
-                'Runtime\n({}%)'.format(format(runtime,".2f"))
+                '$F_1$\n{}%'.format(format(f11,".1f")),
+                '$Rec_1$\n{}%'.format(format(recall1,".1f")),
+                '$Prec_1$\n{}%'.format(format(prec1,".1f")),
+                #'Runtime\n({}%)'.format(format(runtime,".2f"))
+                '$t_R$\n{}%'.format(format(runtime,".1f"))
+                #'$t_R$\n{}'.format(format(tmptr))
+
+
                 ]
 
             N       = len(value) # number of different parameters to be displayed
@@ -596,23 +685,32 @@ if __name__ == '__main__':
             angles  = [n / float(N) * 2 * pi for n in range(N)]
             angles  += angles[:1] # close angle "circle" for spider-chart
 
-            fig = plt.figure(figsize=(10.0,10.0))
+            fig = plt.figure(figsize=(10.5,11.5))
 
             ax  = plt.subplot(polar=True)
             ax.set_ylim(0,100) # limit y-values to 100% for similar plots
             ax.set_rlabel_position(49)
 
-            plt.yticks([0,25,50,65,75,85,95], color='grey', size=9)
-            plt.polar(angles,value,linestyle=style,linewidth=3, color='#9191AA')
-            plt.xticks(angles[:-1],labels) # pass all angles except last (its the repetition of the first value)
-            plt.title(title,ha='center',fontsize=16) # set title
-            plt.suptitle(subtitle,x=0.515,y=0.965,ha='center',fontsize=11) # suptitle position between 0 and 1
+            plt.yticks([0,25,50,60,70,80,90,100], color='grey', size=12)
+            #plt.polar(angles,value,linestyle=style,linewidth=3, color='#9191AA')
+            plt.polar(angles,value,linestyle=style,linewidth=5, color='#000000')
+            plt.xticks(angles[:-1],labels,fontsize=22) # pass all angles except last (its the repetition of the first value)
+
+            # maniupulate outer 100% linewidth
+            gridlines = ax.yaxis.get_gridlines()
+            gridlines[7].set_color('black')
+            gridlines[7].set_linewidth(2.5)
+
+            plt.title(title,ha='center',fontsize=64) # set title
+            #plt.suptitle(subtitle,x=0.515,y=0.965,ha='center',fontsize=11) # suptitle position between 0 and 1
 
             # shrink chart box to enable legend positioning blow plot
             #box = ax.get_position()
             #ax.set_position([box.x0, box.y0,box.width, box.height])
-
-            if verbose: print('\t<< {}'.format(png_file.format(vector[exp[n][i].vector],samplingtype)))
+            if verbose: 
+                #print('\t<< {}'.format(png_file.format(vector[exp[n][i].vector],samplingtype)))
+                print('\t<< {}'.format(png_file.format(vector[exp[n][i].vector],samplingtype,cfg.samplingmode[exp[n][i].mode],exp[n][i].steps)))
+                print('\t\t< ID: {}'.format(exp[n][i].idnumber))
             plt.savefig(png_file.format(vector[exp[n][i].vector],samplingtype,cfg.samplingmode[exp[n][i].mode],exp[n][i].steps)) # save plot to file
 
             # show/hide plots
@@ -924,8 +1022,10 @@ if __name__ == '__main__':
 
         # title & label
         title = 'Parameter Ranking\n'
-        if x.steps > 0: label = '#{}: {}, {}, n={}'.format(i,vector[x.vector],cfg.samplingmode[x.mode],x.steps)
-        else: label = '#{}: {}, unsampled'.format(i,vector[x.vector])
+        label = '#{}: {}'.format(i,IDroman[x.idnumber])
+
+        #if x.steps > 0: label = '#{}: {}, {}, n={}'.format(i,vector[x.vector],cfg.samplingmode[x.mode],x.steps)
+        #else: label = '#{}: {}, unsampled'.format(i,vector[x.vector])
 
 
         if x.steps == 0: width = 2
@@ -982,8 +1082,8 @@ if __name__ == '__main__':
     #ax = plt.gca().add_artist(legend)
 
     # forge top legend to display different linestyles for flow-based and packet-based sampling
-    flowbased_legend   = Line2D([0],[0], label='flow-based sampling',color='k',linestyle='-')
-    packetbased_legend = Line2D([0],[0], label='packet-based sampling',color='k',linestyle=':')
+    flowbased_legend   = Line2D([0],[0], label='flow-based',color='k',linestyle='-')
+    packetbased_legend = Line2D([0],[0], label='packet-based',color='k',linestyle=':')
     handles, labels = plt.gca().get_legend_handles_labels()
     handles.extend([flowbased_legend,packetbased_legend])
 
