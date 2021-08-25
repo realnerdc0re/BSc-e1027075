@@ -1054,7 +1054,7 @@ if __name__ == '__main__':
     stats = [
             #'Speed',
             'Model\nSize',
-            '\nRAM',
+            '\nmem',
             #'Accuracy\n({}%)'.format(format(accuracy,".2f")),
             #'F1-score "0"\n({}%)'.format(format(f10,".2f")),
             #'Recall "0"\n({}%)'.format(format(recall0,".2f")),
