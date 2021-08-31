@@ -499,7 +499,7 @@ if __name__ == '__main__':
     #for x in experiments_sorted:
     #    print('{}'.format(x.parameter))
     #input('...')
-    experiments_sorted.sort(key=lambda x: x.parameter3,reverse=True)
+    experiments_sorted.sort(key=lambda x: x.parameter2,reverse=True) # SORT EXPERIMENT BY PARAMETER (parameter 3 is scaled based on vector type, parameter 2 is scaled for every configuration)
     #print('{}'.format(experiments_sorted))
     #for x in experiments_sorted:
     #    print('{}'.format(x.parameter))
@@ -958,9 +958,9 @@ if __name__ == '__main__':
     i = 0
     for x in experiments_sorted:
         i +=1
-        if i == 7: break
+        if i == 6: break # STOP WHEN 5 EXPERIMENTS ARE DRAWN! (TOP 5 CONFIGURATION)
 
-        print('\t\t< {}'.format(format(x.parameter3,".2f")))
+        print('\t\t< {}'.format(format(x.parameter3,".3f")))
 
         plt.rcParams['xtick.major.pad'] = 15 # move labes a bit outside of outer 100% circle
         #png_file = 'figures/Spiderchart-Comparison_Parameter-Ranking.png'
@@ -1021,8 +1021,12 @@ if __name__ == '__main__':
                 break
 
         # title & label
-        title = 'Parameter Ranking\n'
-        label = '#{}: {}'.format(i,IDroman[x.idnumber])
+        #title = 'Parameter Ranking\n'
+        #title = '$P_{vector}$'
+        title = '$P_{total}$'
+
+        label = '{}'.format(IDroman[x.idnumber])
+        #label = '#{}: {}'.format(i,IDroman[x.idnumber])
 
         #if x.steps > 0: label = '#{}: {}, {}, n={}'.format(i,vector[x.vector],cfg.samplingmode[x.mode],x.steps)
         #else: label = '#{}: {}, unsampled'.format(i,vector[x.vector])
@@ -1044,6 +1048,13 @@ if __name__ == '__main__':
         compare_style.append(style)
         compare_width.append(width)
 
+        # manual attribut settings
+        compare_width  =[5,4.5,4,3.5,3,2.5]
+        #compare_width  =[5,4,3,2.5,2,1.5]
+
+        compare_style  =['dotted','dashed','solid','dotted','solid']
+        compare_colors =['#000000','#BBBBBE','#6E6E74','#4F4F5A','#8D8D8E']
+
     plt.figure(figsize=(10.0,10.0))
     ax = plt.subplot(polar=True)
 
@@ -1053,25 +1064,36 @@ if __name__ == '__main__':
 
     stats = [
             #'Speed',
-            'Model\nSize',
+            #'Model\nSize',
+            '    model',
             '\nmem',
             #'Accuracy\n({}%)'.format(format(accuracy,".2f")),
             #'F1-score "0"\n({}%)'.format(format(f10,".2f")),
             #'Recall "0"\n({}%)'.format(format(recall0,".2f")),
             #'Precision "0"\n({}%)'.format(format(prec0,".2f")),
-            'F1-score "1"',
-            'Recall "1"',
-            'Precision "1"',
-            'Runtime'
+            #'F1-score "1"',
+            '$F_1$',
+            #'Recall "1"',
+            '$Rec_1$',
+            #'Precision "1"',
+            '$Prec_1$',
+            #'Runtime'
+            '$t_R$'
         ]
 
-    plt.xticks(compare_angles[0][:-1],stats)
-    ax.set_rlabel_position(58)
-    plt.yticks([0,25,50,60,75,85,95], color='grey', size=9)
+    plt.rcParams['xtick.major.pad']=30 # move labes a bit outside of outer circle
+    plt.xticks(compare_angles[0][:-1],stats,fontsize=18)
+    ax.set_rlabel_position(49)
     plt.ylim(0,100)
-    plt.title(title,ha='center',fontsize=16) # set title
+    #plt.yticks([0,25,50,60,75,85,95], color='grey', size=9)
+    plt.yticks([0,25,50,60,70,80,90,100], color='grey', size=12)
+    plt.title(title,ha='center',fontsize=30) # set title
     #plt.suptitle(subtitle,x=0.515,y=0.925,ha='center',fontsize=11) # suptitle position between 0 and 1
 
+    # maniupulate outer 100% linewidth
+    gridlines = ax.yaxis.get_gridlines()
+    gridlines[7].set_color('black')
+    gridlines[7].set_linewidth(2.5)
 
     # shrink chart box to enable legend positioning below plot
     box = ax.get_position()
@@ -1089,11 +1111,13 @@ if __name__ == '__main__':
 
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
     # top legend
-    toplegend = plt.legend(bbox_to_anchor=(0., 1.05, 1, .102), loc='upper left',ncol=2, mode="expand", borderaxespad=0., handles=[flowbased_legend,packetbased_legend])
-    ax = plt.gca().add_artist(toplegend)
+    #toplegend = plt.legend(bbox_to_anchor=(0., 1.05, 1, .102), loc='upper left',ncol=2, mode="expand", borderaxespad=0., handles=[flowbased_legend,packetbased_legend])
+    # draw top legend
+    #ax = plt.gca().add_artist(toplegend)
 
     # bottom legend
-    bottomlegend = plt.legend(bbox_to_anchor=(0., -0.15, 1, .102), loc='lower left',ncol=2, mode="expand", borderaxespad=0.)
+    bottomlegend = plt.legend(bbox_to_anchor=(0., -0.15, 1, .102), loc='lower center',ncol=5, mode=None, borderaxespad=0., fontsize='xx-large')
+    bottomlegend.get_frame().set_linewidth(0.0)
     ax = plt.gca().add_artist(bottomlegend)
 
     if verbose: print('\t\t\t< {}'.format(png_file))
@@ -1201,9 +1225,9 @@ if __name__ == '__main__':
             instances       = int(tmp.report['support'][4])
             maxram          = format(tmp.maxram,".2f")
             modelsize       = format(tmp.modelsize,".2f")
-            parameter       = format(parameter,".2f")
-            parameter2      = format(parameter2,".2f")
-            parameter4      = format(parameter4,".2f")
+            parameter       = format(parameter,".4f")
+            parameter2      = format(parameter2,".4f")
+            parameter4      = format(parameter4,".4f")
             pca_var         = format(tmp.pca_var,".2f")
 
 
