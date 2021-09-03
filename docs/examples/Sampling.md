@@ -32,8 +32,8 @@ optional arguments:
 
 ## Usage Examples
 
-If all workday files should be sampled, e.g. flow-based sampling utilizing the AGM feature vector, sampling every n-th packet of the flow (n=5) the following command is sufficient:
+If all workday files should be sampled, e.g. flow-based sampling utilizing the AGM feature vector, sampling every n-th packet of the flow (n=10) the following command is sufficient:
 ```console
-python3 Sampling.py -f 1 0 5 1
+python3 Sampling.py -f 1 0 10 1
 
 ```
