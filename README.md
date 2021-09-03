@@ -9,7 +9,7 @@ This repository contains a various selection of Python scripts that can be utili
 
 ## Usage
 
-A description about the used environmental setup can be found within this repositorys' [docs](/docs) folder.
+A description about the used environmental setup can be found within this repositorys' [docs](/docs) folder. For necessary configurations you may want to look into the [configuration file](config.py) that contains various parameters and filepaths to modify for personal usage.
 
 
 
