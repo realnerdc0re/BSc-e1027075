@@ -18,11 +18,15 @@ python3 -m pip install scikit-learn pandas psutil matplotlib
 
 
 
+## Machine Information
 
-
-
-
-
+```console
+OS: Ubuntu 20.10 x86_64
+Host: MS-7C02 1.0
+Kernel: 5.8.0-59-generic
+CPU: AMD Ryzen 5 3600 (12) @ 3.600GHz
+Memory: 13574MiB / 16019MiB
+```
 
 ## Installed
 
