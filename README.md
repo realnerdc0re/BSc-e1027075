@@ -34,9 +34,17 @@ Examplary commands for every script for various usecases can be found in the app
 
 ## Issues
 
-Beside ensuring that the classification device has enough memory available. One occuring issue encountered in this work is an incompability between models generated on x86 architectures not being able to be imported on the armv6l Raspberry Pi Zero W. This problem could not be solved, instead a virtual machine was utilized to generate the results for this study. Two different approaches to export/import the model on different architectures failed. The first method was generating the model on an x86 64bit machine running Ubuntu, resulting in the following error when importing the model on the Raspberry Pi Zero W:
+Beside ensuring that the classification device has enough memory available. One occuring issue encountered in this work is an incompability between models generated on x86 architectures not being able to be imported on the armv6l Raspberry Pi Zero W. This problem could not be solved, instead a virtual machine was utilized to generate the results for this study. 
+
+Two different approaches to export/import the model on different architectures failed. The first method was generating the model on an x86 64bit machine running Ubuntu, resulting in the following error when importing the model on the Raspberry Pi Zero W:
 
 ```console
 File "sklearn/tree/_tree.pyx", line 607, in sklearn.tree._tree.Tree.__cinit__
 ValueError: Buffer dtype mismatch, expected 'SIZE_t' but got 'long long'
+```
+
+The second approach generated the estimator model on a x86 32bit machine running Debian. However this also resulted in an error when trying to import that model on the Raspberry Pi Zero W:
+```console
+File "sklearn/tree/_tree.pyx", line 673, in sklearn.tree._tree.Tree.__setstate__
+ValueError: Did not recognise loaded array layout
 ```
