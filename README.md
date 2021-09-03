@@ -33,3 +33,10 @@ Examplary commands for every script for various usecases can be found in the app
 
 
 ## Issues
+
+Error when trying to import a model on the Raspberry Pi Zero W fitted on the 64bit machine:
+
+```console
+File "sklearn/tree/_tree.pyx", line 607, in sklearn.tree._tree.Tree.__cinit__
+ValueError: Buffer dtype mismatch, expected 'SIZE_t' but got 'long long'
+```
