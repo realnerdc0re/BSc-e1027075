@@ -12,7 +12,21 @@ This repository contains a various selection of Python scripts that can be utili
 A description about the used environmental setup can be found within this repositorys' [docs](/docs) folder. For necessary configurations you may want to look into the [configuration file](config.py) that contains various parameters, filepaths and remote machine information to modify for personal usage. Once necessary information is configures an experiment execution chain can be started with executing the [Master.py](Master.py) script with or without passing optional arguments:
 
 ```console
-python3 Master.py
+python3 Master.py -h
+usage: Master.py [-h] [-v] [-f] [-m] [--nosync] [--nosampling] [-l | -r]
+
+Script to automate experiments based on a given configuration via config.py. The Script does the sampling and model-creation on the local machine and syncs all necessary files from the local machine to a remote machine afterwards. Subsequently it
+creates predictions on the remote machine, saves the results and syncs back to the local machine.
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -v, --verbose  output verbose information
+  -f, --fit      fit model on remote machine
+  -m, --model    load model on local machine
+  --nosync       no syncing from local to remote
+  --nosampling   use already sampled file if possible
+  -l, --local    run scripts on local machine
+  -r, --remote   run scripts on remote machine
 ```
 
 
