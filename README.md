@@ -9,7 +9,11 @@ This repository contains a various selection of Python scripts that can be utili
 
 ## Usage
 
-A description about the used environmental setup can be found within this repositorys' [docs](/docs) folder. For necessary configurations you may want to look into the [configuration file](config.py) that contains various parameters and filepaths to modify for personal usage.
+A description about the used environmental setup can be found within this repositorys' [docs](/docs) folder. For necessary configurations you may want to look into the [configuration file](config.py) that contains various parameters, filepaths and remote machine information to modify for personal usage. Once necessary information is configures an experiment execution chain can be started with executing the [Master.py](Master.py) script with or without passing optional arguments:
+
+```console
+python3 Master.py
+```
 
 
 
