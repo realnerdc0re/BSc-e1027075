@@ -26,6 +26,13 @@ from pathlib import Path, PureWindowsPath, PurePath, PurePosixPath
 
 mntd = PurePosixPath('/mnt')
 
+# ARGUMENT PARSING
+# command line argument passthrough for better usability
+import argparse
+parser = argparse.ArgumentParser(description='Simple script to analyzed flows already collected from PCAPs. Commands for go-flows and labeling are commented within the source code. Outputs all occuring attack types and their respective counts for each workday or the merged file. Can be used to generate histogram for attack distribution.')
+args = parser.parse_args()
+
+
 # import CSV
 def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
 
@@ -79,8 +86,8 @@ if __name__ == '__main__':
 
     verbose = True
     path = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'Original PCAPs'
-    files = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    #files = ['Merged']
+    #files = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    files = ['Merged']
     filename = '{}_flows.csv'
 
     # COMMAND TO CREATE FLOWS
@@ -103,53 +110,53 @@ if __name__ == '__main__':
         input('...')
         ad = attackdistribution # used for histogram generation
 
+        if True: # following code block should be placed within the for-loop to generate histogram (at the end not used in the thesis, instead created a table)
+            attacks = []
+            numbers = []
+
+            n = len(ad)
+
+            for i in range(0,n):
+                attacks.append(ad.index[i])
+                numbers.append(ad[i])
+
+            attacks.pop(10)
+            numbers.pop(10)
+
+            attacks[9] = 'Infiltration:Dropbox download' # rename to increase readability (bad one because with AGM there is actually exactly that name used for other attack type)
+
+            tickx = [0,0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25]
+
+
+            print('{}\n{}'.format(attacks,numbers))
+
+            #fig = plt.figure(figsize=(21.0,9.0),frameon=True)
+            fig,ax = plt.subplots(figsize=(21.0,9.0))
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            ax.spines["top"].set_visible(False)
+
+            #plt.title('CAIA',ha='center',fontsize=16) # set title
+            plt.bar(tickx,numbers,color='#6E6E74',width=0.125,edgecolor='#4F4F5A',linewidth=2,tick_label=attacks)
+            plt.xticks(rotation=80,size=14)
+            plt.yticks([]) # dont plot any numbers on the y-axiy
+            #plt.tick_params(top=False,bottom=False)
+
+            #plt.xlabel('Attacks')
+            #plt.ylabel('Numbers')
+            move = [-0.035,-0.035,-0.05,-0.065,-0.05,-0.075,-0.05,-0.05,-0.015,-0.065,-0.08,-0.035,-0.03,-0.035] # manually adjust positioning CAIA
+            for i,v in enumerate(numbers):
+                xvalue = tickx[i] + move[i]
+                plt.text(x=xvalue,y=v+2500,s=v,size=14)
+
+            plt.subplots_adjust(bottom=0.35) # create space for attack labels
+            #plt.axis('off')
+
+            plt.savefig('/home/noooberino/Git/BSc-e1027075-Thesis/graphics/figures/CAIAdistribution.pdf',bbox_inches='tight',pad_inches=0) # save plot to file
+            #plt.imsave('/home/noooberino/Git/BSc-e1027075-Thesis/graphics/figures/CAIAdistribution.pdf')
+            plt.show()
+
+            #ad.plot.bar()
+            #pyplot.hist(attackdistribution.)
+
     exit()
-
-    if false: # following code block should be placed within the for-loop to generate histogram (at the end not used in the thesis, instead created a table)
-        attacks = []
-        numbers = []
-
-        n = len(ad)
-
-        for i in range(0,n):
-            attacks.append(ad.index[i])
-            numbers.append(ad[i])
-
-        attacks.pop(10)
-        numbers.pop(10)
-
-        attacks[9] = 'Infiltration:Dropbox download' # rename to increase readability (bad one because with AGM there is actually exactly that name used for other attack type)
-
-        tickx = [0,0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25]
-
-
-        print('{}\n{}'.format(attacks,numbers))
-
-        #fig = plt.figure(figsize=(21.0,9.0),frameon=True)
-        fig,ax = plt.subplots(figsize=(21.0,9.0))
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-
-        #plt.title('CAIA',ha='center',fontsize=16) # set title
-        plt.bar(tickx,numbers,color='#6E6E74',width=0.125,edgecolor='#4F4F5A',linewidth=2,tick_label=attacks)
-        plt.xticks(rotation=80,size=14)
-        plt.yticks([]) # dont plot any numbers on the y-axiy
-        #plt.tick_params(top=False,bottom=False)
-
-        #plt.xlabel('Attacks')
-        #plt.ylabel('Numbers')
-        move = [-0.035,-0.035,-0.05,-0.065,-0.05,-0.075,-0.05,-0.05,-0.015,-0.065,-0.08,-0.035,-0.03,-0.035] # manually adjust positioning CAIA
-        for i,v in enumerate(numbers):
-            xvalue = tickx[i] + move[i]
-            plt.text(x=xvalue,y=v+2500,s=v,size=14)
-
-        plt.subplots_adjust(bottom=0.35) # create space for attack labels
-        #plt.axis('off')
-
-        plt.savefig('/home/noooberino/Git/BSc-e1027075-Thesis/graphics/figures/CAIAdistribution.pdf',bbox_inches='tight',pad_inches=0) # save plot to file
-        #plt.imsave('/home/noooberino/Git/BSc-e1027075-Thesis/graphics/figures/CAIAdistribution.pdf')
-        plt.show()
-
-        #ad.plot.bar()
-        #pyplot.hist(attackdistribution.)

@@ -14,14 +14,14 @@ import pandas as pd
 
 wd = os.getcwd()
 
-# directories
+# manually set directories
 flowfolder = wd+'/csv/flow-sampled'
 packetfolder = wd+'/csv/packet-sampled'
 
 
 # ARGUMENT PARSING
 import argparse
-parser = argparse.ArgumentParser(description='Script to merge multiple CSVs into a single file.')
+parser = argparse.ArgumentParser(description='Simple script to merge multiple CSVs into a single file. It is necessary to set directory paths within the python script.')
 # force choice for folder-selection
 samplegroup = parser.add_mutually_exclusive_group(required=True)
 samplegroup.add_argument('--flowsampling', action='store_true', help='merge flow-sampled CSVs')

@@ -12,14 +12,17 @@ import os
 # https://pypi.org/project/memory-profiler/
 from memory_profiler import profile
 
-# https://medium.com/the-andela-way/machijpjpafne-monitoring-tool-using-python-from-scratch-8d10411782fd
-# https://medium.com/survata-engineering-blog/monitoring-memory-usage-of-a-running-python-program-49f027e3d1ba
-
 # possible arguments for dstat monitoring usage
 # fix for the --output error: https://serverfault.com/questions/996996/dstat-fails-to-start-trying-to-load-python3s-csv
 #dstat --time --epoch --cpu-adv --cpu-use --disk --net --mem-adv --proc --sys --unix --top-io-adv
 
-# https://www.geeksforgeeks.org/memory-profiling-in-python-using-memory_profiler/
+# ARGUMENT PARSING
+# command line argument passthrough for better usability
+import argparse
+parser = argparse.ArgumentParser(description='Script to evaluate the possibility to monitor ressource usage with Pythons memory profiler. Was not utilized for this study.')
+args = parser.parse_args()
+
+
 @profile
 def monitor():
     # https://psutil.readthedocs.io/en/latest/#processes

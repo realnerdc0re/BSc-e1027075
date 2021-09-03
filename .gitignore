@@ -141,8 +141,6 @@ CIC-IDS2017/*
 tmp/*
 csv/*
 logs/*
-rpi-logs/*
-logs-rpi/*
 figures/*
 # files
 Merged.csv

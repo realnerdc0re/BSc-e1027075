@@ -118,10 +118,10 @@ remoteconf  = '/home/{}/{}/{}'.format(remoteuser,remotewd,configuration)
 #######################################################################################
 # EXPERIMENTS
 # files, feature-vectors, sampling-modes & sampling-steps to process
-file        = [0]  # 0 to process all all workday files, 1 to 5 for workdays
-vector      = [5,6]  # determines used go-flows specification file specified above
-mode        = [7]  # determines applied sampling mode specified above
-steps       = [5,10]  # value for n, 0 to process unsampled PCAP
+file        = [5]  # 0 to process all all workday files, 1 to 5 for workdays
+vector      = [4,6]  # determines used go-flows specification file specified above
+mode        = [3]  # determines applied sampling mode specified above
+steps       = [9]  # value for n, 0 to process unsampled PCAP
 seed        = 1000 # seed number used for random sampling
 #######################################################################################
 # SCRIPTS

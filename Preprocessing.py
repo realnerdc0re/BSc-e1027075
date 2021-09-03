@@ -1,83 +1,95 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 17 13:24:01 2020
+Created on Fri Jan 10 10:32:48 2021
 
 @author: pjr
 """
-
 from pandas import read_csv
-from pandas.plotting import scatter_matrix
-from matplotlib import pyplot
-from scipy.stats import zscore
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.impute import SimpleImputer as Imputer
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.decomposition import IncrementalPCA
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from timeit import default_timer as timer
-#from memory_profiler import profile
+from pathlib import Path, PureWindowsPath, PurePosixPath
+from colorama import Fore, Style
 
 import time as epochtime
 import numpy as np
 import pandas as pd
+import psutil
+import threading
 import sys
 import csv
 import os
+import gc
+import joblib
+import math
+import importlib
+import matplotlib.pyplot as plt
+import config as cfg # necessary configurations from config.py
 
-# capture files, https://www.unb.ca/cic/datasets/ids-2017.html
-filenames = {0:'Merged',1:'Monday-WorkingHours',2:'Tuesday-WorkingHours',3:'Wednesday-WorkingHours',4:'Thursday-WorkingHours',5:'Friday-WorkingHours'}
+# create base-folders if necessary
+if not os.path.exists(cfg.logs):            os.mkdir(cfg.logs)
+if not os.path.exists(cfg.fpath):           os.mkdir(cfg.fpath)
+if not os.path.exists(cfg.packetfolder):    os.mkdir(cfg.packetfolder)
+if not os.path.exists(cfg.tmp):             os.mkdir(cfg.tmp)
 
-# get working directory
-wd = os.getcwd()
-# forge logfolder, timestamps & dstat logs based on wd
-logfolder = wd+"/logs"
-reportcsv = logfolder+'/report.csv'
-resultscsv = logfolder+'/results.csv'
-timecsv = logfolder+'/time.csv'
 
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
 import argparse
 parser = argparse.ArgumentParser(description='script for preprocessing labeled CSVs')
 # positional arguments
-parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(filenames))
+parser.add_argument('file', metavar='file', type=int,nargs=1,help='select file to process: {}'.format(cfg.filenames))
+parser.add_argument('n', metavar='n', type=int,nargs=1,help='non-zero integer, used to determine sampling-steps')
+parser.add_argument('j', metavar='j', type=int,nargs=1,help='select feature-vector: {}'.format(cfg.vectors))
+parser.add_argument('batch', metavar='batch', type=int,nargs=1,help='choose numerical value for StandardScaler batchsize')
 # optional arguments
 parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
-parser.add_argument('--superverbose', action='store_true', help='output additional informations')
-parser.add_argument('-t','--time', action='store_true', help='measure function-runtimes')
-parser.add_argument('-e','--export', action='store_true', help='export timestamps')
-# force sampling choice
+parser.add_argument('--superverbose', action='store_true', help='output additional dataset related informations')
+parser.add_argument('-m','--model', action='store_true', help='import model')
+parser.add_argument('-s','--save', action='store_true', help='save model')
+parser.add_argument('-l','--local', action='store_true', help='used to determine PCA component number on local machine')
+parser.add_argument('-r','--remote', action='store_true', help='execution on remote machine, different method to kill dstat, changing foldername for results')
+# display runtime or export timestamps and dstat-logs
+timegroup = parser.add_mutually_exclusive_group(required=False)
+timegroup.add_argument('-t','--time', action='store_true', help='display script runtime')
+timegroup.add_argument('-e','--export', action='store_true', help='export timestamps & resource logs')
+# force sampling method & mode
 samplegroup = parser.add_mutually_exclusive_group(required=True)
-samplegroup.add_argument('-f','--flowsampling', action='store_true', help='use flow-sampled CSV files')
-samplegroup.add_argument('-p','--packetsampling', action='store_true', help='use per-packet sampled CSV files')
-# force OS choice, https://docs.python.org/3/library/argparse.html#mutual-exclusion
-osgroup = parser.add_mutually_exclusive_group(required=True)
-osgroup.add_argument('--rpi', action='store_true', help='use Raspberry Pi paths (pre-sampled CSVs)')
-osgroup.add_argument('--linux', action='store_true', help='use Linux paths')
-osgroup.add_argument('--osx', action='store_true', help='use MacOS paths')
-osgroup.add_argument('--windows', action='store_true', help='use windows paths')
+samplegroup.add_argument('-f','--flowsampling', metavar='m', type=int, nargs=1, choices=cfg.fsamplingmode, help='select sampling-mode: {}'.format(cfg.fsamplingmode))
+samplegroup.add_argument('-p','--packetsampling', metavar='m', type=int, nargs=1, choices=cfg.psamplingmode, help='select sampling-mode: {}'.format(cfg.psamplingmode))
 args = parser.parse_args()
 
+# starting dstat logging threaded
+def threadFunc(): os.system(dstatcmd.format(cfg.dstat))
+th = threading.Thread(target=threadFunc)
 
-# set/reset options for maximum columns to display and floating point output precision
-def poptions():
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.precision',3)
-def resetpoptions():
-    pd.reset_option('display.max_columns', 15)
-    pd.reset_option('display.max_rows', 15)
-    pd.reset_option('display.precision', 6)
+# INFORMATIONAL OUTPUT
+# progress bar signaling time to wait for dstat to write latest logs
+def progressBar(it, prefix="", size=60, file=sys.stdout):
+    count = len(it)
+    def show(j):
+        x = int(size*j/count)
+        file.write("%s[%s%s] %i/%i\r" % (prefix, "·"*x, " "*(size-x), j, count))
+        file.flush()
+
+    show(0)
+
+    for i, item in enumerate(it):
+        yield item
+        show(i+1)
+
+    file.write("\n")
+    file.flush()
+    return
 # import CSV
-def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):  
+def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf-8'):
 
     if time: start = timer()
 
@@ -95,57 +107,23 @@ def importCSV(csvpath,csvusecols=None,verbose=False,chunksize=None,encoding='utf
         for chunk in read_csv(csvpath,usecols=csvusecols,skipinitialspace=True,encoding=encoding,chunksize=chunksize):
             csvdata = csvdata.append(chunk)
 
-    printdata(csvdata,'imported')
-
-    if verbose:
-        print('\n{}'.format(csvdata.groupby('Label').size()))
-        print('\n{}'.format(csvdata.groupby('Attack').size()))
-        if (not time): input('\n...')
+    printdata(csvdata,'imported',True)
+    if (not time): input('\n')
 
     if time: 
         end = timer()
         print('\nimportCSV\n[TIME]: %.3f' % (end-start),'seconds')
 
     return csvdata
-# dataset ext2numerical
-def ext2num(dataset,mapping,verbose):
-    
-    if not (verbose or time):
-        print('\n...applying function ext2num\n')
-    
-    if verbose:
-        print('\n\n'+40*'~'+' FUNCTION: ext2num '+40*'~')
-        print('\n',dataset.groupby('Label').size())
-        print('\nmapping:\n',mapping)
-
-    #print('\n\napplying method ext2num...\n\n')
-
-    if time:
-        start = timer()
-    
-    dataset.replace({'Label':mapping},inplace=True)
-    
-    if time:
-        end = timer()
-
-    if verbose:
-        print('\n',dataset.groupby('Label').size())
-        if (not time): input('\n{VERBOSE} press ENTER to continue...\n')       
-        
-    if time: print('\next2num\n{TIME}: %.3f' % (end-start),'seconds')
-    return
-
-# INFORMATIONAL OUTPUT
 # outputs additional informations only shown in verbose mode
 def verboseprint(dataset):
-    print('\n{}\n'.format(dataset.columns))
-    print('\n{}'.format(dataset.info()))
+    #print('\n{}\n'.format(dataset.columns))
+    print(cfg.vcolor+'\n{}'.format(dataset.info())+Style.RESET_ALL)
     return
 # outputs basic datset informations
 def printdata(dataset,heading,verbose=False):
-    print('\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
-    print('\n{}\n'.format(dataset))
-    if not rpi: print('\n{}\n'.format(dataset.describe())) # skip for rpi
+    print(cfg.vcolor+'\n\n'+40*'~'+' FUNCTION: printdata, {} '.format(heading)+40*'~')
+    print('\n{}\n'.format(dataset)+Style.RESET_ALL)
 
     if verbose: verboseprint(dataset)
 
@@ -156,18 +134,202 @@ def summary(dataset):
     print('\n'+20*'~'+' summary '+20*'~')
     print('\n{}'.format(dataset.describe()))
     print('\n{}'.format(dataset.groupby('Label').size()))
-    if (not time): input('\n...')
+    if (not time): input('\n')
     #resetpoptions()
     return
+# save timestamps
+def setTimestamp(infotext,write=False,append=False,export=args.export):
+    t = epochtime.time()
+    if write:    character = 'w'
+    elif append: character = 'a'
 
-# CLEANING FEATURES 
-# function to create a feature containing pseudo-random values
-def createRandom(dataset,feature,verbose=False,time=False):
-    import random
-    for i in range(0,len(dataset)):
-        dataset.at[i,feature]=random.randint(0,1000000)
+    if export: # write timestamp to csv
+        with open(cfg.time,character) as timecsv:
+            csvwriter = csv.writer(timecsv, delimiter=",")
+            csvwriter.writerow([t,'Preprocessing.py',infotext,'start'])
     return
-# clean given df from any infinite values by replacement
+
+
+# DATA PRE-PROCESSING
+# convert to smaller datatypes to reduce memory consumption
+def conversion(dataset,verbose=False):
+
+    if time: start = timer()
+    if verbose: print(cfg.vcolor+'\n\n'+40*'~'+' FUNCTION: conversion '+40*'~'+Style.RESET_ALL)
+
+    features = list(dataset) # get feature labels
+    types = dataset.dtypes # get datatype per feature
+    maxValues = dataset.max() # get maximum values per feature
+
+    if verbose:
+        print('\n'+20*'~'+' original '+20*'~')
+        print('\n{}\n'.format(types))
+        #print('\n{}\n'.format(maxValues))
+        if (not time): input('')
+
+    dicttype = {} # store index numbers and target-datatypes
+
+    if verbose: print(cfg.vcolor+'>>> searching for 64bit numerical values'+Style.RESET_ALL)
+    i = -1
+    for x in types: # determine int64/float64 features
+        i = i + 1
+        if (x == 'int64'):
+            if (-(2**8)/2 <= maxValues[i] <= (2**8)/2):
+                dicttype[features[i]] = 'int8'
+            elif (-(2**16)/2 <= maxValues[i] <= (2**16)/2):
+                dicttype[features[i]] = 'int16'
+            elif (-(2**32)/2 <= maxValues[i] <= (2**32)/2):
+                dicttype[features[i]] = 'int32'
+        elif (x == 'float64'):
+            if (-(2**16)/2 <= maxValues[i] <= (2**16)/2):
+                dicttype[features[i]] = 'float32' # changed from float16 to float32, since pd.mean does not support float16 properly
+            elif (-(2**32)/2 <= maxValues[i] <= (2**32)/2):
+                dicttype[features[i]] = 'float32'
+
+    if verbose: print(cfg.vcolor+'>>> converting values'+Style.RESET_ALL)
+    dataset = dataset.astype(dicttype,copy=False)
+
+    types = dataset.dtypes
+    if verbose:
+        print(cfg.vcolor+'\n'+20*'~'+' converted '+20*'~')
+        print(cfg.vcolor+'\n{}\n'.format(types))
+        if (not time): input('')
+
+    if verbose: printdata(dataset,'after-conversion',True)
+
+    if time: 
+        end = timer()
+        if verbose: print(cfg.vcolor+'\nconversion\n[TIME]: %.3f' % (end-start),'seconds'+Style.RESET_ALL)
+
+    return dataset
+# calculate mean value of given dataset features
+def calcMean(dataset,name,features,verbose=False,time=False):
+    means = [] # initialize empty list
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: calcMean, {} '.format(name)+40*'~')
+        print(cfg.vcolor+'\t\t>> Calculating mean values'+Style.RESET_ALL)
+
+    for feature in features:
+        mean = dataset[feature].mean() # calculate mean of current feature
+        means.append(mean)
+        if verbose: print(cfg.vcolor+'\t\t\t> {}: {}'.format(feature,format(mean,".2f"))+Style.RESET_ALL)
+    if verbose: print(cfg.vcolor+100*'~'+'\n'+Style.RESET_ALL)
+    return means
+# search NaN features and replace with mean value
+def searchNaN(dataset,name,verbose=False,time=False):
+    features = []
+    # informational output
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: searchNaN, {}'.format(name)+40*'~')
+        print('\t\t>> Searching NaN features'+Style.RESET_ALL)
+
+    NaNs = dataset.isna().any()
+    for i in range(0,NaNs.shape[0]):
+        if NaNs.iloc[i] == True:
+            if verbose: print(cfg.vcolor+'\t\t\t+ {}'.format(NaNs.index[i])+Style.RESET_ALL)
+            features.append(NaNs.index[i])
+
+    # get exact NaNs row index numbers for debugging
+    if verbose:
+        print(cfg.vcolor+'\t\t>> Searching index numbers')
+        NaNdf = dataset.isnull() # creates dataframe containing False/True values for NaNs in each cell
+        for feature in features:
+            index = NaNdf[feature].loc[lambda x: x==True].index # get actual df row index numbers for NaNs per feature
+            print('\t\t\t> {}'.format(feature))
+            if len(index) > 0: # if NaN values are found
+                for row in index:
+                    print('\t\t\t\t+ {}:\t{}'.format(row,dataset[feature][row]))
+    if verbose: print(cfg.vcolor+101*'~'+'\n'+Style.RESET_ALL)
+
+    return features
+# replace NaN values with replacement, replacement has same length as passed features
+def replaceNaN(dataset,name,features,replacement,verbose=False,time=False):
+
+    if verbose:
+        print(cfg.vcolor+'\n'+40*'~'+' FUNCTION: replaceNaN, {} '.format(name)+40*'~')
+        print(cfg.vcolor+'\t\t>> replace {} NaNs'.format(name)+Style.RESET_ALL)
+    i = -1
+    for feature in features:
+        i += 1
+        if verbose:
+            print(cfg.vcolor+'\t\t\t> {}: {}'.format(feature,format(replacement[i],".2f"))+Style.RESET_ALL)
+        # NaN replacement with passed replacement value
+        dataset[feature] = dataset[feature].fillna(replacement[i])
+    if verbose: print(cfg.vcolor+101*'~'+'\n'+Style.RESET_ALL)
+    return
+
+
+
+# UNUSED? replace NaNs with mean values
+def replacementNaN(dataset,verbose=False,time=False):
+
+    NaNfeatures = []
+    if time: start = timer()
+
+    # informational output
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: replacementNaN '+40*'~')
+        print('\n>>> searching NaNs')
+
+    NaNs = dataset.isna().any()
+    #print('{}\n{}'.format(NaNs,type(NaNs)))
+
+    for i in range(0,NaNs.shape[0]):
+        #print('{}: {}'.format(i,NaNs.iloc[i]))
+        if NaNs.iloc[i] == True:
+            print('\t+ {}'.format(NaNs.index[i]))
+            NaNfeatures.append(NaNs.index[i])
+
+    #print('{}'.format(NaNfeatures)) # features containing NaN values
+    input(':::')
+
+    if verbose: print('>>> replacing NaNs')
+
+    for feature in NaNfeatures: # iterate NaN containing features
+        if verbose: print('\t>> {} ({})'.format(feature,dataset[feature].dtypes))
+
+        if dataset[feature].dtype == 'float16':
+            print('FLOAT16: {}'.format(dataset[feature].dtype))
+
+        # calculate mean
+        print('{}\n{}'.format(dataset[feature],type(dataset[feature])))
+
+        mean = dataset[feature].mean()
+
+        print('replacement mean: {}'.format(mean))
+
+        #dataset[feature] = dataset[feature].replace(np.nan, mean)
+        dataset[feature] = dataset[feature].fillna(mean)
+
+        print('dtypes: {}'.format(dataset[feature].dtypes))
+
+
+        #isNaN = dataset[feature].isnull()
+        #rowNaN = dataset[feature].isnull()
+        #index = []
+        #print('{}\n{}\n'.format(rowNaN,type(rowNaN)))
+        #for i in range(0,len(rowNaN)):
+        #    if rowNaN.iloc[i] == True:
+        #        index.append(i)
+        #    #print('{}'.format(rowNaN.iloc[i]))
+        #input('...')
+        #print('{}:\n{}'.format(feature,index))
+
+        # calculate mean
+        #mean = dataset[feature].mean()
+        #dataset[feature] = dataset[feature].replace(np.nan, mean)
+        # replace NaNs with mean values
+        #print('feature: {}\nrowNaN:\n{}\n\n'.format(feature,dataset[rowNaN]))
+        input('...')
+
+    print('{}'.format(dataset['((sourceTransportPort),forward): modeCount']))
+    print('{}'.format(dataset['((destinationTransportPort),forward): modeCount']))
+
+    input('...')
+
+
+    return # maybe remove # unused
+# replace all Inf values with given replacement
 def cleanInf(dataset,mode,verbose=False,time=False):
 
     if time: start = timer()
@@ -175,8 +337,9 @@ def cleanInf(dataset,mode,verbose=False,time=False):
     modename = {0: 'value', 1: 'mean', 2: 'min', 3: 'max', 4: 'std'}
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanInf '+40*'~')
-    print('\n>>> searching Infs...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanInf '+40*'~')
+        print('\n>>> searching Infs')
 
     # create pseudo-random values to a feature, add inf value for testing purpose
     #createRandom(dataset,'Random',False,False)
@@ -246,7 +409,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
 
         if verbose: 
             print('\n{}'.format(vmax))
-            if (not time): input('\n...')
+            if (not time): input('\n')
 
         i = -1
         # cycle through features and replace Infinite values
@@ -275,7 +438,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
             elif mode == 3: value = tmax
             elif mode == 4: value = tstd
 
-            print('\n>>> replacing Infinite values: {}'.format(column))
+            if verbose: print('\n>>> replacing Infinite values: {}'.format(column))
             writeCells(dataset,column,infRows[i],value,verbose,False)
 
     else: return
@@ -284,7 +447,7 @@ def cleanInf(dataset,mode,verbose=False,time=False):
         vmax = dataset.max(numeric_only=True)
         print('\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(vmax))
-        if (not time): input('\n...')
+        if (not time): input('\n')
 
     if time: 
         end = timer()
@@ -292,116 +455,15 @@ def cleanInf(dataset,mode,verbose=False,time=False):
 
     # return whatever needed for method to clean specific cells or drop features    
     return
-# clean given df from any NaN values by replacement
-def cleanNaN_original(dataset,mode,verbose=False,time=False):
-
-    if time: start = timer()
-
-    modename = {0: 'value', 1: 'mean', 2: 'min', 3: 'max', 4: 'std'}
-
-    # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
-    print('\n>>> searching NaNs...')
-
-    # summary for NaN values
-    vNaN = dataset.isnull().sum()
-
-    # get features (index & label) containing NaN values
-    # feature (column)-index
-    iNaN = []
-    # feature (column)-label
-    lNaN = []
-    i = -1
-    for x in vNaN:
-        i=i+1
-        # if there is at least one NaN value in the summary
-        if(x > 0):
-            iNaN.append(i)
-            lNaN.append(vNaN.index[i])
-
-    if (not iNaN): return
-
-    # get row-number for NaN values
-    # initialise empty lists 
-    NaNindex=[]
-    # empty list to fill with numpy arrays containing the row numbers for infinite values
-    NaNRows=[]
-    NaNtable=[]
-
-    # output table containing features with NaN counts
-    if verbose: 
-        print('\n{}'.format(vNaN))
-
-    # cycles through features containing NaN values
-    # variable i to adress index-elements
-    i = -1
-    for column in lNaN:
-        i = i+1
-        # iterates through all rows of columns containing NaNs, returns table with 'True' or 'False' per row per feature
-        NaNtable = dataset[column].isnull()
-
-        # cycling through NaNtable, identifying features containing NaNs
-        for i in range(0,dataset.shape[0]):
-            if NaNtable[i] == True:
-                NaNindex.append(i)
-
-        # create temporary array from index list
-        tmp = np.array(NaNindex)
-        NaNRows.append(tmp)
-        # reset index-list before next iteration
-        NaNindex=[]
-    if verbose and (not time): input('\n...') 
-
-    # replace cells containing NaN values with e.g. mean values of that feature
-    if iNaN:
-        i=-1
-        for column in lNaN:
-            i = i+1
-            # get total number of contained NaNs
-            NaNcount = len(NaNRows[i])
-
-            # create series with removed NaN values
-            tmp = removeCells(dataset,column,NaNRows[i],False,False)
-            # calculate specific feature values for further replacement of NaNs
-            tmean = tmp.mean()
-            tmax = tmp.max()
-            tmin = tmp.min()
-            tstd = tmp.std()
-
-            if verbose:
-                print('\n'+20*'~'+' replacement: {} '.format(column)+20*'~')
-                print('\nmean: {}\nstd: {}\nmin: {}\nmax: {}'.format(tmean,tstd,tmin,tmax))
-                print('\nmode: {}'.format(modename[mode]))
-                print('cells: {}'.format(NaNcount))
-
-            # replacement-modes
-            if mode == 0: value = 0
-            elif mode == 1: value = tmean
-            elif mode == 2: value = tmin
-            elif mode == 3: value = tmax
-            elif mode == 4: value = tstd
-
-            print('\n>>> replacing NaNs: {}'.format(column))
-            writeCells(dataset,column,NaNRows[i],value,verbose,False)
-
-    if verbose:
-        # display NaN summary after replacement
-        vNaN = dataset.isnull().sum()
-        print('\n\n'+20*'~'+' cleaned '+20*'~')
-        print('\n{}'.format(vNaN))
-
-    if time: 
-        end = timer()
-        print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
-
-    return
+# replace all NaNs with given replacement
 def cleanNaN(dataset,replacement,verbose=False,time=False):
 
     if time: start = timer()
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
-    print('\n>>> searching NaNs...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanNaN '+40*'~')
+        print('\n>>> searching NaNs')
 
     # summary for NaN values
     vNaN = dataset.isnull().sum()
@@ -418,22 +480,23 @@ def cleanNaN(dataset,replacement,verbose=False,time=False):
 
     # cycles through features containing NaN values
     for column in lNaN:
-        print('>>> replacing NaNs: {}'.format(column))
+        if verbose: print('>>> replacing NaNs: {}'.format(column))
         dataset[column] = dataset[column].replace(np.nan, replacement)
 
     if time:
         end = timer()
         print('\ncleanNaN\n[TIME]: %.3f' % (end-start),'seconds')
 
-    return
+    return # maybe remove # unused
 # remove features containing strings from given df
 def cleanString(dataset,verbose=False,time=False):
 
     if time: start = timer()
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanString '+40*'~')
-    print('\n>>> searching strings...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanString '+40*'~')
+        print('\n>>> searching strings')
 
     # table containing object-types per feature
     stype = dataset.dtypes
@@ -462,19 +525,20 @@ def cleanString(dataset,verbose=False,time=False):
         stype = dataset.dtypes
         print('\n'+20*'~'+' cleaned '+20*'~')
         print('\n{}'.format(stype))
-        if (not time): input('\n...')
+        if (not time): input('\n')
 
     if time: print('\ncleanString\n[TIME]: %.3f' % (end-start),'seconds')
 
     return
-# remove single-value-features from given df, since these contain no informations
+# remove single-value-features from given df
 def cleanSingleValue(dataset,verbose=False,time=False):
 
     if time: start = timer()
 
     # informational output
-    print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
-    print('\n>>> searching unique-value features...')
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: cleanSingleValue '+40*'~')
+        print('\n>>> searching unique-value features')
 
     ldrop = []
     # summary for non-unique values
@@ -505,69 +569,15 @@ def cleanSingleValue(dataset,verbose=False,time=False):
         print('\ncleanSingleValue\n[TIME]: %.3f' % (end-start),'seconds')
 
     return
-
-# REMOVE/EXTRACT FEATURES
-# save features of given df from given list, drop everything else
-def saveFeatures(dataset,features,verbose=False,time=False):
-
-    if time: start = timer()
-
-    # informational output
-    print('\n>>> saving features...')
-    print('\n\t{}'.format(features))
-    
-    # list of all features from given dataset
-    ldrop = dataset.columns.values
-
-    # index numbers for features
-    index = []
-    isave = []
-    idrop = [i for i in range(0,len(ldrop))]
-
-    for i in range(0,len(ldrop)):
-        for j in features:
-            if j == ldrop.item(i):
-                index.append(i)
-
-    if (not index):
-        print('[WARNING] features not found. Abort.')
-        return
-        
-
-    # create list of indexes from features to save
-    isave = index.copy()
-    isave.reverse()
-
-    # remove features to save from drop (labels & index)
-    for x in isave:
-        ldrop = np.delete(ldrop, x)
-        idrop = np.delete(idrop, x)
-    # drop features from dataset
-    dataset.drop(axis=1,labels=ldrop,inplace=True)    
-
-    if time: end = timer()
-
-    if verbose:
-        print('\n'+10*'~'+' save '+10*'~')
-        print('\n{}'.format(features))
-        print('\n{}'.format(len(features)))
-        print('\n'+10*'~'+' remove '+10*'~')
-        print('\n{}'.format(ldrop))
-        print('\n{}'.format(len(ldrop)))
-
-        if (not time): input('\n...')
-
-    if time: print('\nsaveFeatures\n[TIME]: %.3f' % (end-start),'seconds')        
-
-    return
 # remove given feature from given df
 def removeFeatures(dataset,feature,verbose=False,time=False):
 
     if time: start = timer()
 
     # informational output
-    for i in range(0,len(feature)):
-        print('>>> removing feature: {}'.format(feature[i]))
+    if verbose:
+        for i in range(0,len(feature)):
+            print('>>> removing feature: {}'.format(feature[i]))
 
     # drop features to remove directly from dataset
     dataset.drop(axis=1,columns=feature,inplace=True)
@@ -577,27 +587,6 @@ def removeFeatures(dataset,feature,verbose=False,time=False):
         print('\nremoveFeatures\n[TIME]: %.3f' % (end-start),'seconds')
 
     return
-# copy given feature into new dataframe for further manipulation, without affecting original df
-def extractFeatures(dataset,feature,verbose=False,time=False):
-
-    if time: start = timer()
-
-    # informational output
-    if verbose:
-        print('\n>>> extracting features...')
-        print('\n\t{}'.format(feature))
-
-    # create a new df containing given feature as copy of the original df
-    new = dataset[feature].copy()
-
-    if time: 
-        end = timer()
-        print('\nextractFeatures\n[TIME]: %.3f' % (end-start),'seconds')
-
-    # return extracted features for further processing
-    return new
-
-# REMOVE/MANIPULATE CELLS 
 # manipulate content of given cells from given dataframe-feature
 def writeCells(dataset,feature,cells,content,verbose=False,time=False):
 
@@ -608,7 +597,7 @@ def writeCells(dataset,feature,cells,content,verbose=False,time=False):
         print('\n'+10*'~'+' writeCells '+10*'~')
         print('\nvalue: {}'.format(content))
         print('cells: {}'.format(len(cells)))
-        print('\n>>> replace cells content with {}...'.format(content))
+        print('\n>>> replace cells content with {}'.format(content))
 
     # replace given cells with given content
     for j in cells:
@@ -619,173 +608,595 @@ def writeCells(dataset,feature,cells,content,verbose=False,time=False):
         print('\nwriteCells\n[TIME]: %.3f' % (end-start),'seconds')
 
     return
-# TODO: implement replacements via numpy.vectorize
-def writeCellsVectorized(dataset,feature,cells,content,verbose=False,time=False):
-
-    if time: start = timer()
-
-    # informational output
-    if verbose:
-        print('\n'+10*'~'+' writeCells '+10*'~')
-        print('\nvalue: {}'.format(content))
-        print('cells: {}'.format(len(cells)))
-        print('\n>>> replace cells content with {}...'.format(content))
-
-    # replace given cells with given content
-    for j in cells:
-        dataset.at[j,feature] = content
-
-    if time: 
-        end = timer()
-        print('\nwriteCells\n[TIME]: %.3f' % (end-start),'seconds')
-
-    return
-# remove given cells from a copy of the given dataframe feature, return the manipulated copy for further calculations
-def removeCells(dataset,feature,cells,verbose=False,time=False):
-
-    if time: start = timer()
-
-    # informational output
-    if verbose:
-        print('\n'+10*'~'+' removeCells '+10*'~')
-        print('\n>>> removing cells from features...')
-
-    # copy extracted features into new dataframe
-    tmp = extractFeatures(dataset,feature,verbose)
-
-    if verbose:
-        print('\n'+10*'~'+' removeCells, feature: {}, cells: {} '.format(feature,len(cells))+10*'~')
-        print('\n{}'.format(tmp.describe()))
-
-    # drop cells from df copy containing given feature
-    tmp.drop(axis=0,index=cells,inplace=True)
-
-    if time: end = timer()
-
-    if verbose:
-        print('\n'+10*'~'+' removeCells, result '+10*'~')
-        print('\n{}'.format(tmp.describe()))
-        if (not time): input('\n...')
+# split given df into training & test portions
+def splitDataframe(dataset,testsize,verbose=False,time=False):
     
-    if time: print('\nremoveCells\n[TIME]: %.3f' % (end-start),'seconds')
+    if time: start = timer()
+    
+    # informational output
+    if verbose:
+        print('\n\n'+40*'~'+' FUNCTION: splitDataframe '+40*'~')
+        print('\n>>> splitting dataframe into training & test portion')
+    
+    
+    # splitting dataset, to have data for comparison later to estimate algorithm accuracy
+    # write dataset values into array
+    #array = dataset.values
+    # empty list to return X_train, X_validation, Y_train, Y_validation
+    data = []
 
-    # return manipulated copy of the feature for further processing
-    return tmp
-
-
-
+    # all but the very last column put into X
+    X = dataset.iloc[:,:-1]
+    # very last column (label) put into Y as separate column
+    Y = dataset.iloc[:,-1]
+    
+    # splitting up the data into training & validation datasets into 70% training & 30% validation
+    # Xtrain & Ytrain for preparing models
+    # Xtest & Ytest to use later for validation
+    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=testsize, random_state=1)
+    
+    data.append(Xtrain)
+    data.append(Xtest)
+    data.append(Ytrain)
+    data.append(Ytest)
+   
+    if time: end = timer()
+    
+    if verbose:
+        print('\n'+20*'~'+' original '+20*'~')
+        print('\n{}'.format(dataset))
+        if (not time): input('\n')
+        print('\n'+10*'~'+' X '+10*'~')
+        print('\n{}'.format(X))
+        print('\n'+10*'~'+' Y '+10*'~')
+        print('\n{}'.format(Y))
+        if (not time): input('\n')
+        
+        print('\n'+10*'~'+' Xtrain '+10*'~')
+        print('\n{}'.format(Xtrain))
+        print('\n'+10*'~'+' Ytrain '+10*'~')
+        print('\n{}'.format(Ytrain))
+        if (not time): input('\n')
+    
+        print('\n'+10*'~'+' Xtest '+10*'~')
+        print('\n{}'.format(Xtest))
+        print('\n'+10*'~'+' Ytest '+10*'~')
+        print('\n{}'.format(Ytest))
+        if (not time): input('\n')
+        
+    if time: print('\nsplitFrame\n[TIME]: %.3f' % (end-start),'seconds')
+    
+    # return list of arrays or dataframes
+    return data
 
 
 if __name__ == '__main__':
 
-    global verbose 
-    global time
-    global dataset
+    # set variables given in config.py
+    splitsize   = cfg.splitsize
+    chunksize   = cfg.chunksize
+    n_Xpca      = cfg.n_PCA
 
-    verbose = args.verbose
-    superverbose = args.superverbose
+    # set boolean variables based on argument passing
+    time            = args.time
+    save            = args.save
+    #load            = args.load
+    model           = args.model
+    local           = args.local
+    remote          = args.remote
+    export          = args.export
+    verbose         = args.verbose
+    superverbose    = args.superverbose
+    flowsampling    = args.flowsampling
+    packetsampling  = args.packetsampling
     if superverbose: verbose = True
-    time = args.time
-    flowsampling = args.flowsampling
-    packetsampling = args.packetsampling
 
-    export = args.export
+    batch   = args.batch[0] # batch-size
+    findex  = args.file[0] # file-index
+    n       = args.n[0] # sampling-steps
+    j       = args.j[0] # feature-vector
 
-    rpi = args.rpi
-    windows = args.windows
-    osx = args.osx
-    linux = args.linux
-    findex = args.file[0]
+    if export:
+        time = True
+        print('>>> clear log-directory')
+        for file in os.listdir(cfg.logs): # remove all files in the working directory logfolder
+            Path.unlink(cfg.logs / file)
 
-    if time: 
-        start = timer() # runtime
-        t = epochtime.time() # epochtime
-        print('\nClassification.py\n[EPOCH, start]: {}'.format(t))
 
-        if export: # write timestamp to csv
-            if os.path.isfile(timecsv):
-                with open(timecsv,'a') as csvfile:
-                    csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow([t,'Preprocessing.py','start'])
-            else:
-                with open(timecsv,'w') as csvfile:
-                    csvwriter = csv.writer(csvfile, delimiter=",")
-                    csvwriter.writerow([t,'Preprocessing.py','start'])
+    # FILES, PATHS & COMMANDS
+    wd = Path.cwd() # working directory
 
-    # FILEPATHS
-    # path to CSV files based on OS choice
-    if windows:
-        fpath = r"D:\CIC-IDS2017\PCAP\flow-sampledCSV"
-        ppath = r"D:\CIC-IDS2017\PCAP\packet-sampledCSV"
-        chunksize = None
-    elif linux:
-        fpath = r"/mnt/data/CIC-IDS2017/PCAP/flow-sampledCSV"
-        ppath = r"/mnt/data/CIC-IDS2017/PCAP/packet-sampledCSV"
-        chunksize = None
-    elif rpi:
-        fpath = r"/home/dietpi/BSc-e1027075/csv/flow-sampled"
-        ppath = r"/home/dietpi/BSc-e1027075/csv/packet-sampled"
-        chunksize = 10**3
-    # filenames of sampled, unlabeled CSVs
-    csvname = ["Merged.csv","Monday-WorkingHours.csv","Tuesday-WorkingHours.csv","Wednesday-WorkingHours.csv","Thursday-WorkingHours.csv","Friday-WorkingHours.csv"]
-    # set path to sampeld CSV based on optional arguments and OS
+    # filenames
+    csv_import  = '{}.csv'.format(cfg.filenames[findex])
+    npy_Xtrain  = 'Xtrain_split_{}v{}.npy'
+    npy_Xtest   = 'Xtest_split_{}v{}.npy'
+
+    # directories
+    log = 'logs_model-{}' # foldername to save logs
+
+    # commands
+    dstatcmd    = 'dstat --epoch --cpu-adv --disk --mem-adv --swap --output {} > /dev/null 2>&1 &'
+    cplogs      = 'cp -r {} {}/'
+
+    # placeholder pickle-model for 32/64bit systems, can also be used for remote/local
+    #if remote:  modelpkl = '{}_model_remote.pkl'
+    #else:       modelpkl = '{}_model_local.pkl'
+    if remote:  modelpkl = cfg.model_remote
+    else:       modelpkl = cfg.model_remote # cfg.model_local
+
+    # first set correct foldernames for preprocessing & classification logs
+    if model:
+        if remote:  log = log.format('import_remote')
+        else:       log = log.format('import_local')
+    else: 
+        if remote:  log = log.format('fit_remote')
+        else:       log = log.format('fit_local')
+
+    # set samplingmode and flags for further processing
     if flowsampling:
-        if windows: path = fpath+"\\"+csvname[findex]
-        elif (linux or rpi): path = fpath+"/"+csvname[findex]
-        savepath = fpath+r"/processed"
+        flowsampling    = True
+        packetsampling  = False
+        samplefolder    = cfg.flowfolder
+        m               = args.flowsampling[0]
+        sampling        = 'flowbased'
     elif packetsampling:
-        if windows: path = ppath+"\\"+csvname[findex]
-        elif (linux or rpi): path = ppath+"/"+csvname[findex]
-        savepath = ppath+r"/processed"
+        packetsampling  = True
+        flowsampling    = False
+        samplefolder    = cfg.packetfolder
+        m               = args.packetsampling[0]
+        sampling        = 'packetbased'
+
+    # forge foldername to import CSV based on arguments
+    foldername = cfg.foldername.format(cfg.filenames[findex],m,j,n,sampling)
+
+    if flowsampling:
+        #foldername = '{}_perflowsampled'.format(foldername) # base folder
+        path    = cfg.flowfolder / foldername / csv_import # sampled CSV directory
+        logs    = cfg.flowfolder / foldername / log # logfolder path
+        modeld  = cfg.flowfolder / foldername / 'model' # pickle model directory
+        infocsv = cfg.flowfolder / foldername / 'information.csv' # PCA information
+    elif packetsampling:
+        #foldername = '{}_packetsampled'.format(foldername)
+        path    = cfg.packetfolder / foldername / csv_import
+        logs    = cfg.packetfolder / foldername / log
+        modeld  = cfg.packetfolder / foldername / 'model'
+        infocsv = cfg.packetfolder / foldername / 'information.csv'
+
+
+    # set full path to model file after all folder-paths are set up
+    if (model or save): modelfile = modeld / modelpkl.format(cfg.filenames[findex])
+
+    # create log & model folders if necessary
+    if not os.path.exists(cfg.logs):    os.mkdir(cfg.logs)
+    if not os.path.exists(modeld):      os.mkdir(modeld)
+
+    if time:
+        if remote: os.system('killall python2')
+        else: os.system('killall dstat')
+        start = timer()
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            th.start() # start dstat loggin
+            with open(cfg.time,'w') as timecsv: # create file
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow(['epochtime','scriptname','segment','status']) # labels
+                csvwriter.writerow([t,'rpi-Preprocessing.py','start','start'])
 
 
     # OUTPUT passed optional arguments & filepath
-    print('\n\n'+40*'~'+' SCRIPT: Preprocessing.py '+40*'~')
+    print('\n\n'+40*'~'+' SCRIPT: rpi-Preprocessing.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
-    print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,flowsampling,packetsampling))
-    print('\n\n{}'.format(path))
-    if (not time): input('\n...')
+    print('\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--save\n{}\t--export\n{}\t--model\n{}\t--remote\n\n{}\t--flowsampling\n{}\t--packetsampling'.format(verbose,superverbose,time,save,export,model,remote,flowsampling,packetsampling))
+    print('\n'+20*'~'+' processing '+20*'~')
+    print('\nbatchsize = {}\nsplitsize = {}'.format(batch,splitsize))
+    print('\n'+20*'~'+' paths & file '+20*'~'+'\n')
+    print('FOLDER:\t{}\n\t{}\n\t{}\n'.format(cfg.logs,samplefolder,foldername))
+    print('JSON:\t{}'.format(cfg.vectors[j]))
+    if model or save: print('MODEL:\t{}'.format(modelpkl.format(cfg.filenames[findex])))
+    print('MODE:\t{}'.format(cfg.samplingmode[m]))
+    print('CSV:\t{}'.format(csv_import))
+    print('\n'+20*'~'+' commands '+20*'~')
+    print('\ndstat: {}\n\n'.format(dstatcmd))
 
 
-    # IMPORT
-    dataset = importCSV(path,None,verbose,chunksize)
-    # output basic dataset informations
-    printdata(dataset,'original',verbose)
-    print('\nmemory-usage (bytes):\n\n{}\n'.format(dataset.memory_usage()))
+    # IMPORT CSV
+    if time:
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','import CSV','start'])
+
+    print('>>> Importing CSV in chunks of {} lines, splitting into Xtrain & Xtest'.format(cfg.chunksize))
+    # initialise empty dataframes and series
+    dataset = pd.DataFrame()
+    Xtrain  = pd.DataFrame()
+    Xtest   = pd.DataFrame()
+    Ytrain  = pd.Series(dtype=int)
+    Ytest   = pd.Series(dtype=int)
+
+    for chunk in read_csv(path,chunksize=cfg.chunksize,
+    usecols=None,skipinitialspace=True,encoding='utf-8'):
+        chunk = conversion(chunk,False) # convert values into smaller datatypes whenever possible
+        cleanString(chunk,False,False) # remove all features with string dtype
+        chunksplit = splitDataframe(chunk,0.30,False,False) # split into training & test portion
+
+        # accumulate splits
+        Xtrain = Xtrain.append(chunksplit[0])
+        Xtest  = Xtest.append(chunksplit[1])
+        Ytrain = Ytrain.append(chunksplit[2])
+        Ytest  = Ytest.append(chunksplit[3])
+
+    features = list(Xtrain) # used later to initialise empty np arrays via len(features)
+    del chunksplit
+    del chunk
+    gc.collect()
 
 
-    # PREPROCESSING
-    # manually dropping feature 'flowStartMilliseconds'
-    # TODO: should be done directly in FLowSampling.py instead?
-    dropfeature = []
-    dropfeature.append('flowStartMilliseconds')
-    removeFeatures(dataset,dropfeature,verbose,time)
-    # REMOVE NaNs, INF, STRINGS
-    # get rid of NaNs, Inf & Str objects within the DataFrame
-    cleanSingleValue(dataset,verbose,time)
-    cleanString(dataset,verbose,time)
-    # mode 0: replace with value (0 per default, can be changed within the functions)
-    cleanInf(dataset,0,verbose,time)
-    cleanNaN(dataset,0,verbose,time)
-    # output basic informations of cleaned dataset
-    printdata(dataset,'cleaned',verbose)
+    # NAN REPLACEMENT for Xtrain & Xtest
+    print('>>> Search NaN values')
+    NaNtrain = searchNaN(Xtrain,'Xtrain',verbose,False)
+    NaNtest  = searchNaN(Xtest,'Xtest',verbose,False)
+    print('>>> Calculate NaN mean value replacements')
+    meantrain = calcMean(Xtrain,'Xtrain',NaNtrain,verbose,False)
+    meantest  = calcMean(Xtest,'Xtest',NaNtest,verbose,False)
+    print('>>> Replace NaN values with feature mean values')
+    replaceNaN(Xtrain,'Xtrain',NaNtrain,meantrain,verbose,False)
+    replaceNaN(Xtest,'Xtest',NaNtest,meantest,verbose,False)
+    del meantrain; del meantest; del NaNtrain; del NaNtest
 
 
-    # SAVE
-    # save preprocessed dataset to CSV
-    filesave = str(savepath)+"/"+str(filenames[findex])+"_processed.csv"
-    print('\n>>> save preprocessed data to CSV: {}'.format(filesave))
-    dataset.to_csv(str(filesave), index = False,encoding='utf-8-sig')
+    # SCALER FIT
+    if time:
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','fit scaler','start'])
+
+    print('>>> StandardScaling partial fit to Xtrain')
+    scaler = StandardScaler(copy=False)
+    n = Xtrain.shape[0] # total number of rows
+    processed = 0
+    while processed < n: # iterating until done
+        toprocess = min(batch, n-processed) # number of rows to process
+        scaler.partial_fit(Xtrain[processed:processed+toprocess])
+        processed += toprocess # increase number of already processed rows
+
+
+    # PCA COMPONENT NUMBER to reach explained variance
+    if local:
+        print('>>> Determine PCA component number for {}% explained variance'.format(cfg.PCA_var*100))
+        XtrainPCA = Xtrain.copy()
+        XtrainPCA = scaler.transform(XtrainPCA)
+
+        pca = PCA().fit(XtrainPCA) # fit data to training portion
+        xi = np.arange(1, XtrainPCA.shape[1]+1, step=1)
+        y = np.cumsum(pca.explained_variance_ratio_)
+        nPCAexact = np.interp(cfg.PCA_var,y,xi) # interpolate based on given datapoints
+        nPCA      = math.ceil(nPCAexact) # use ceil function to round up to the next integer
+        if verbose: print(cfg.vcolor+'< \u2308{}\u2309 = {} PCA components'.format(round(nPCAexact,2),nPCA)+Style.RESET_ALL)
+
+        infoPCA = read_csv(infocsv) # open information.csv
+        infoPCA.loc[5] = ['PCA variance',cfg.PCA_var]
+        infoPCA.loc[6] = ['PCA components',nPCA]
+        infoPCA.to_csv(infocsv, index=False) # save info
+        del XtrainPCA; del infoPCA; del nPCAexact; del xi; del y
+
+
+    # SPLITTING DATA INTO SMALLER FILES
+    if time:
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','split files','start'])
+
+    print('>>> Splitting data to reduce memory consumption')
+    n = Xtrain.shape[0]
+    toprocess = min(splitsize, n)
+    iteration = int(n/splitsize)+1
+    index = 0
+    while toprocess > 0:
+        index += 1
+        print('\t[{}/{}] Xtrain'.format(index,iteration))
+        npsave = cfg.tmp / npy_Xtrain.format(index,iteration)
+
+        print('\t\t> Converting dtype')
+        npXtrain = Xtrain[:][0:toprocess].to_numpy().astype(np.float32) # convert slice into np array
+        Xtrain = Xtrain.drop(Xtrain.index[0:toprocess]) # drop processed slice from df
+
+        print('\t\t> Saving')
+        np.save(npsave,npXtrain)
+        n -= toprocess # number of rows that need to be processed
+        toprocess = min(splitsize, n)# get slice-size for next iteration
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,iteration),npXtrain,npXtrain.shape,npXtrain.dtype,int(npXtrain.nbytes/1024**2))+Style.RESET_ALL)
+
+    # create array to restore splitted files afterwards
+    iXtrain = np.arange(1,index+1,1)
+    del Xtrain
+    del npXtrain
+    gc.collect()
+
+    n = Xtest.shape[0]
+    toprocess = min(splitsize, n)
+    iteration = int(n/splitsize)+1
+    index = 0
+    while toprocess > 0:
+        index += 1
+        print('\t[{}/{}] Xtest'.format(index,iteration))
+
+        print('\t\t> Converting dtype')
+        npXtest = Xtest[:][0:toprocess].to_numpy().astype(np.float32)
+        Xtest = Xtest.drop(Xtest.index[0:toprocess])
+
+        print('\t\t> Saving')
+        npsave = cfg.tmp / npy_Xtest.format(index,iteration)
+        np.save(npsave,npXtest)
+        n -= toprocess
+        toprocess = min(splitsize, n)
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,iteration),npXtest,npXtest.shape,npXtest.dtype,int(npXtest.nbytes/1024**2))+Style.RESET_ALL)
+    iXtest = np.arange(1,index+1,1) # create array to restore splitted files later
+    del Xtest
+    del npXtest
+    gc.collect()
+
+
+    # SCALER TRANSFORM
+    if time:
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','scale Xtrain','start'])
+
+
+    print('>>> StandardScaling')
+    for index in iXtrain: # cycle through split-files and apply StandardScaler transform on the fly
+        print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
+        Xtrain_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
+        npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain)) # split-file to load in current iteration
+        tmp = np.load(npload).astype(np.float32) # load split-file
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2))+Style.RESET_ALL)
+
+        print('\t\t> Transforming')
+        n = tmp.shape[0]
+        size = min(batch, n)
+        while size > 0:
+            tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
+            tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
+            Xtrain_scaled = np.append(Xtrain_scaled,tmpscaled,axis=0).astype(np.float32)
+            n -= size
+            size = min(batch,n)
+            if superverbose: print(cfg.vcolor+'\n{}\n{} {} {}MB'.format(Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2))+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),Xtrain_scaled,Xtrain_scaled.shape,Xtrain_scaled.dtype,int(Xtrain_scaled.nbytes/1024**2))+Style.RESET_ALL)
+        del tmpscaled
+
+        print('\t\t> Saving')
+        npsave = cfg.tmp / npy_Xtrain.format(index,len(iXtrain))
+        np.save(npsave,Xtrain_scaled)
+        del Xtrain_scaled
+    del tmp
+
+
+    if time:
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','scale Xtest','start'])
+
+    for index in iXtest: # cycle through split-files and apply StandardScaler transform on the fly
+
+        print('\t[{}/{}] Xtest'.format(index,len(iXtest)))
+        Xtest_scaled = np.empty(shape=[0,len(features)]) # initialise empty numpy array
+        npload = cfg.tmp / npy_Xtest.format(index,len(iXtest))
+        tmp = np.load(npload).astype(np.float32) # load split-file
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),tmp,tmp.shape,tmp.dtype,int(tmp.nbytes/1024**2))+Style.RESET_ALL)
+
+        print('\t\t> Transforming')
+        n = tmp.shape[0]
+        size = min(batch, n)
+        while size > 0:
+            tmpscaled = scaler.transform(tmp[:][0:size],copy=None) # transform rows
+            tmp = np.delete(tmp,np.s_[0:size:1],axis=0) # delete rows from array
+            Xtest_scaled = np.append(Xtest_scaled,tmpscaled,axis=0).astype(np.float32)
+            n -= size
+            size = min(batch,n)
+            if superverbose: print(cfg.vcolor+'\n{}\n{} {} {}MB'.format(Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2))+Style.RESET_ALL)
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),Xtest_scaled,Xtest_scaled.shape,Xtest_scaled.dtype,int(Xtest_scaled.nbytes/1024**2))+Style.RESET_ALL)
+        del tmpscaled
+
+        print('\t\t> Saving')
+        npsave = cfg.tmp / npy_Xtest.format(index,len(iXtest))
+        np.save(npsave,Xtest_scaled)
+        del Xtest_scaled
+    del tmp
+
+
+    # PCA
+    if time:
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','fit PCA','start'])
+
+    infoPCA = read_csv(infocsv) # read information.csv
+    n_Xpca = int(infoPCA.loc[6][1]) # load PCA component number
+    del infoPCA
+
+    print('>>> Applying PCA fit with {} components'.format(n_Xpca))
+    ipca = IncrementalPCA(n_components = n_Xpca, batch_size = cfg.PCA_batch)
+
+    for index in iXtrain: # partial fit PCA to Xtrain, iterating over split-files
+        print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
+        npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain))
+        split = np.load(npload).astype(np.float32)
+
+        print('\t\t> Fitting')
+        ipca.partial_fit(split)
+    del split
+
+
+    if (not model): # PCA transform Xtrain (only necessary to fit model)
+        print('>>> Applying PCA transform')
+        Xtrain = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
+        for index in iXtrain:
+            print('\t[{}/{}] Xtrain'.format(index,len(iXtrain)))
+            npload = cfg.tmp / npy_Xtrain.format(index,len(iXtrain))
+            split = np.load(npload).astype(np.float32)
+            if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
+
+            print('\t\t> Transforming')
+            split = ipca.transform(split)
+            if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtrain.format(index,len(iXtrain)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
+
+            print('\t\t> Saving')
+            Xtrain = np.append(Xtrain,split,axis=0).astype(np.float32) # append splits to single Xtrain np.array
+        if verbose: print(cfg.vcolor+'< Xtrain (PCA):\n{}\n{} {} {}MB\n'.format(Xtrain,Xtrain.shape,Xtrain.dtype,int(Xtrain.nbytes/1024**2))+Style.RESET_ALL)
+        del split
+
+    if time:
+        t = epochtime.time()
+        if export: # write timestamp to csv
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','PCA Xtest','start'])
+
+    # Xtest
+    Xtest = np.empty(shape=[0,n_Xpca]) # initialise empty numpy array
+    if model: print('>>> Applying PCA transform')
+    for index in iXtest:
+        print('\t[{}/{}] Xtest'.format(index,len(iXtest)))
+        npload = cfg.tmp / npy_Xtest.format(index,len(iXtest))
+        split = np.load(npload).astype(np.float32)
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
+
+        print('\t\t> Transforming')
+        split = ipca.transform(split)
+        if verbose: print(cfg.vcolor+'< {}:\n{}\n{} {} {}MB\n'.format(npy_Xtest.format(index,len(iXtest)),split,split.shape,split.dtype,int(split.nbytes/1024**2))+Style.RESET_ALL)
+
+        print('\t\t> Saving')
+        Xtest = np.append(Xtest,split,axis=0).astype(np.float32)
+    del split
+    del ipca; 
+    if verbose: print(cfg.vcolor+'< Xtest (PCA):\n{}\n{} {} {}MB\n'.format(Xtest,Xtest.shape,Xtest.dtype,int(Xtest.nbytes/1024**2))+Style.RESET_ALL)
+
+
+    # RANDOM FOREST CLASSIFIER
+
+    if model: # select already fitted modelfile or fit model
+        if time:
+            t = epochtime.time()
+            if export: # write timestamp to csv
+                with open(cfg.time,'a') as timecsv:
+                    csvwriter = csv.writer(timecsv, delimiter=",")
+                    csvwriter.writerow([t,'rpi-Preprocessing.py','import model','start'])
+        print('>>> Importing model')
+        model = joblib.load(modelfile)
+    else:
+        if time:
+            t = epochtime.time()
+            if export: # write timestamp to csv
+                with open(cfg.time,'a') as timecsv:
+                    csvwriter = csv.writer(timecsv, delimiter=",")
+                    csvwriter.writerow([t,'rpi-Preprocessing.py','fit model','start'])
+
+        print('>>> Fitting RandomForestClassifier')
+        model = RandomForestClassifier(n_estimators=cfg.maxtrees,max_depth=cfg.maxdepth,max_leaf_nodes=cfg.maxleaves)
+        model = model.fit(Xtrain,Ytrain)
+        del Xtrain
+
+        if save:
+            print('>>> saving model {}'.format(modelfile))
+            joblib.dump(model,str(modelfile),compress=False)
+
+    if time: setTimestamp('predictions',append=True)
+
+    print('>>> Creating predictions')
+    predictions = model.predict(Xtest)
+
+    if time: setTimestamp('results',append=True) # use function to write timestamp to csv
+
+    print('>>> Creating confusion-matrix')
+    matrix = confusion_matrix(Ytest,predictions)
+
+    print('>>> Creating classification-report')
+    report = pd.DataFrame(classification_report(Ytest,predictions,digits=5,output_dict=True)).transpose()
+
+    print('>>> Obtain various Random Forest estimator values')
+    depths = [t.get_depth() for t in model.estimators_]
+    leaves = [t.get_n_leaves() for t in model.estimators_]
+
+    print('>>> Saving parameters, accuracy-score and feature-importance')
+    parameters = model.get_params(deep=True)
+    accuracyscore = accuracy_score(Ytest,predictions)
+    featureimportance = model.feature_importances_
+
+    # output model estimators
+    print(cfg.vcolor+'\n\n'+10*'~'+' {}: estimators '.format(model)+10*'~')
+    print('Trees:\n{}'.format(len(depths)))
+    print('Depths:\n{}'.format(depths))
+    print('Leaves:\n{}'.format(leaves)+Style.RESET_ALL)
+
+    # output final results
+    print(cfg.vcolor+'\n\n'+10*'~'+' {}: results '.format(model)+10*'~')
+    print('\nModel-Parameters:\n{}'.format(parameters))
+    print('\n\nAccuracy-Score: %.5f' % (accuracyscore))
+    print('\n\nFeature-Importance:\n{}'.format(featureimportance))
+    print('\n\nConfusion-Matrix:\n')
+    print('t       p r e d i c t')
+    print('r         "0"    "1"')
+    print('u  "0":',matrix[0])
+    print('e  "1":',matrix[1])
+    print('\n\nClassification-Report:\n\n{}'.format(report)+Style.RESET_ALL)
+
+
+    if export:
+        print('\n>>> Exporting results to folder: {}'.format(cfg.logs))
+        evaluation = {'model':[model],'parameters':[parameters],
+        'accuracy-score':[accuracyscore],'feature-importance':[featureimportance],
+        'confusion-matrix':[matrix],'PCA-components':[n_Xpca],'Trees':[len(depths)],'Depths':[depths],'Leaves':[leaves]}
+        results = pd.DataFrame.from_dict(evaluation,orient='index',columns=['summary'])
+        results.to_csv(cfg.result) # save results
+        report.to_csv(cfg.report) # save classification-report
 
     if time:
         end = timer()
         t = epochtime.time()
-        print('\nPreprocessing.py\n[EPOCH, end]: {}'.format(t))
-        print('[RUNTIME]: %.3f' % (end-start),'seconds')
-
+        print('\n(runtime: %.3f' % (end-start),'seconds)\n')
         if export: # write timestamps to csv
-            with open(timecsv,'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'Preprocessing.py','end'])
+            with open(cfg.time,'a') as timecsv:
+                csvwriter = csv.writer(timecsv, delimiter=",")
+                csvwriter.writerow([t,'rpi-Preprocessing.py','end','end'])
+
+
+    # STOP MONITORING
+    if export:
+        wait = 50 # seconds to wait before killing dstat
+        if remote: # different method to kill dstat on a Raspberry Pi, running dietPi compared to killing the process on Ubuntu
+            pids = os.popen('pidof /usr/bin/python2 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+            pids = [int(s) for s in pids.split(' ')] # convert strings to list
+        else:
+            pids = os.popen('pidof /usr/bin/python3 /usr/bin/dstat').read() # get pids as string, containing pid from dstat process and the pid of the running script
+            pids = [int(s) for s in pids.split(' ')] # convert strings to list
+            mypid = os.getpid() # pid of running script
+            pids.remove(mypid)
+
+        for i in progressBar(range(wait),'>>> Waiting for dstat (pid={}): '.format(pids[0]), wait):
+            epochtime.sleep(1)
+
+        print('>>> Killing dstat')
+        os.kill(pids[0],9) # kill running dstat process (kills running script, has to be done that way since dstat is running in background)
+
+        print('>>> Saving logs to folder {}'.format(logs))
+        if not os.path.exists(logs): os.mkdir(logs) # create logfolder if necessary
+        for root, dirs, files in os.walk(cfg.logs):
+            for filename in files: # iterate over filenames found within the wd logfolder
+                log = cfg.logs / filename # full path for current logfile
+                print('\t> Saving {}'.format(filename))
+                os.system(cplogs.format(log,logs))
+        print(20*'#')
 
     exit()

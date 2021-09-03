@@ -183,11 +183,11 @@ if __name__ == '__main__':
             with open(cfg.time,'w') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
                 csvwriter.writerow(['epochtime','scriptname','segment','status']) # set labels
-                csvwriter.writerow([t,'rpi-Control.py','','start'])
+                csvwriter.writerow([t,'Sampling','','start'])
 
     # check passed optional arguments and commands
     print('\n'+40*' '+' FILE: {}'.format(cfg.filenames[findex]))
-    print(40*'~'+' SCRIPT: rpi-Sampling.py '+40*'~')
+    print(40*'~'+' SCRIPT: Sampling.py '+40*'~')
     print('\n'+20*'~'+' optional arguments '+20*'~')
     print("\n{}\t--verbose\n{}\t--superverbose\n{}\t--time\n{}\t--export\n{}\t--flowsampling\n{}\t--packetsampling".format(verbose,superverbose,time,export,flowsampling,packetsampling))
     print('\n{}, n = {}'.format(samplingmode,n))
@@ -206,11 +206,11 @@ if __name__ == '__main__':
         for fcount in range(1,len(cfg.filenames)): # iterate over all PCAP files
             if flowsampling:
                 samplearg   = '{} {} {} {}'.format(m,fcount,n,j)
-                samplingcmd = 'python3 rpi-FlowSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
+                samplingcmd = 'python3 FlowSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
 
             elif packetsampling:
                 samplearg   = '{} {} {} {} {}'.format(split,m,fcount,n,j)
-                samplingcmd = 'python3 rpi-PacketSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
+                samplingcmd = 'python3 PacketSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
 
 
             print('\n>>> Execute sampling: {}\n\t> {}\n\t> {}\n\t> {}\n\t> n={}'.format(samplingcmd,cfg.filenames[fcount],cfg.vectors[j],samplingmode,n))
@@ -231,11 +231,11 @@ if __name__ == '__main__':
     else: # sample single PCAP
         if flowsampling: 
             samplearg   = '{} {} {} {}'.format(m,findex,n,j)
-            samplingcmd = 'python3 rpi-FlowSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
+            samplingcmd = 'python3 FlowSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
 
         elif packetsampling: 
             samplearg   = '{} {} {} {} {}'.format(split,m,findex,n,j)
-            samplingcmd = 'python3 rpi-PacketSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
+            samplingcmd = 'python3 PacketSampling.py {} {} {}'.format(verbosearg,timearg,samplearg)
 
 
         print('\n>>> Execute sampling: {}\n\t> {}\n\t> {}\n\t> {}\n\t> n={}'.format(samplingcmd,cfg.filenames[findex],cfg.vectors[j],samplingmode,n))
@@ -259,8 +259,8 @@ if __name__ == '__main__':
         if export: # write timestamp to csv
             with open(cfg.time,'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=",")
-                csvwriter.writerow([t,'rpi-Control.py','','end'])
-        else: print('\n(rpi-Control.py, runtime: %.3f' % (end-start),'seconds)\n')
+                csvwriter.writerow([t,'Sampling','','end'])
+        else: print('\n(Sampling, runtime: %.3f' % (end-start),'seconds)\n')
 
 
     # STOP MONITORING

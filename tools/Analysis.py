@@ -42,30 +42,30 @@ import config as cfg
 # ARGUMENT PARSING
 # command line argument passthrough for better usability
 import argparse
-parser = argparse.ArgumentParser(description='script for preprocessing labeled CSVs')
+parser = argparse.ArgumentParser(description='Script to analyse PCAPs. Can be used to determine feature importance or PCA component numbers to reach a certain amount of explained variance. Can also output wrong classified attack types.')
 # optional arguments
-parser.add_argument('-v','--verbose', action='store_true', help='output additional informations')
-parser.add_argument('--superverbose', action='store_true', help='output additional dataset related informations')
-parser.add_argument('--false', action='store_true', help='output false classified instances')
-parser.add_argument('--pca', action='store_true', help='use PCA components specified in configuration')
-parser.add_argument('--analysis', action='store_true', help='evaluate PCA component numbers, saves components into configuration when combined with --pca')
+parser.add_argument('-v','--verbose',   action='store_true', help='output additional informations')
+parser.add_argument('--superverbose',   action='store_true', help='output additional dataset related informations')
+parser.add_argument('--false',          action='store_true', help='output overview for false classified instances')
+parser.add_argument('--pca',            action='store_true', help='use PCA components specified in configuration')
+parser.add_argument('--analysis',       action='store_true', help='evaluate PCA component numbers, saves components into configuration when combined with --pca')
 # force PCAP selection
 capturegroup = parser.add_mutually_exclusive_group(required=True)
-capturegroup.add_argument('--merged', action='store_true', help='use compelte dataset merged PCAP')
-capturegroup.add_argument('--monday', action='store_true', help='use Monday-WorkingHours PCAP')
-capturegroup.add_argument('--tuesday', action='store_true', help='use Tuesday-WorkingHours PCAP')
-capturegroup.add_argument('--wednesday', action='store_true', help='use Wednesday-WorkingHours PCAP')
-capturegroup.add_argument('--thursday', action='store_true', help='use Thursday-WorkingHours PCAP')
-capturegroup.add_argument('--friday', action='store_true', help='use Friday-WorkingHours PCAP')
-capturegroup.add_argument('--test', action='store_true', help='use excerpt from Friday-Workinghours PCAP for testing')
-capturegroup.add_argument('--experiment', action='store_true', help='use already created CSV from experiment')
+capturegroup.add_argument('--merged',       action='store_true', help='use compelte dataset merged PCAP')
+capturegroup.add_argument('--monday',       action='store_true', help='use Monday-WorkingHours PCAP')
+capturegroup.add_argument('--tuesday',      action='store_true', help='use Tuesday-WorkingHours PCAP')
+capturegroup.add_argument('--wednesday',    action='store_true', help='use Wednesday-WorkingHours PCAP')
+capturegroup.add_argument('--thursday',     action='store_true', help='use Thursday-WorkingHours PCAP')
+capturegroup.add_argument('--friday',       action='store_true', help='use Friday-WorkingHours PCAP')
+capturegroup.add_argument('--test',         action='store_true', help='use excerpt from Friday-Workinghours PCAP for testing')
+capturegroup.add_argument('--experiment',   action='store_true', help='use already created CSV from experiment')
 # force sampling method & mode
 samplegroup = parser.add_mutually_exclusive_group(required=True)
-samplegroup.add_argument('-f','--flowsampling', action='store_true', help='flow-based vector')
-samplegroup.add_argument('-p','--packetsampling', action='store_true', help='packet-based vector')
+samplegroup.add_argument('-f','--flowsampling',     action='store_true', help='flow-based vector')
+samplegroup.add_argument('-p','--packetsampling',   action='store_true', help='packet-based vector')
 # force vector type choice
 vectorgroup = parser.add_mutually_exclusive_group(required=True)
-vectorgroup.add_argument('-a','--agm', action='store_true', help='AGM vector')
+vectorgroup.add_argument('-a','--agm',  action='store_true', help='AGM vector')
 vectorgroup.add_argument('-c','--caia', action='store_true', help='CAIA vector')
 args = parser.parse_args()
 
@@ -846,36 +846,18 @@ if __name__ == '__main__':
     predictions = model.predict(Xtest)
     featureimportance = model.feature_importances_
 
-    if (false and agm): # verbose output for false predictions
+    if false: # verbose output for false predictions
+
         print('>> Output false predictions')
         falseclassified = originalXtest[Ytest != predictions]
         falsepositives = falseclassified[falseclassified['Attack'] == 'Normal'].copy()
         falsenegatives = falseclassified[falseclassified['Attack'] != 'Normal'].copy()
         poptions() # output all rows
 
-        if agm: # prepare output for AGM vector
-            renamefeatures = {
-                'sourceIPAddress': 'srcIP',
-                'mode(destinationIPAddress)': 'dstIPmode',
-                'mode(sourceTransportPort)': 'srcPortmode',
-                'mode(destinationTransportPort)': 'dstPortmode',
-                'mode(_tcpFlags)': 'TCPmode',
-                'mode(ipTTL)': 'ipTTLmode',
-                'mode(protocolIdentifier)': 'protocolmode'
-                }
-            falsenegatives.rename(columns=renamefeatures,inplace=True)
-            falsepositives.rename(columns=renamefeatures,inplace=True)
-
-            outputlist = ['A','P','F','R','S','U','E','C','N','mode(_tcpFlags)','sourceIPAddress','mode(destinationIPAddress)','mode(sourceTransportPort)','mode(destinationTransportPort)','packetTotalCount','Attack',]
-            output = [8,7,6,5,4,3,2,1,0,26,25,27,9,11,14,17,20,23,31,32]
-        # list for tcpEncodeDecimal
-        if caia:
-            outputlist = []
-            output     = []
-
-        print('\nFalse negative instances:\n{}'.format(falsenegatives.iloc[:,output])) # all rows, feature-index numbers
-        print('\nFalse positive instances:\n{}'.format(falsepositives.iloc[:,output]))
+        print('\nFalse negative instances:\n{}'.format(falsenegatives)) # all rows, feature-index numbers
         print('\n\nFalse negatives summary:\n{}\n'.format(falsenegatives.groupby('Attack').size()))
+        input('...')
+
 
     parameters = model.get_params(deep=True)
     accuracyscore = accuracy_score(Ytest,predictions)
