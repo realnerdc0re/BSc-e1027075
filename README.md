@@ -2,4 +2,4 @@
 
 ## Introduction
 
-![Diagram](docs/images/SuperficialDiagram.png?raw=true "Superficial Diagram")
+![Diagram](docs/images/SuperficialDiagram.svg?raw=true "Superficial Diagram")
