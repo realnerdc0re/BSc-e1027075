@@ -9,6 +9,8 @@ This repository contains a various selection of Python scripts that can be utili
 
 ## Usage
 
+A description about the used environmental setup can be found within this repositorys' [docs](/docs) folder.
+
 
 
 ## Issues
