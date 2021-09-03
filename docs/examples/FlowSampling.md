@@ -1,8 +1,6 @@
 # FlowSampling.py - Script to execute flow-based sampling modes a traffic capture file in PCAP format
 
 This script is able to collect flows from a passed capture file, saving the collected flows in form of a CSV file. Afterwards this CSV file is imported and, again depending on the passed arguments, the specified sampling mode is applied on packets within each flow. At the end of its execution the script utilizes a labeling script to label the resulting data in preparation for preprocessing and classification.
-
-
 ```console
 python3 FlowSampling.py -h
 usage: FlowSampling.py [-h] [-v] [--superverbose] [--debug] [-t] mode file n j
@@ -28,7 +26,7 @@ optional arguments:
 
 ```
 
-## Usage Examples
+## Usage Example
 
 In order to apply flow-based sampling with the AGM feature-vector, in particular sample every n-th packet within each collected flow flow (n=10), the following arguments are necessary to execute the script:
 ```console

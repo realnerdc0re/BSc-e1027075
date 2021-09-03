@@ -1,8 +1,6 @@
 # Sampling.py - Script to select proper sampling script based on passed arguments
 
 The main usecase for this script is in combination with the Master.py script. Beside selecting the correct script for the passed sampling mode this script also is capable to sample specific files one after another and merge the resulting, sampled CSV into one single file at the end of its execution.
-
-
 ```console
 python3 Sampling.py -h
 usage: Sampling.py [-h] [-v] [--superverbose] [-t | -e] (-f m | -p m) file n j
@@ -30,7 +28,7 @@ optional arguments:
                         select sampling-mode: {5: 'every n-th packet', 6: 'n out of N', 7: 'probability', 8: 'timebased'}
 ```
 
-## Usage Examples
+## Usage Example
 
 If all workday files should be sampled, e.g. flow-based sampling utilizing the AGM feature vector, sampling every n-th packet of the flow (n=10) the following command is sufficient:
 ```console
