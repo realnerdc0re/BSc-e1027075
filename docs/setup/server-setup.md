@@ -8,7 +8,7 @@ In this setup *aptitude* is used as preferred APT front-end for Debian packets, 
 ```console
 sudo apt-get update && sudo apt-get install aptitude
 sudo aptitude update && sudo aptitude dist-upgrade
-sudo aptitdue install python3 python3-pip
+sudo aptitude install python3 python3-pip
 ```
 
 Pythons packet-management *pip* was further used to install required modules as user:
