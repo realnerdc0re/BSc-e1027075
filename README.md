@@ -29,6 +29,7 @@ optional arguments:
   -r, --remote   run scripts on remote machine
 ```
 
+Examplary commands for every script for various usecases can be found in the appropriate documentation folder [examples](/docs/examples).
 
 
 ## Issues
