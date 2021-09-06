@@ -36,7 +36,7 @@ optional arguments:
 
 ## Usage Example
 
-Exemplary command to perform classification (importing the estimator model) for a specific experiment configuration:
+Exemplary command to perform classification (importing the estimator model) for a specific experiment configuration, in particular flow-based sampling, sample every n-th packet (n=10) utilizing the AGM feature-vector:
 ```console
 python3 Preprocessing.py -m -f 1 0 10 1
 ```
