@@ -24,7 +24,7 @@ The servers' public key has to be added in *~/.ssh/authorized_keys* on the virtu
 Pythons packet-management *pip* was further used to install required modules as user, in particlar the scikit-learn module was forced being installed in the same version as the server machine:
 ```console
 python3 -m pip install scikit-learn==0.23.2
-python3 -m pip install scikit-learn pandas psutil matplotlib
+python3 -m pip install scikit-learn pandas psutil matplotlib colorama
 ```
 Setting PYTHONPATH environment variable:
 ```console
@@ -39,7 +39,7 @@ export PYTHONPATH="$ {PYTHONPATH}:/home/<user>/.local/bin"
 
 ## Machine Information
 
-Basic specification of the virtual machine:
+Basic specifications of the virtual machine:
 ```console
 OS: Debian GNU/Linux 10 (buster) x86_64
 Kernel: 5.4.119-1-pve

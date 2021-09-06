@@ -4,18 +4,39 @@ In this study a machine running Ubuntu has been used apply sampling and collect 
 
 ## Setup
 
+### OS
+
 In this setup *aptitude* is used as preferred APT front-end for Debian packets, for Python *python3* and its packet-management *pip* is utilized.
 ```console
 sudo apt-get update && sudo apt-get install aptitude
 sudo aptitude update && sudo aptitude dist-upgrade
 sudo aptitude install python3 python3-pip
 ```
+### Python
 
 Pythons packet-management *pip* was further used to install required modules as user:
 ```console
-python3 -m pip install scikit-learn pandas psutil matplotlib
+python3 -m pip install scikit-learn pandas psutil matplotlib colorama
 ```
+### Tools
 
+#### Labeling Script
+
+The script used to label sampled network traffic of the CIC-IDS-2017 dataset can be downloaded at:
+https://github.com/CN-TU/Datasets-preprocessing/tree/master/CIC-IDS-2017/labeling
+
+#### go-flows
+
+The flow exporter used in this study to collect network flows based on a passed JSON configuration for flow-key and feature specifications can be found here:
+https://github.com/CN-TU/Datasets-preprocessing/tree/master/CIC-IDS-2017/labeling
+
+#### Wireshark
+
+Wireshark and all included tools like editcap or mergecap can be installed directly from the command line:
+```console
+sudo aptitude update
+sudo aptitude install wireshark
+```
 
 
 ## Machine Information
@@ -181,7 +202,7 @@ python3.8-dev 3.8.10-0ubuntu1~20.10.1
 python3.8-minimal 3.8.10-0ubuntu1~20.10.1
 ```
 
-ll Python related modules installed on the server machine:
+All Python modules installed on the server machine:
 ```console
 python3 -m pip list
 Package                 Version

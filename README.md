@@ -43,7 +43,7 @@ File "sklearn/tree/_tree.pyx", line 607, in sklearn.tree._tree.Tree.__cinit__
 ValueError: Buffer dtype mismatch, expected 'SIZE_t' but got 'long long'
 ```
 
-The second approach generated the estimator model on a x86 32bit machine running Debian. However this also resulted in an error when trying to import that model on the Raspberry Pi Zero W:
+The second approach generated the estimator model on a x86 32bit machine running Debian. However, this also resulted in an error when trying to import that model on the Raspberry Pi Zero W:
 ```console
 File "sklearn/tree/_tree.pyx", line 673, in sklearn.tree._tree.Tree.__setstate__
 ValueError: Did not recognise loaded array layout
