@@ -61,12 +61,9 @@ ssh-keygen -t rsa
 sudo apt autoremove
 ```
 ### Tweaks
-To significantly improve boot times:
+To significantly improve boot times open dietpi.txt and change the following lines:
 ```console
 sudo nano /boot/dietpi.txt
-```
-Change the following lines:
-```console
 CONFIG_BOOT_WAIT_FOR_NETWORK=0
 CONFIG_NTP_MODE=0
 ```
