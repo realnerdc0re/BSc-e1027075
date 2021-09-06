@@ -1,6 +1,6 @@
 # Raspberry Pi Zero W
 
-The Raspberry Pi Zero W used at the beginning of this thesis was used with DietPi, a lightweight Debian OS for single-board computers.
+The Raspberry Pi Zero W used at the beginning of this thesis runs DietPi, a lightweight Debian OS for single-board computers.
 
 ## Setup
 
