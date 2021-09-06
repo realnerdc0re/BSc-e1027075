@@ -1,6 +1,6 @@
 # Linux Machine
 
-In this study a machine running Ubuntu has been used apply sampling and collect flows for further processing. All estimator models have been fitted on this machine.
+In this study a machine running Ubuntu has been used to apply sampling and collect flows on captures of the CIC-IDS-2017 dataset. All estimator models have been fitted on this machine.
 
 ## Setup
 
