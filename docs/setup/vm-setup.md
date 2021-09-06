@@ -35,8 +35,6 @@ Add following line, replace *<user>* with the user that is actually used on the 
 export PYTHONPATH="$ {PYTHONPATH}:/home/<user>/.local/bin"
 ```
 
-
-
 ## Machine Information
 
 Basic specifications of the virtual machine:

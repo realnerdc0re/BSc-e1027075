@@ -29,8 +29,7 @@ optional arguments:
 
 ## Usage Example
 
-In order to apply packet-based sampling with the AGM feature-vector, in particular sample every n-th packet of the network traffic capture file (n=10) for Friday, the following arguments are necessary to execute the script:
+In order to apply packet-based sampling with the AGM feature-vector, in particular sample every n-th packet of the network traffic capture file (n=10) for Friday, passing a split-size of 5000 for the PCAP file, the following arguments are necessary to execute the script:
 ```console
 python3 PacketSampling.py 5000 5 0 5 10 6
-
 ```
