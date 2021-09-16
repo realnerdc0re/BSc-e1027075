@@ -1,6 +1,6 @@
 # Preprocessing.py - Script to perform necessary data pre-processing and classification for the implemented estimator algorithm
 
-The script imports an already sampled network traffic capture in form of a CSV file. After the import is done, necessary pre-processing steps are taken like replacing NaN feature-values, fitting the scaler, applying Principal Component Analysis (PCA) and, depeneding on the passed argument, fitting or importing an estimator model to finally create predictions for the test portion of the data.
+The script imports an already sampled network traffic capture in form of a CSV file. After the import is done, necessary pre-processing steps are taken like replacing NaN feature-values, fitting the scaler, applying Principal Component Analysis (PCA) and, depending on the passed argument, fitting or importing an estimator model to finally create predictions for the test portion of the data.
 
 ```console
 python3 Preprocessing.py -h
