@@ -95,6 +95,7 @@ if __name__ == '__main__':
     #~/Git/go-flows/./go-flows run features ~/Git/BSc-e1027075/go-flows-configurations/AGM_10s.json export csv Merged_flows_unlabeled.csv source libpcap Merged.pcap
     # COMMAND TO LABEL FLOWS
     #python3 /mnt/data/BSc-e1027075/Labeling.py /mnt/data/CIC-IDS2017/PCAP/Original\ PCAPs/Merged_flows 5tuple
+    #python3 /mnt/data/BSc-e1027075/Labeling.py /mnt/data/CIC-IDS2017/PCAP/Original\ PCAPs/Merged_flows 5tuplebi
     #python3 /mnt/data/BSc-e1027075/Labeling.py /mnt/data/CIC-IDS2017/PCAP/Original\ PCAPs/Merged_flows AGM
 
 
@@ -102,15 +103,19 @@ if __name__ == '__main__':
         currentfile = filename.format(file)
         filepath = path / currentfile
         dataset = importCSV(filepath,None,False,None) # import current file
-        print('\n',dataset.groupby('Label').size()) # outputs distribution of attack and benign labeled flows
-        #print('\n',dataset.groupby('Attack').size()) # outputs distribution of attack and benign labeled flows
+        print('\n',dataset.groupby('Label').size()) # outputs distribution of attack types and benign labeled flows
 
-        attackdistribution = dataset.groupby('Attack').size() # creates distribution of all attack types to create histogram
-        print('\n{}\n{}'.format(attackdistribution, type(attackdistribution)))
+        ad = dataset.groupby('Attack').size() # attack types distribution
+        print('\n{}\n{}'.format(ad, type(ad)))
         input('...')
-        ad = attackdistribution # used for histogram generation
 
-        if True: # following code block should be placed within the for-loop to generate histogram (at the end not used in the thesis, instead created a table)
+        pd.set_option('display.max_rows', None)
+        sd = dataset.groupby('sourceIPAddress').size() # source IP distribution
+        dd = dataset.groupby('destinationIPAddress').size() # destinatin IP distribution
+        print('\n{}\n{}'.format(sd, type(sd)))
+        print('\n{}\n{}'.format(dd, type(dd)))
+
+        if False: # following code block could be placed within the for-loop to generate histogram (at the end not used in the thesis, instead created a table)
             attacks = []
             numbers = []
 
