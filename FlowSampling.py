@@ -561,6 +561,26 @@ if __name__ == '__main__':
         else: # skip sampling
             print('>>> No flow-based sampling, processing original capture')
 
+        # PACKET COUNTS
+        # apply(accumulate(octetTotalCount),forward)
+        print('>>> Calculate sampled packet counts per flow')
+        dataset.insert(len(dataset.columns),'samplecountforward',int(0)) # initialise new features after last column
+        dataset.insert(len(dataset.columns),'samplecountbackward',int(0)) # initialise new features after last column
+
+        #dataset['samplecountforward']  = dataset['apply(accumulate(octetTotalCount),forward)'].apply(lambda x: None if np.isnan(x).any() else len(x))
+        #dataset['samplecountbackward'] = dataset['apply(accumulate(octetTotalCount),backward)'].apply(lambda x: None if np.isnan(x).any() else len(x))
+        dataset['samplecountforward']  = dataset['apply(accumulate(ipTotalLength),forward)'].apply(lambda x: 0 if np.isnan(x).all() else len(x))
+        dataset['samplecountbackward'] = dataset['apply(accumulate(ipTotalLength),backward)'].apply(lambda x: 0 if np.isnan(x).all() else len(x))
+
+        print('forward:\n{}'.format(dataset['samplecountforward']))
+        print('backward:\n{}'.format(dataset['samplecountbackward']))
+
+        print('>>> Calculate total sampled packet count direction')
+        fwdcount = dataset['samplecountforward'].sum()
+        bwdcount = dataset['samplecountbackward'].sum()
+        totalcount = fwdcount + bwdcount
+        print('\t<< {}\n\t\t< {} forward\n\t\t< {} backward'.format(totalcount,fwdcount,bwdcount))
+        input('...')
 
         # CALCULATIONS
         print('>>> Create features & calculate values')
@@ -757,6 +777,24 @@ if __name__ == '__main__':
         if debug:
             searchNaN(dataset,features,verbose=True,time=False)
             print(cfg.vcolor+'Dtypes:\n{}'.format(dataset.dtypes)); input('...\n'+Style.RESET_ALL)
+
+        # PACKET COUNTS
+        # apply(accumulate(octetTotalCount),forward)
+        print('>>> Calculate sampled packet counts per flow')
+        dataset.insert(len(dataset.columns),'samplecountforward',int(0)) # initialise new features after last column
+
+        #dataset['samplecountforward']  = dataset['apply(accumulate(octetTotalCount),forward)'].apply(lambda x: None if np.isnan(x).any() else len(x))
+        #dataset['samplecountbackward'] = dataset['apply(accumulate(octetTotalCount),backward)'].apply(lambda x: None if np.isnan(x).any() else len(x))
+        dataset['samplecountforward']  = dataset['apply(accumulate(destinationIPAddress),forward)'].apply(lambda x: len(x))
+
+        print('forward:\n{}'.format(dataset['samplecountforward']))
+
+        print('>>> Calculate total sampled packet count direction')
+        fwdcount = dataset['samplecountforward'].sum()
+        totalcount = fwdcount
+        print('\t<< {}'.format(totalcount))
+        input('...')
+
 
         # CALCULATIONS
         # encode tcpFlags & convert to numpy array

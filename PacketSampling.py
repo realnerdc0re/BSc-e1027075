@@ -285,7 +285,8 @@ if __name__ == '__main__':
                 if word.isdigit():
                     totalpacketcount = int(word) # total number of packets in pcap
                     totalpackets = np.arange(1,totalpacketcount+1,1)
-                    totalsamplecount = len(totalpackets[0::n])
+                    if mode == 5: totalsamplecount = len(totalpackets[0::n])
+                    if mode == 7: totalsamplecount = math.ceil(totalpacketcount/n)
                     print('\t< {}\n\t< {} packets total\n\t< {} packets sampled'.format(capcmd,totalpacketcount,totalsamplecount))
 
 

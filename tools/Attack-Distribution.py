@@ -87,7 +87,7 @@ if __name__ == '__main__':
     verbose = True
     path = mntd / 'data' / 'CIC-IDS2017' / 'PCAP' / 'Original PCAPs'
     #files = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    files = ['Merged']
+    files = ['Monday-WorkingHours','Tuesday-WorkingHours','Wednesday-WorkingHours','Thursday-WorkingHours','Friday-WorkingHours']
     filename = '{}_flows.csv'
 
     # COMMAND TO CREATE FLOWS
@@ -109,11 +109,11 @@ if __name__ == '__main__':
         print('\n{}\n{}'.format(ad, type(ad)))
         input('...')
 
-        pd.set_option('display.max_rows', None)
-        sd = dataset.groupby('sourceIPAddress').size() # source IP distribution
-        dd = dataset.groupby('destinationIPAddress').size() # destinatin IP distribution
-        print('\n{}\n{}'.format(sd, type(sd)))
-        print('\n{}\n{}'.format(dd, type(dd)))
+        #pd.set_option('display.max_rows', None)
+        #sd = dataset.groupby('sourceIPAddress').size() # source IP distribution
+        #dd = dataset.groupby('destinationIPAddress').size() # destinatin IP distribution
+        #print('\n{}\n{}'.format(sd, type(sd)))
+        #print('\n{}\n{}'.format(dd, type(dd)))
 
         if False: # following code block could be placed within the for-loop to generate histogram (at the end not used in the thesis, instead created a table)
             attacks = []
